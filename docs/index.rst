@@ -2,8 +2,7 @@ PAMOLA Core API Reference
 =========================
 
 **PAMOLA Core** is an open-source Python library for privacy-preserving data
-operations developed by `Realm Inveo Inc. <https://realmdata.ai>`_ and
-`DGT Network Inc. <https://dgt.world>`_.
+operations developed by `Realm Inveo Inc. (REALMDATA) <https://realmdata.ai>`_.
 
 Complete reference for every public symbol exported by ``pamola_core``.
 All public APIs are importable directly from the top-level package.

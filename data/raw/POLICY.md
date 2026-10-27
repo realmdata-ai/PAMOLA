@@ -82,7 +82,7 @@ Before committing anything under `data/raw/`:
 - [ ] A `readme.md` in the dataset directory describing schema and intent
 - [ ] Fingerprints intact
 - [ ] Licence terms for the dataset are stated and compatible with this
-      repository's BSD-3-Clause licence
+      repository's MIT licence
 - [ ] Size justified — see §6
 - [ ] Committed **on its own**, in a data-scoped commit. The current corpus
       entered on 2026-01-10 inside an unrelated README commit, which is why

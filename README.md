@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-BSD%203--Clause-blue.svg"></a>
+  <a href="https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/python-3.11--3.12-blue.svg"></a>
   <a href="https://pypi.org/project/pamola-core/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pamola-core?include_prereleases&label=pypi"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-active%20development-orange.svg">
@@ -470,7 +470,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Ownership & Licensing
 
-PAMOLA.CORE is maintained by Realm Inveo Inc. and distributed under the BSD 3-Clause License. See [LICENSE](LICENSE) for applicable copyright notices and license terms.
+PAMOLA.CORE is developed and maintained by Realm Inveo Inc. (REALMDATA) and distributed under the [MIT License](LICENSE).
 
 ---
 

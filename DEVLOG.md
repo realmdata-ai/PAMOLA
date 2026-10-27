@@ -14,6 +14,36 @@ DEVLOG is for *why and how*; CHANGELOG is for *what shipped*.
 
 ---
 
+## 2026-10-27 — MIT licence, English-only repository, data provenance
+
+Branch `docs/english-only-docs-and-data-provenance`. Prompted by the pre-PyPI audit of
+`1.0.0rc1` (maintainers' archive, BOX `PAMOLA/core/20261027_*`).
+
+**Decision (Val, 2026-10-27): the project is relicensed from BSD-3-Clause to MIT, with
+Realm Inveo Inc. (REALMDATA) as the only copyright holder.** `LICENSE` is the verbatim MIT
+text with no additional clauses; `pyproject.toml` declares `license = "MIT"` and
+`license-files` (PEP 639, setuptools >= 77, which also removes the build-time deprecation of
+the licence table and classifier); every module header and the Sphinx metadata name the single
+holder. Earlier releases (`0.0.1` .. `1.0.0.dev4`) stay under the terms they were published
+with. `data/raw/crossparty_anti-fraud` keeps its own Apache-2.0 licence until decided otherwise.
+
+**English only.** Russian-language internal material (`docs/ru`, `docs/specs`, `docs/mocks`,
+four working reports in `docs/output`) and the dead bilingual MkDocs remnants left the tree
+(archived outside the repository); Russian prose in code was translated. Russian *data* for
+the multilingual features stays.
+
+**Documentation measured, not read.** Every Python block of `docs/en` and `README.md` is
+checked for imports that resolve and constructor arguments the API accepts: 122 broken imports,
+49 rejected arguments and 86 broken links went to zero; pages for removed code were deleted.
+`tests/test_readme_examples.py` now executes the README.
+
+**Data provenance.** `DATA_PROVENANCE.md` is the per-asset register. `HR_JOB_SAMPLE.csv`
+(CV records with contact data, no passport, synthetic origin unprovable) was removed from the
+tree; whether to purge it from history is an open maintainer decision, listed with the other
+open actions at the end of the register.
+
+---
+
 ## 2026-08-17 (later) — the suite becomes trustworthy again
 
 PRs #105 → #108 merged. Two debts closed, two opened. The theme is not cleanup:

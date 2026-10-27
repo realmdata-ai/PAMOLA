@@ -118,6 +118,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   release installable on 3.10 (4.1.0) is still affected; `filelock==4.2.1` is now an unconditional pin. Ruff
   `target-version` is `py311`. Applications on Python 3.10 must stay on `1.0.0.dev*` or upgrade Python.
 
+### Licence
+
+- **Relicensed from BSD-3-Clause to MIT; Realm Inveo Inc. (REALMDATA) is the only copyright
+  holder.** `LICENSE` is the standard MIT text; the package metadata declare
+  `License-Expression: MIT` (PEP 639) and ship `LICENSE`; module headers and the API reference
+  carry the same notice. Releases published before this change keep their original licence.
+
 ### Documentation and data
 
 - **README examples run.** The quickstart called `TaskReporter` with arguments it does not take and
