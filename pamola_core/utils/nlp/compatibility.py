@@ -14,6 +14,7 @@ from pamola_core.utils.nlp.base import DependencyManager
 from pamola_core.utils.nlp.cache import cache_function
 from pamola_core.utils.nlp.remote_resources import (
     download_nltk_resource,
+    nltk_resource_present,
     download_spacy_model,
 )
 
@@ -216,13 +217,9 @@ def setup_nlp_resources(download_if_missing: bool = True) -> Dict[str, bool]:
             'stopwords': 'corpora/stopwords'
         }
         for res_name, path in nltk_resources.items():
-            try:
-                nltk.data.find(path)
-                status[f'nltk_{res_name}'] = True
-            except LookupError:
-                status[f'nltk_{res_name}'] = False
-                if download_if_missing:
-                    status[f'nltk_{res_name}'] = download_nltk_resource(nltk, res_name)
+            status[f'nltk_{res_name}'] = nltk_resource_present(nltk, path)
+            if not status[f'nltk_{res_name}'] and download_if_missing:
+                status[f'nltk_{res_name}'] = download_nltk_resource(nltk, res_name)
 
     # Check spaCy resources
     if check_dependency('spacy'):
