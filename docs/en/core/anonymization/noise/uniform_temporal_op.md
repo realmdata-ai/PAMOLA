@@ -617,11 +617,11 @@ class UniformTemporalNoiseOperation(AnonymizationOperation):
 ## Related Operations
 
 - **UniformNumericNoiseOperation**: For adding noise to numeric fields
-- **DateGeneralizationOperation**: For date generalization (binning)
+- **DateTimeGeneralizationOperation**: For date generalization (binning)
 - **Future**: Temporal pattern mining protection
 
 ## References
 
-- [PAMOLA.CORE Noise Operations Sub-Specification](./specs/noise_srs.md)
-- [Temporal Privacy Patterns](./guides/temporal_privacy.md)
-- [Datetime Anonymization Best Practices](./guides/datetime_anon.md)
+- [Base Anonymization Operation](../base_anonymization_op.md)
+- [Uniform Numeric Noise Operation](./uniform_numeric_op.md)
+- [DateTime Generalization Operation](../generalization/datetime_op.md)

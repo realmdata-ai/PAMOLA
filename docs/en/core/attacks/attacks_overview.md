@@ -1,8 +1,6 @@
 # Attacks Module Documentation
 
-**Module:** `pamola_core.attacks`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
+**Module:** `pamola_core.attacks` (experimental, internal package - not exported from `pamola_core.__init__`)
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -15,29 +13,26 @@
 
 ## Overview
 
-The `attacks` module provides privacy risk simulation tools for testing anonymized data robustness. It implements multiple privacy breach scenarios to assess whether data anonymization is effective.
-
-**Purpose:** Evaluate privacy risk by simulating real-world attacks that attempt to:
+The `attacks` module provides privacy risk simulation tools for testing anonymized data robustness. It carries only the attacks that measure **anonymization** quality:
 - Re-identify individuals (linkage attacks)
-- Determine if a person was in the training dataset (membership inference)
 - Infer hidden sensitive attributes (attribute inference)
-- Find similarity between original and anonymized datasets
+
+**Not in this package:** membership inference (a model-privacy question, outside the scope of
+`pamola_core`) and singling-out. Distance to Closest Record (DCR) and Nearest Neighbor Distance
+Ratio (NNDR) are privacy metrics in `pamola_core.metrics.privacy`; see
+[Distance (DCR)](../metrics/privacy/distance.md) and [Neighbor (NNDR)](../metrics/privacy/neighbor.md).
 
 **Use Case:** After anonymization, run attacks to verify the privacy level achieved:
 ```python
-from pamola_core.attacks import (
-    LinkageAttack, MembershipInference, AttributeInference,
-    DistanceToClosestRecord, NearestNeighborDistanceRatio, AttackMetrics
-)
+from pamola_core.attacks import LinkageAttack, AttributeInference, AttackMetrics
 
 # Test if linkage attack can re-identify people
 linkage = LinkageAttack()
 matches = linkage.record_linkage_attack(original_data, anonymized_data, keys)
 
-# Test membership inference
-mia = MembershipInference()
-predictions = mia.membership_inference_attack_dcr(training_data, test_data)
-metrics = AttackMetrics().attack_metrics(y_true, predictions)
+# Test if a hidden attribute can be inferred
+inference = AttributeInference()
+predicted = inference.attribute_inference_attack(train_data, test_data, "diagnosis")
 ```
 
 ## Attack Types
@@ -45,10 +40,7 @@ metrics = AttackMetrics().attack_metrics(y_true, predictions)
 | Attack | Purpose | Input | Output | Difficulty |
 |--------|---------|-------|--------|------------|
 | **Linkage** | Re-identify records by matching common attributes | 2 datasets + keys | Match pairs (DataFrame) | Medium |
-| **Membership Inference** | Determine if someone was in training set | 2 datasets | Binary predictions (array) | Low-Medium |
 | **Attribute Inference** | Infer missing sensitive attribute | 2 datasets + target field | Predicted values (Series) | Low |
-| **Distance to Closest Record (DCR)** | Measure dataset dissimilarity using nearest neighbor distance | 2 datasets | Distances (array) | Low |
-| **Nearest Neighbor Distance Ratio (NNDR)** | Ratio of 1st to 2nd nearest neighbor distance | 2 datasets | Ratios (array) | Low |
 
 ## Quick Comparison
 
@@ -59,30 +51,15 @@ metrics = AttackMetrics().attack_metrics(y_true, predictions)
 - When: You have external datasets with overlapping attributes
 - Risk: High if quasi-identifiers not removed
 
-**Membership Inference (DCR)**
-- Goal: Can attacker tell if someone was in training data?
-- When: You suspect similarity between original and anonymized datasets
-- Risk: Medium - DCR is a direct distance metric
-
-**Membership Inference (NNDR)**
-- Goal: Can attacker infer membership using neighborhood patterns?
-- When: You want confidence-based membership detection
-- Risk: Low-Medium - relies on nearest neighbor ratios
-
-**Membership Inference (Model)**
-- Goal: Can a trained model infer membership from feature patterns?
-- When: You have clustered training data and want ML-based inference
-- Risk: Low - confidence-based, not distance-based
-
 **Attribute Inference**
 - Goal: Can attacker guess missing sensitive attributes?
 - When: Some attributes are partially visible in anonymized data
 - Risk: Medium - uses entropy-based feature selection
 
-**DCR / NNDR Metrics**
+**DCR / NNDR Metrics** (in `pamola_core.metrics.privacy`, not in this package)
 - Goal: Direct privacy metrics without binary prediction
 - When: You want numerical risk scores
-- Risk: Low - purely computational metrics
+- See [Distance (DCR)](../metrics/privacy/distance.md) and [Neighbor (NNDR)](../metrics/privacy/neighbor.md)
 
 ## Module Architecture
 
@@ -91,12 +68,9 @@ pamola_core.attacks/
 ├── base.py                          # AttackInitialization (abstract)
 ├── preprocess_data.py               # PreprocessData (TF-IDF + scaling)
 ├── linkage_attack.py                # LinkageAttack (3 variants)
-├── membership_inference.py          # MembershipInference (DCR/NNDR/Model)
 ├── attribute_inference.py           # AttributeInference (entropy-based)
-├── distance_to_closest_record.py    # DistanceToClosestRecord (DCR metric)
-├── nearest_neighbor_distance_ratio.py # NearestNeighborDistanceRatio (NNDR metric)
 ├── attack_metrics.py                # AttackMetrics (evaluation metrics)
-└── __init__.py                      # Public API exports
+└── __init__.py                      # Package exports
 ```
 
 ### Class Hierarchy
@@ -104,10 +78,7 @@ pamola_core.attacks/
 AttackInitialization (ABC)
   └─ PreprocessData
        ├─ LinkageAttack
-       ├─ MembershipInference
        ├─ AttributeInference
-       ├─ DistanceToClosestRecord
-       ├─ NearestNeighborDistanceRatio
        └─ AttackMetrics
 ```
 
@@ -117,7 +88,8 @@ All attack classes inherit from `PreprocessData`, which provides TF-IDF vectoriz
 
 ### 1. Setup
 ```python
-from pamola_core.attacks import LinkageAttack, MembershipInference, AttackMetrics
+from pamola_core.attacks import LinkageAttack, AttackMetrics
+import numpy as np
 import pandas as pd
 
 # Load datasets
@@ -129,23 +101,17 @@ anonymized = pd.read_csv("anonymized.csv")
 ```python
 # Linkage: direct record matching
 linkage = LinkageAttack()
-matches = linkage.record_linkage_attack(original, anonymized, keys=["name", "dob"])
-
-# Membership Inference: DCR variant
-mia = MembershipInference()
-predictions = mia.membership_inference_attack_dcr(original, anonymized)
+matches = linkage.record_linkage_attack(original, anonymized, linkage_keys=["name", "dob"])
 ```
 
 ### 3. Evaluate
 ```python
-# Create ground truth (1 = member, 0 = non-member)
-y_true = np.ones(len(original))  # All are members (in original)
-
-# Compute metrics
+# Ground truth and predictions are 0/1 arrays you derive from the attack output
+# (for example: 1 = record correctly re-identified)
 metrics_obj = AttackMetrics()
-results = metrics_obj.attack_metrics(y_true, predictions)
-asr = metrics_obj.attack_success_rate(y_true, predictions)
-rrs = metrics_obj.residual_risk_score(y_true, predictions)
+results = metrics_obj.attack_metrics(y_true, y_pred)
+asr = metrics_obj.attack_success_rate(y_true, y_pred)
+rrs = metrics_obj.residual_risk_score(y_true, y_pred)
 
 print(f"Attack Accuracy: {results['Attack Accuracy']}")
 print(f"Attack Success Rate: {asr}")
@@ -155,30 +121,16 @@ print(f"Residual Risk Score: {rrs}")
 ### 4. Interpret Results
 - **High Attack Accuracy (>0.7)** → Anonymization is weak
 - **Low Attack Accuracy (<0.55)** → Anonymization is strong
-- **ASR > 0.5** → Many training members identified (risky)
+- **ASR > 0.5** → Many true positives identified (risky)
 - **RRS > 0.3** → Significant privacy risk
 
 ## Key Concepts
 
 ### Data Preprocessing
 All attacks use `PreprocessData.preprocess_data()`:
-- **Categorical columns** → TF-IDF vectorization (max 5000 features)
+- **Categorical columns** → TF-IDF vectorization (`max_features=5000` by default)
 - **Numeric columns** → Standard scaling (zero mean, unit variance)
 - **Result:** Combined numeric feature matrix for similarity/distance computation
-
-### Distance Metrics
-- **Euclidean:** Default for KDTree (straight-line distance)
-- **Custom metric:** Supported via cdist method (cosine, manhattan, etc.)
-
-### Thresholds
-Most attacks use adaptive thresholds (median of metric values) if not specified:
-```python
-# Explicit threshold
-mia = MembershipInference(dcr_threshold=0.5)
-
-# Adaptive threshold (automatic)
-mia = MembershipInference()  # Uses median(dcr_values)
-```
 
 ### Feature Importance in Attacks
 - **High-entropy features** → Less predictive (removed by AttributeInference)
@@ -188,29 +140,23 @@ mia = MembershipInference()  # Uses median(dcr_values)
 ## Related Components
 
 - **[Profiling Module](../profiling/)** — Analyze dataset characteristics before anonymization
-- **[Metrics Module](../metrics/)** — Compute privacy metrics (k-anonymity, l-diversity)
+- **[Metrics Module](../metrics/)** — Compute privacy metrics (DCR, NNDR, disclosure risk)
 - **[Privacy Models](../privacy_models/)** — Model privacy risks at the data level
 - **[Anonymization Module](../anonymization/)** — Apply transformations (masking, generalization)
 
 ## Export Reference
 
-All public classes available via:
+Names exported by `pamola_core.attacks`:
 ```python
 from pamola_core.attacks import (
     # Base
     AttackInitialization,
-    BaseAttack,
+    BaseAttack,            # alias of AttackInitialization
 
-    # Core attacks
+    # Attacks
     LinkageAttack,
-    MembershipInference,
-    MembershipInferenceAttack,
     AttributeInference,
-    AttributeInferenceAttack,
-    DistanceToClosestRecord,
-    DistanceToClosestRecordAttack,
-    NearestNeighborDistanceRatio,
-    NearestNeighborDistanceRatioAttack,
+    AttributeInferenceAttack,  # alias of AttributeInference
 
     # Metrics
     AttackMetrics,
@@ -221,7 +167,6 @@ from pamola_core.attacks import (
 
 - **[Base Attack](./base_attack.md)** — Abstract interfaces
 - **[Linkage Attack](./linkage_attack.md)** — Re-identification techniques
-- **[Membership Inference](./membership_inference.md)** — Training set membership
 - **[Attribute Inference](./attribute_inference.md)** — Hidden attribute inference
-- **[Distance Metrics](./distance_to_closest_record.md)** — DCR computation
+- **[Distance Metrics](../metrics/privacy/distance.md)** — DCR computation (metrics package)
 - **[Attack Metrics](./attack_metrics.md)** — Evaluation and scoring

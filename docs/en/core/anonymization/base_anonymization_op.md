@@ -648,7 +648,7 @@ By following the extension and onboarding guidance in this documentation, develo
 > - For module-specific logic, parameters, and examples, document only the unique aspects in the module operation doc and refer to this file for all shared base class details.
 > - Example reference section for module docs:
 >
->   > **Reference:** This operation inherits from the abstract base class documented in [base_anonymization_op.md](../base_anonymization_op.md). See that file for all shared parameters, methods, and usage patterns.
+>   > **Reference:** This operation inherits from the abstract base class documented in `base_anonymization_op.md` (link it relatively, e.g. `../base_anonymization_op.md`). See that file for all shared parameters, methods, and usage patterns.
 
 For additional examples and advanced usage patterns, refer to the existing operation implementations in the `pamola_core.anonymization` package.
 

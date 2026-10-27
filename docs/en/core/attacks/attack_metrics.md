@@ -1,8 +1,6 @@
 # Attack Metrics Documentation
 
 **Module:** `pamola_core.attacks.attack_metrics`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -17,7 +15,7 @@
 
 ## Overview
 
-`AttackMetrics` provides evaluation metrics for assessing the success of privacy attacks, particularly membership inference attacks (MIA).
+`AttackMetrics` provides evaluation metrics for assessing the success of privacy attacks from binary ground truth and binary predictions. The method docstrings use membership terminology (1 = member, 0 = non-member), but the metrics apply to any binary attack outcome, for example "record re-identified" from a linkage attack. `pamola_core` itself does not ship a membership inference attack.
 
 **Purpose:** Quantify attack effectiveness by computing:
 - **Attack Accuracy** — Overall correctness of attack predictions
@@ -28,12 +26,11 @@
 - **Attack Success Rate (ASR)** — Proportion of actual members correctly identified
 - **Residual Risk Score (RRS)** — Privacy risk beyond random guessing
 
-**Use Case:** After running membership inference or linkage attacks, evaluate success:
+**Use Case:** After running an attack that produces binary predictions, evaluate success:
 ```python
-from pamola_core.attacks import MembershipInference, AttackMetrics
+from pamola_core.attacks import AttackMetrics
 
-mia = MembershipInference()
-predictions = mia.membership_inference_attack_dcr(training, test)
+# y_true: ground-truth 0/1 labels; predictions: 0/1 labels produced by your attack
 
 metrics = AttackMetrics()
 results = metrics.attack_metrics(y_true, predictions)
@@ -298,7 +295,8 @@ print(f"Residual Risk Score: {rrs:.4f}")  # 0.3333
 ### Complete Attack Evaluation
 
 ```python
-from pamola_core.attacks import MembershipInference, AttackMetrics
+from pamola_core.attacks import AttackMetrics
+from sklearn.neighbors import NearestNeighbors
 import pandas as pd
 import numpy as np
 
@@ -323,9 +321,12 @@ test_data = test_data.sample(frac=1, random_state=42).reset_index(drop=True)
 # Ground truth
 y_true = np.array([1]*25 + [0]*25)
 
-# Run attack
-mia = MembershipInference()
-predictions = mia.membership_inference_attack_dcr(original, test_data)
+# Illustrative distance-based attack (plain scikit-learn, not a pamola_core API):
+# predict "member" when the closest original record is closer than the median distance
+features = ['age', 'income']
+nn = NearestNeighbors(n_neighbors=1).fit(original[features])
+distances = nn.kneighbors(test_data[features])[0].ravel()
+predictions = (distances < np.median(distances)).astype(int)
 
 # Evaluate
 metrics_obj = AttackMetrics()
@@ -335,7 +336,7 @@ rrs = metrics_obj.residual_risk_score(y_true, predictions)
 
 # Display results
 print("=" * 50)
-print("MEMBERSHIP INFERENCE ATTACK EVALUATION")
+print("ATTACK EVALUATION")
 print("=" * 50)
 
 print("\n[1] Standard Metrics:")
@@ -376,21 +377,13 @@ print("=" * 50)
 ### Multi-Method Comparison
 
 ```python
-from pamola_core.attacks import (
-    MembershipInference, LinkageAttack, AttackMetrics
-)
+from pamola_core.attacks import LinkageAttack, AttackMetrics
 
-mia = MembershipInference()
 linkage = LinkageAttack()
 metrics_obj = AttackMetrics()
 
-# Run different attacks
-mia_dcr = mia.membership_inference_attack_dcr(original, test_data)
-mia_nndr = mia.membership_inference_attack_nndr(original, test_data)
-mia_model = mia.membership_inference_attack_model(original, test_data)
-
 # Linkage attack (convert to binary: 1=linked, 0=not linked)
-linkage_results = linkage.record_linkage_attack(original, test_data, keys=['age', 'city'])
+linkage_results = linkage.record_linkage_attack(original, test_data, linkage_keys=['age', 'city'])
 linkage_binary = np.isin(test_data.index, linkage_results.index).astype(int)
 
 # Compare methods
@@ -399,9 +392,7 @@ print(f"{'Method':<20} {'Accuracy':<10} {'ASR':<10} {'RRS':<10}")
 print("-" * 50)
 
 methods = {
-    'MIA-DCR': mia_dcr,
-    'MIA-NNDR': mia_nndr,
-    'MIA-Model': mia_model,
+    'Distance threshold': predictions,  # from the example above
     'Linkage': linkage_binary
 }
 
@@ -420,10 +411,12 @@ print("Strongest attack: Method with highest ASR or RRS")
 
 ```python
 from pamola_core.attacks import AttackMetrics
+from sklearn.neighbors import NearestNeighbors
 import numpy as np
 
-# Raw attack scores (from DCR or NNDR)
-dcr_scores = dcr_obj.calculate_dcr(original, test_data)
+# Raw attack scores: distance from each test record to its closest original record
+nn = NearestNeighbors(n_neighbors=1).fit(original[['age', 'income']])
+dcr_scores = nn.kneighbors(test_data[['age', 'income']])[0].ravel()
 
 # Try different thresholds
 thresholds = np.percentile(dcr_scores, [10, 25, 50, 75, 90])
@@ -629,7 +622,6 @@ print(f"Predicted member ratio: {(y_pred == 1).sum() / len(y_pred):.1%}")
 
 ## Related Components
 
-- **[MembershipInference](./membership_inference.md)** — Generate predictions for evaluation
 - **[LinkageAttack](./linkage_attack.md)** — Re-identification attack results
-- **[DistanceToClosestRecord](./distance_to_closest_record.md)** — Threshold source for predictions
+- **[Distance (DCR) metric](../metrics/privacy/distance.md)** — Distance-based privacy metric (`pamola_core.metrics.privacy.distance`)
 - **[Attacks Overview](./attacks_overview.md)** — Complete attack module guide

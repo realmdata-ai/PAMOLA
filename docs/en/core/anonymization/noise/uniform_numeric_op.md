@@ -517,6 +517,5 @@ class UniformNumericNoiseOperation(AnonymizationOperation):
 
 ## References
 
-- [PAMOLA.CORE Noise Operations Sub-Specification](./specs/noise_srs.md)
-- [Anonymization Best Practices Guide](./guides/anonymization.md)
-- [Privacy-Utility Tradeoff Analysis](./guides/privacy_utility.md)
+- [Base Anonymization Operation](../base_anonymization_op.md)
+- [Uniform Temporal Noise Operation](./uniform_temporal_op.md)

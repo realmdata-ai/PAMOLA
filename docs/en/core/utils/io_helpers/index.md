@@ -238,7 +238,7 @@ except ValidationError:
 - [DataReader](../ops/op_data_reader.md) - Uses io_helpers for reading
 - [DataSource](../ops/op_data_source.md) - Uses io_helpers for data management
 - [BaseOperation](../ops/op_base.md) - Uses io_helpers for I/O operations
-- [Encryption Guide](../../../encryption-guide.md) - Detailed encryption documentation
+- [Cryptographic Subsystem](../crypto_files.md) - Detailed encryption documentation
 
 ## Summary
 

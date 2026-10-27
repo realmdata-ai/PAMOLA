@@ -147,9 +147,7 @@ When updating the module:
 
 ## Related Documentation
 
-- [Project Overview](../../project-overview-pdr.md)
-- [Code Standards](../../code-standards.md)
-- [System Architecture](../../system-architecture.md)
+- [Documentation Index](../README.md)
 - [Profiling Module](../profiling/)
 - [Anonymization Module](../anonymization/)
 - [Metrics Module](../metrics/)

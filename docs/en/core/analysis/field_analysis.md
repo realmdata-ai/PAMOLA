@@ -330,7 +330,7 @@ else:
 
 - [`analyze_descriptive_stats()`](./descriptive_stats.md) - Underlying statistics computation (multi-field)
 - [`visualize_distribution_df()`](./distribution.md) - Distribution visualization backend
-- [`get_project_root()`](../utils/paths.md) - Fallback directory resolution
+- `pamola_core.utils.paths.get_project_root()` - Fallback directory resolution
 - [`analyze_dataset_summary()`](./dataset_summary.md) - Multi-field dataset overview
 
 ---
