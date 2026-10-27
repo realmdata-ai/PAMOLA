@@ -67,9 +67,9 @@ def __init__(
     external_dictionary_path: Optional[str] = None,
     dictionary_format: str = "auto",
     hierarchy_level: int = 1,
-    min_group_size: int = 5,
+    min_group_size: int = 10,
     freq_threshold: float = 0.01,
-    max_categories: int = 100,
+    max_categories: int = 1_000_000,
     allow_unknown: bool = True,
     unknown_value: str = "OTHER",
     group_rare_as: str = "OTHER",
@@ -95,9 +95,9 @@ def __init__(
 | `external_dictionary_path` | Optional[str] | None | Path to external hierarchy dictionary file |
 | `dictionary_format` | str | "auto" | Dictionary file format: "auto", "json", or "csv" |
 | `hierarchy_level` | int | 1 | Target hierarchy level to generalize to (1 to MAX_HIERARCHY_LEVELS) |
-| `min_group_size` | int | 5 | Minimum group size for privacy. `merge_low_freq`: a category with fewer records than this is rare |
+| `min_group_size` | int | 10 | Minimum group size for privacy. `merge_low_freq`: a category with fewer records than this is rare |
 | `freq_threshold` | float | 0.01 | Frequency threshold (0–1). `merge_low_freq`: a category whose share of the records is below this is rare |
-| `max_categories` | int | 100 | `frequency_based` only: number of most frequent categories that are kept, the rest are grouped. Not used by `merge_low_freq` or `hierarchy` |
+| `max_categories` | int | 1,000,000 | `frequency_based` only: number of most frequent categories that are kept, the rest are grouped. Not used by `merge_low_freq` or `hierarchy` |
 | `allow_unknown` | bool | True | Allow unknown values in output |
 | `unknown_value` | str | "OTHER" | Placeholder for unknown values |
 | `group_rare_as` | str | "OTHER" | Rare category grouping strategy |

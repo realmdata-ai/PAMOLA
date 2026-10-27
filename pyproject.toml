@@ -1,6 +1,6 @@
 [project]
 name = "pamola-core"
-version = "1.0.0rc2"
+version = "1.0.0"
 requires-python = ">=3.11,<3.13"
 
 # NOTE: an entry WITH an email lands in the `Author-email` core-metadata field;
@@ -33,7 +33,7 @@ keywords = [
 ]
 
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Legal Industry",

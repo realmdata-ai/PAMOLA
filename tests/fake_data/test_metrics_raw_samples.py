@@ -14,6 +14,7 @@ import pytest
 
 from pamola_core.fake_data.commons.metrics import MetricsCollector
 from pamola_core.fake_data.operations.email_op import FakeEmailOperation
+from pamola_core.utils.artifact_policy import ArtifactClass
 from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.utils.ops.op_result import OperationStatus
 
@@ -79,3 +80,22 @@ def test_option_is_declared_in_each_core_schema(name):
     )
     prop = config.schema["allOf"][1]["properties"]["include_raw_samples_in_metrics"]
     assert prop["default"] is False and "WARNING" in prop["description"]
+
+
+@pytest.mark.parametrize("raw", [False, True])
+def test_raw_samples_decide_the_metrics_artifact_class(tmp_path, raw):
+    """With raw samples the metrics file holds source values: diagnostic, not for release."""
+    df = pd.DataFrame({"id": range(6), "email": PII * 2})
+    op = FakeEmailOperation(field_name="email", include_raw_samples_in_metrics=raw)
+    result = op.execute(DataSource(dataframes={"main": df}), tmp_path / "task", _Reporter())
+    assert result.status == OperationStatus.SUCCESS, result.error_message
+
+    metrics = [
+        a
+        for a in result.artifacts
+        if "generator metrics" in a.description
+    ]
+    assert metrics
+    expected = ArtifactClass.DIAGNOSTIC if raw else ArtifactClass.AGGREGATE_METRIC
+    assert {a.artifact_class for a in metrics} == {expected}
+    assert {a.to_dict()["not_for_release"] for a in metrics} == {raw}

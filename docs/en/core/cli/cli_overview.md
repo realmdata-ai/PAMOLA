@@ -150,7 +150,7 @@ Display PAMOLA.CORE version and exit.
 **Example:**
 ```bash
 pamola-core --version
-# Output: pamola-core 1.0.0rc2
+# Output: pamola-core 1.0.0
 ```
 
 ### `--verbose` / `-v`

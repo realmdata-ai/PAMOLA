@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/python-3.11--3.12-blue.svg"></a>
-  <a href="https://pypi.org/project/pamola-core/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pamola-core?include_prereleases&label=pypi"></a>
+  <a href="https://pypi.org/project/pamola-core/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pamola-core?label=pypi"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-active%20development-orange.svg">
 </p>
 
@@ -221,16 +221,9 @@ For dataset-level utility scoring (classification / regression downstream models
 **From PyPI:**
 
 ```bash
-pip install --pre pamola-core
+pip install pamola-core
 ```
 
-> **The `--pre` flag is required.** Every `1.0.0` release so far is a
-> pre-release, and `pip` skips pre-releases by default — so a plain
-> `pip install pamola-core` will **not** give you this library. You can also
-> pin an exact version from the [release history](https://pypi.org/project/pamola-core/#history),
-> e.g. `pip install "pamola-core==<version>"`.
-> The flag stops being necessary once `1.0.0` final ships.
->
 > The base install is large (about 0.9 GB of dependencies: pandas, scikit-learn, Dask, spaCy,
 > FAISS, PyArrow and others). Install it into a virtual environment.
 
@@ -245,7 +238,7 @@ pip install -e .
 **Visualization is optional:**
 
 ```bash
-pip install --pre "pamola-core[viz]"
+pip install "pamola-core[viz]"
 ```
 
 The base install writes JSON, CSV and Parquet, and never draws. Charts need
@@ -325,13 +318,13 @@ PAMOLA.CORE follows [Semantic Versioning](https://semver.org/) and [PEP 440](htt
 
 ```python
 import pamola_core
-print(pamola_core.__version__)   # e.g. "1.0.0rc2"
+print(pamola_core.__version__)   # e.g. "1.0.0"
 ```
 
 | Phase | Version | Branch | Tag | Install |
 |-------|---------|--------|-----|---------|
-| Pre-releases (current) | `1.0.0.devN`, `1.0.0rcN` | `develop` | `v1.0.0.devN`, `v1.0.0rcN` | `pip install --pre pamola-core` |
-| Stable (planned) | `1.0.0` | `main` | `v1.0.0` | `pip install pamola-core` |
+| Stable (current) | `1.0.0` | `main` | `v1.0.0` | `pip install pamola-core` |
+| Pre-releases | `X.Y.Z.devN`, `X.Y.ZrcN` | `develop` | `vX.Y.Z.devN`, `vX.Y.ZrcN` | `pip install --pre pamola-core` |
 
 The badge at the top shows the newest version published on PyPI; the version on `develop` can be ahead of it.
 

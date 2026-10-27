@@ -9,9 +9,13 @@ from three parts:
   an explicit failure and returns;
 * every write of a figure goes through ``guarded_write`` (called by ``save_visualization``).
   After the timeout the run is *cancelled*: a write that has not started is refused, and a
-  write already in flight is waited for, so no file appears after the operation returned;
+  write already in flight is waited for up to a grace period (30 s). A write that outlasts
+  the grace period cannot be stopped: the operation returns without it, and the writer
+  removes its own file as soon as the write ends, so the file never stays behind (it can
+  exist only while that write is still running);
 * files the abandoned worker managed to write before the cancellation are removed, and the
-  caller registers artifacts only for runs that completed.
+  caller registers artifacts only for runs that completed. A file whose removal fails is
+  logged as a warning.
 
 The worker is a daemon thread, so an abandoned renderer cannot keep the process alive.
 """
@@ -61,9 +65,13 @@ class RenderRun:
         return tuple(self._written)
 
     def cancel(self) -> List[Path]:
-        """Refuse further writes, wait out one in flight, remove what was written."""
-        acquired = self._lock.acquire(timeout=_CANCEL_GRACE_SECONDS)
+        """Refuse further writes, wait out one in flight, remove what was written.
+
+        A write still in flight after the grace period removes its own file when it ends
+        (see ``guarded_write``).
+        """
         self._cancelled = True
+        acquired = self._lock.acquire(timeout=_CANCEL_GRACE_SECONDS)
         removed: List[Path] = []
         try:
             for path in self._written:
@@ -99,7 +107,9 @@ def guarded_write(path: Any) -> Iterator[None]:
     """Wrap the actual write of one visualization file.
 
     Outside a rendering worker this is a no-op. Inside one, a cancelled run refuses the write
-    and a successful write is remembered so a later cancellation can remove it.
+    and a successful write is remembered so a later cancellation can remove it. A write that
+    ends after the run was cancelled removes its own file and raises
+    ``VisualizationCancelledError``.
     """
     run = _current_run.get()
     if run is None:
@@ -111,7 +121,23 @@ def guarded_write(path: Any) -> Iterator[None]:
                 "visualization run was cancelled after its timeout; nothing was written"
             )
         yield
+        if run.cancelled:
+            _remove_late_write(Path(path))
+            raise VisualizationCancelledError(
+                "visualization run was cancelled while this file was being written; "
+                "the file was removed"
+            )
         run._written.append(Path(path))  # noqa: SLF001
+
+
+def _remove_late_write(path: Path) -> None:
+    """Remove a file whose write ended after the run was cancelled."""
+    try:
+        path.unlink()
+    except FileNotFoundError:
+        pass
+    except OSError as exc:
+        logger.warning("Could not remove abandoned visualization %s: %s", path.name, exc)
 
 
 def wait_for_render(

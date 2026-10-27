@@ -96,6 +96,7 @@ from pamola_core.utils.io import (
     load_settings_operation,
 )
 from pamola_core.utils.io_helpers.crypto_utils import get_encryption_mode
+from pamola_core.utils.artifact_policy import raw_samples_artifact_class
 from pamola_core.utils.ops.op_base import FieldOperation
 
 # Import framework utilities
@@ -205,7 +206,9 @@ class AnonymizationOperation(FieldOperation):
             Diagnostic option, default False. If True, ``metrics/*.json`` also
             carries the most frequent raw (pre-transformation) values of
             low-cardinality fields. WARNING: this writes source values,
-            possibly PII, into a generic metrics artifact.
+            possibly PII; the metrics file is then registered as a
+            ``diagnostic`` artifact with ``contains_source_values=True``
+            (``not_for_release``).
         **kwargs : dict
             Additional parameters passed to :class:`FieldOperation`.
         """
@@ -2040,12 +2043,15 @@ class AnonymizationOperation(FieldOperation):
                 if isinstance(value, (int, float, str, bool)):
                     result.add_metric(key, value)
 
-            # Register metrics artifact
+            # Register metrics artifact. With raw samples the file holds source values,
+            # so it is a diagnostic (not for release), not an aggregate metric.
+            source_values = raw_samples_artifact_class(self.include_raw_samples_in_metrics)
             result.add_artifact(
                 artifact_type="json",
                 path=metrics_result.path,
                 description=f"{self.operation_name.lower()} {self.field_name} anonymization metrics",
                 category=Constants.Artifact_Category_Metrics,
+                **source_values,
             )
 
             # Report artifact
@@ -2054,6 +2060,7 @@ class AnonymizationOperation(FieldOperation):
                     artifact_type="json",
                     path=str(metrics_result.path),
                     description=f"{self.operation_name.lower()} {self.field_name} anonymization metrics",
+                    **source_values,
                 )
 
             return True

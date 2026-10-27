@@ -80,6 +80,7 @@ from pamola_core.utils.io_helpers.crypto_utils import get_encryption_mode
 from pamola_core.utils.artifact_policy import (
     ArtifactClass,
     ArtifactPolicyError,
+    raw_samples_artifact_class,
     require_encryption_key,
 )
 import pamola_core.utils.io as pamola_io
@@ -1812,12 +1813,15 @@ class GeneratorOperation(FieldOperation):
                 if isinstance(value, (int, float, str, bool)):
                     result.add_metric(key, value)
 
-            # Register metrics artifact
+            # Register metrics artifact. With raw samples the file holds source values,
+            # so it is a diagnostic (not for release), not an aggregate metric.
+            source_values = raw_samples_artifact_class(self.include_raw_samples_in_metrics)
             result.add_artifact(
                 artifact_type="json",
                 path=metrics_result.path,
                 description=f"{self.operation_name.lower()} {self.field_name} generator metrics",
                 category=Constants.Artifact_Category_Metrics,
+                **source_values,
             )
 
             # Report artifact
@@ -1826,6 +1830,7 @@ class GeneratorOperation(FieldOperation):
                     artifact_type="json",
                     path=str(metrics_result.path),
                     description=f"{self.operation_name.lower()} {self.field_name} generator metrics",
+                    **source_values,
                 )
         except Exception as e:
             self.logger.warning(f"Failed to save metrics: {str(e)}")

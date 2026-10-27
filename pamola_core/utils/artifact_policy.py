@@ -82,6 +82,21 @@ def check_class_and_content(
     return artifact_class
 
 
+def raw_samples_artifact_class(include_raw_samples: bool) -> dict:
+    """Artifact keywords for a metrics file that may carry raw samples.
+
+    ``include_raw_samples_in_metrics=True`` puts source values into the metrics file, so
+    it is registered as ``DIAGNOSTIC`` with ``contains_source_values=True`` (not for
+    release). Without raw samples the file keeps the class derived from its category.
+    """
+    if include_raw_samples:
+        return {
+            "artifact_class": ArtifactClass.DIAGNOSTIC,
+            "contains_source_values": True,
+        }
+    return {}
+
+
 def require_encryption_key(encryption_key: Optional[str], what: str) -> str:
     """A ``PROTECTED_MAPPING`` is only written encrypted: refuse without a key."""
     if not encryption_key:

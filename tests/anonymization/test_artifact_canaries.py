@@ -37,6 +37,7 @@ from pamola_core.anonymization.pseudonymization.hash_based_op import (
 from pamola_core.anonymization.pseudonymization.mapping_op import (
     ConsistentMappingPseudonymizationOperation,
 )
+from pamola_core.utils.artifact_policy import ArtifactClass
 from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.utils.ops.op_result import OperationStatus
 
@@ -221,3 +222,21 @@ def test_raw_samples_opt_in_reaches_metrics_artifact(df, tmp_path):
     assert metrics_files
     combined = "".join(p.read_text(encoding="utf-8") for p in metrics_files)
     assert PII_FRAGMENTS[0] in combined
+
+
+def _metrics_artifacts(result):
+    return [a for a in result.artifacts if "anonymization metrics" in a.description]
+
+
+@pytest.mark.parametrize("raw", [False, True])
+def test_raw_samples_decide_the_metrics_artifact_class(df, tmp_path, raw):
+    """With raw samples the metrics file holds source values: diagnostic, not for release."""
+    op = FullMaskingOperation(field_name="email", include_raw_samples_in_metrics=raw)
+    result = op.execute(_data_source(df), tmp_path / "task", _Reporter())
+    assert result.status == OperationStatus.SUCCESS
+
+    metrics = _metrics_artifacts(result)
+    assert metrics
+    expected = ArtifactClass.DIAGNOSTIC if raw else ArtifactClass.AGGREGATE_METRIC
+    assert {a.artifact_class for a in metrics} == {expected}
+    assert {a.to_dict()["not_for_release"] for a in metrics} == {raw}
