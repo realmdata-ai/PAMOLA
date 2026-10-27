@@ -90,7 +90,7 @@ tech_report = report.generate(output_format='technical')
         'timestamp': '2026-03-23T10:30:00Z',
         'report_type': 'l-diversity',
         'report_id': 'ld_20260323_103000',
-        'pamola_version': '1.0.0rc1'
+        'pamola_version': '1.0.0rc2'
     },
     'l_diversity_configuration': {
         'l': 3,

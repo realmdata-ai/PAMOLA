@@ -325,7 +325,7 @@ PAMOLA.CORE follows [Semantic Versioning](https://semver.org/) and [PEP 440](htt
 
 ```python
 import pamola_core
-print(pamola_core.__version__)   # e.g. "1.0.0rc1"
+print(pamola_core.__version__)   # e.g. "1.0.0rc2"
 ```
 
 | Phase | Version | Branch | Tag | Install |

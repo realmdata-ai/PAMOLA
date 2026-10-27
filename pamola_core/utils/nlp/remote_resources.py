@@ -25,6 +25,7 @@ method is visible to the caller instead of looking like an ordinary success.
 import logging
 import os
 import threading
+import zipfile
 from typing import Dict, Optional
 
 from pamola_core.errors.exceptions.nlp import ModelNotAvailableError
@@ -183,6 +184,22 @@ def download_spacy_model(spacy_module, model_name: str) -> bool:
             "check network access or install the model manually.",
         )
         return False
+
+
+def nltk_resource_present(nltk_module, path: str) -> bool:
+    """
+    Whether NLTK has the resource at ``path`` (e.g. ``"corpora/wordnet"``).
+
+    ``python -m nltk.downloader wordnet`` installs ``corpora/wordnet.zip``, which NLTK reads,
+    but ``nltk.data.find("corpora/wordnet")`` does not find it; both forms are tried.
+    """
+    for candidate in (path, f"{path}.zip"):
+        try:
+            nltk_module.data.find(candidate)
+            return True
+        except (LookupError, zipfile.BadZipFile):
+            continue
+    return False
 
 
 def download_nltk_resource(nltk_module, name: str, force: bool = False) -> bool:

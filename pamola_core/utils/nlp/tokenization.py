@@ -47,6 +47,7 @@ from pamola_core.utils.nlp.cache import (
 
 from pamola_core.utils.nlp.remote_resources import (
     download_nltk_resource,
+    nltk_resource_present,
     download_spacy_model,
     hub_load_kwargs,
     record_hub_failure,
@@ -67,81 +68,96 @@ _TRANSFORMERS_AVAILABLE = DependencyManager.check_dependency("transformers")
 # Global dictionary of lemmatizers or stemmers
 _LEMMATIZERS = {}
 
-# If pymorphy2 is available, set up Russian lemmatizer
-if _PYMORPHY_AVAILABLE:
-    try:
-        pymorphy2 = DependencyManager.get_module("pymorphy2")
-        if pymorphy2:
-            try:
-                _LEMMATIZERS["ru"] = pymorphy2.MorphAnalyzer()
-                logger.debug("Initialized pymorphy2 MorphAnalyzer for Russian")
-            except Exception as e:
-                # Catch ANY exception during MorphAnalyzer initialization
-                # and downgrade to INFO level to avoid failing the whole process
-                logger.info(f"Could not initialize pymorphy2 MorphAnalyzer: {e}")
-                # Optional: set a fallback if needed
-                # _LEMMATIZERS['ru'] = SomeFallbackStemmer()
-    except Exception as e:
-        logger.warning(f"Error loading pymorphy2 module: {e}")
+_LEMMATIZERS_READY = False
 
-# If NLTK is available, set up WordNetLemmatizer for English and optional SnowballStemmer
-if _NLTK_AVAILABLE:
-    try:
-        nltk = DependencyManager.get_module("nltk")
-        if nltk:
-            # Import required NLTK components
-            from nltk.stem import WordNetLemmatizer, SnowballStemmer
 
-            # Ensure NLTK resources (punkt, wordnet) are available
-            try:
-                nltk.data.find("tokenizers/punkt")
-            except (LookupError, zipfile.BadZipFile):
-                # Offline by default: fetched only on explicit opt-in.
-                download_nltk_resource(nltk, "punkt", force=True)
+def _ensure_lemmatizers() -> None:
+    """
+    Build the lemmatizers and stemmers on first use.
 
-            try:
-                nltk.data.find("corpora/wordnet")
-            except (LookupError, zipfile.BadZipFile):
-                download_nltk_resource(nltk, "wordnet", force=True)
+    Done lazily so that importing the package neither checks NLP resources nor reports
+    missing ones; a caller that never lemmatizes never pays for it.
+    """
+    global _LEMMATIZERS_READY
+    if _LEMMATIZERS_READY:
+        return
+    _LEMMATIZERS_READY = True
 
-            _LEMMATIZERS["en"] = WordNetLemmatizer()
-            logger.debug("Initialized NLTK WordNetLemmatizer for English")
-
-            # Initialize Snowball stemmers for various languages
-            for lang in [
-                "danish",
-                "dutch",
-                "english",
-                "finnish",
-                "french",
-                "german",
-                "hungarian",
-                "italian",
-                "norwegian",
-                "portuguese",
-                "romanian",
-                "russian",
-                "spanish",
-                "swedish",
-            ]:
+    # If pymorphy2 is available, set up Russian lemmatizer
+    if _PYMORPHY_AVAILABLE:
+        try:
+            pymorphy2 = DependencyManager.get_module("pymorphy2")
+            if pymorphy2:
                 try:
-                    stemmer = SnowballStemmer(lang)
-                    lang_code = {
-                        "english": "en",
-                        "russian": "ru",
-                        "german": "de",
-                        "french": "fr",
-                        "spanish": "es",
-                        "italian": "it",
-                        "portuguese": "pt",
-                    }.get(lang, lang[:2])
-                    if lang_code not in _LEMMATIZERS:
-                        _LEMMATIZERS[lang_code] = stemmer
-                        logger.debug(f"Initialized SnowballStemmer for {lang}")
+                    _LEMMATIZERS["ru"] = pymorphy2.MorphAnalyzer()
+                    logger.debug("Initialized pymorphy2 MorphAnalyzer for Russian")
                 except Exception as e:
-                    logger.debug(f"Could not initialize stemmer for {lang}: {e}")
-    except Exception as e:
-        logger.warning(f"Error initializing NLTK-based lemmatizers: {e}")
+                    # Catch ANY exception during MorphAnalyzer initialization
+                    # and downgrade to INFO level to avoid failing the whole process
+                    logger.info(f"Could not initialize pymorphy2 MorphAnalyzer: {e}")
+                    # Optional: set a fallback if needed
+                    # _LEMMATIZERS['ru'] = SomeFallbackStemmer()
+        except Exception as e:
+            logger.warning(f"Error loading pymorphy2 module: {e}")
+
+    # If NLTK is available, set up WordNetLemmatizer for English and optional SnowballStemmer
+    if _NLTK_AVAILABLE:
+        try:
+            nltk = DependencyManager.get_module("nltk")
+            if nltk:
+                # Import required NLTK components
+                from nltk.stem import WordNetLemmatizer, SnowballStemmer
+
+                # Ensure NLTK resources (punkt, wordnet) are available.
+                # Offline by default: fetched only on explicit opt-in.
+                if not nltk_resource_present(nltk, "tokenizers/punkt"):
+                    download_nltk_resource(nltk, "punkt", force=True)
+                wordnet = nltk_resource_present(nltk, "corpora/wordnet") or download_nltk_resource(
+                    nltk, "wordnet", force=True
+                )
+
+                # Without the corpus WordNetLemmatizer raises LookupError on first use;
+                # English then falls back to the Snowball stemmer registered below.
+                if wordnet:
+                    _LEMMATIZERS["en"] = WordNetLemmatizer()
+                    logger.debug("Initialized NLTK WordNetLemmatizer for English")
+
+                # Initialize Snowball stemmers for various languages
+                for lang in [
+                    "danish",
+                    "dutch",
+                    "english",
+                    "finnish",
+                    "french",
+                    "german",
+                    "hungarian",
+                    "italian",
+                    "norwegian",
+                    "portuguese",
+                    "romanian",
+                    "russian",
+                    "spanish",
+                    "swedish",
+                ]:
+                    try:
+                        stemmer = SnowballStemmer(lang)
+                        lang_code = {
+                            "english": "en",
+                            "russian": "ru",
+                            "german": "de",
+                            "french": "fr",
+                            "spanish": "es",
+                            "italian": "it",
+                            "portuguese": "pt",
+                        }.get(lang, lang[:2])
+                        if lang_code not in _LEMMATIZERS:
+                            _LEMMATIZERS[lang_code] = stemmer
+                            logger.debug(f"Initialized SnowballStemmer for {lang}")
+                    except Exception as e:
+                        logger.debug(f"Could not initialize stemmer for {lang}: {e}")
+        except Exception as e:
+            logger.warning(f"Error initializing NLTK-based lemmatizers: {e}")
+
 
 if _SPACY_AVAILABLE:
     logger.debug("spaCy is available (SpacyTokenizer can be used).")
@@ -1412,12 +1428,13 @@ def lemmatize(
         tokens = adjusted
 
     # 3) Use known lemmatizer or stemmer from _LEMMATIZERS
+    _ensure_lemmatizers()
     if language in _LEMMATIZERS:
         lemma_obj = _LEMMATIZERS[language]
         if language == "ru" and _PYMORPHY_AVAILABLE:
             return [lemma_obj.parse(t)[0].normal_form for t in tokens]
-        elif language == "en" and _NLTK_AVAILABLE:
-            # WordNetLemmatizer
+        elif hasattr(lemma_obj, "lemmatize"):
+            # WordNetLemmatizer ("en" holds the Snowball stemmer when WordNet is absent)
             return [lemma_obj.lemmatize(t) for t in tokens]
         else:
             # Possibly a SnowballStemmer or custom callable

@@ -391,10 +391,9 @@ class HierarchyDictionary:
                     f"Found {len(empty_values)} entries with no hierarchy values"
                 )
 
-            # Basic circular reference check (simple one-level check)
-            for value in list(self._data.keys())[:100]:  # Check first 100 only
-                if self._check_circular_reference(value):
-                    issues.append(f"Potential circular reference detected for: {value}")
+            # No cycle check: each entry maps a value to its labels, and labels are not
+            # looked up again, so the structure cannot loop. A level whose label equals the
+            # value itself ("HS-grad" -> "HS-grad") is ordinary identity generalization.
 
             return len(issues) == 0, issues
 
@@ -657,28 +656,3 @@ class HierarchyDictionary:
 
             self._level_values[i] = values
 
-    def _check_circular_reference(
-        self, value: str, visited: Optional[Set[str]] = None
-    ) -> bool:
-        """
-        Simple circular reference check.
-
-        Note: This is a basic implementation checking if a value
-        appears in its own hierarchy path.
-        """
-        if visited is None:
-            visited = set()
-
-        if value in visited:
-            return True
-
-        visited.add(value)
-
-        # Check if value appears in any of its hierarchy levels
-        if value in self._data:
-            hierarchy = self._data[value]
-            for key, val in hierarchy.items():
-                if key.startswith("level_") and val == value:
-                    return True
-
-        return False
