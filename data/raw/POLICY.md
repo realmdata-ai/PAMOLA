@@ -1,7 +1,9 @@
 # Data Publication Policy — `data/raw/`
 
 **Status:** normative for this repository.
-**Last reviewed:** 2026-08-16.
+**Last reviewed:** 2026-10-26.
+**Per-asset register:** [`DATA_PROVENANCE.md`](../../DATA_PROVENANCE.md) — origin, licence and
+verification status of every data asset in the repository and the package.
 
 This file states, in one place, what may appear in `data/raw/` of the public
 PAMOLA repository and why. `README.md` in this directory describes the
