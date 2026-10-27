@@ -134,7 +134,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   that an operation transforms only its own field of the dataset it is given, and
   `tests/test_readme_examples.py` executes every Python block of `README.md`.
 - **The repository is English-only.** Russian-language internal material (`docs/ru`, `docs/specs`,
-  `docs/mocks`, four working reports in `docs/output`) and the remnants of the bilingual MkDocs
+  `docs/mocks`, four working reports in `docs/output`), the superseded August 2026 audit reports and the remnants of the bilingual MkDocs
   build (`docs/common`, an empty `mkdocs.yml`) were removed; Russian comments, docstrings and
   messages in the code were translated. Russian *data* used by the multilingual features (name
   dictionaries, stop words, keyword and phone patterns) is unchanged.

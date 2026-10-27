@@ -103,7 +103,7 @@ Preference, smallest first:
 3. **Passports, readmes, generators always in-repo**, regardless of where the
    bytes live. Provenance must never depend on an external fetch.
 
-> **Open decision (Q-01, `docs/output/20260816_CC_REPO_AUDIT.md`):** the
+> **Open decision (Q-01, `20260816_CC_REPO_AUDIT.md` (archived outside the repository)):** the
 > current `*_10k` and full-size CSVs (~120 MB) predate this policy and are
 > still tracked. Whether to move them to tier 2 is pending Val's decision. No
 > history rewrite is proposed.
