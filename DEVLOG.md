@@ -111,9 +111,10 @@ capability returns it needs a design, tests and an explicit promotion.
 
 ## 2026-08-17 — 1.0 cleanup: ~12 600 lines removed, singling-out added
 
-Sections A and B of `docs/output/20260816_CC_RUNBOOK_1_0.md` executed, plus the
-decisions Val took on top of them. Session report:
-`docs/output/20260817_CC_SESSION_REPORT.md`.
+Sections A and B of the 1.0 runbook (`20260816_CC_RUNBOOK_1_0.md`) executed, plus the
+decisions Val took on top of them. Session report: `20260817_CC_SESSION_REPORT.md`.
+Both were written in Russian and moved to the maintainers' archive on 2026-10-26
+(BOX `PAMOLA/core/20261026_REPO_DOCS_ARCHIVE/docs/output/`); the repository is English-only.
 
 **Positioning changed, and it invalidated an ADR.** CD established that BEST
 retired the pamola-core bridge on **2026-06-14** (`BRIDGED_OP_CODES = 0`,
