@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 Core JSON Schema definition for backend validation of fake phone generation configurations in PAMOLA.CORE.
@@ -38,6 +38,8 @@ class FakePhoneOperationConfig(OperationConfig):
     Used for runtime parameter validation and type checking.
     """
 
+    SENSITIVE_KEYS = frozenset({"key"})
+
     schema = {
         "type": "object",
         "title": "Fake Phone Operation Core Configuration",
@@ -47,6 +49,17 @@ class FakePhoneOperationConfig(OperationConfig):
             {
                 "type": "object",
                 "properties": {
+                    "include_raw_samples_in_metrics": {
+                        "type": "boolean",
+                        "title": "Include Raw Samples In Metrics",
+                        "default": False,
+                        "description": (
+                            "Diagnostic only. If true, metrics/*.json may contain the most "
+                            "frequent raw (original) values of the field. WARNING: this "
+                            "writes source values, possibly PII, into a generic metrics "
+                            "artifact. Keep false in production."
+                        ),
+                    },
                     "field_name": {
                         "type": "string",
                         "title": "Field Name",

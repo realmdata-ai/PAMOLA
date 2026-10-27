@@ -4,7 +4,7 @@ Module: Image and Plot Utilities
 Description: Helpers for managing, saving, and formatting visualizations and image outputs
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Unified interface for saving matplotlib figures and other plots using the pamola core I/O system

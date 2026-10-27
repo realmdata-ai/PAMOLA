@@ -237,9 +237,9 @@ op = CellSuppressionOperation(
 )
 
 # Execute
-data_source = DataSource(file_path="data.csv")
+data_source = DataSource.from_file_path("data.csv")
 task_dir = Path("./output")
-result = op.execute(data_source, task_dir)
+result = op.execute(data_source, task_dir)  # reporter is optional for suppression operations
 
 # Check results
 print(f"Cells suppressed: {result.metrics['cells_suppressed']}")
@@ -378,16 +378,14 @@ op = CellSuppressionOperation(
 
 ### Dask Support
 
-For large datasets, Dask processing is automatic:
+With `engine="auto"` (the default) the engine is selected from the data size:
 
 ```python
-# Automatically switches to Dask for >1M rows
 op = CellSuppressionOperation(
     field_name="transaction_amount",
     suppression_strategy="median",
     suppress_if="outlier",
-    engine="auto",  # or force with "dask"
-    max_rows_in_memory=1_000_000
+    engine="auto"  # or force with "dask"
 )
 ```
 
@@ -395,11 +393,11 @@ op = CellSuppressionOperation(
 
 ### Optimization Tips
 
-1. **Batch Size**: Adjust based on memory
+1. **Chunk Size**: Adjust based on memory
    ```python
    op = CellSuppressionOperation(
        field_name="field",
-       batch_size=50000  # Larger batches for simple operations
+       chunk_size=50000  # Larger chunks for simple operations
    )
    ```
 
@@ -488,10 +486,10 @@ The operation integrates seamlessly with other PAMOLA components:
 
 ```python
 # Chain with other operations
-from pamola_core.anonymization.generalization import GeneralizationOperation
+from pamola_core import NumericGeneralizationOperation
 
 # First generalize age ranges
-gen_op = GeneralizationOperation(
+gen_op = NumericGeneralizationOperation(
     field_name="age",
     strategy="binning",
     bin_count=10
@@ -500,7 +498,7 @@ gen_op = GeneralizationOperation(
 # Then suppress outliers in income within age groups
 supp_op = CellSuppressionOperation(
     field_name="income",
-    suppression_strategy="group_median",
+    suppression_strategy="group_mean",
     group_by_field="age",  # Uses generalized age
     suppress_if="outlier"
 )

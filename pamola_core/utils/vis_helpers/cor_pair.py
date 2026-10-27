@@ -7,7 +7,7 @@ Description:
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for correlation pair plot visualizations
 using both Plotly and Matplotlib backends. Plotly is the primary implementation,
@@ -245,11 +245,11 @@ class PlotlyCorrelationPair(PlotlyFigure):
 
             except ImportError as e:
                 logger.error(
-                    f"Plotly is not available. Please install it with: pip install plotly. Error: {e}"
+                    f"Plotly is not available. It ships with the viz extra: pip install 'pamola-core[viz]'. Error: {e}"
                 )
                 return self.create_empty_figure(
                     title=title,
-                    message="Plotly is not available. Please install it with: pip install plotly.",
+                    message="Plotly is not available. It ships with the viz extra: pip install 'pamola-core[viz]'.",
                 )
             except Exception as e:
                 logger.error(f"Error creating correlation pair plot: {e}")
@@ -935,7 +935,7 @@ class MatplotlibCorrelationPair(MatplotlibFigure):
                 # Define plt as None to ensure it's defined in except block
                 plt = None
                 logger.error(
-                    f"Matplotlib is not available. Please install it with: pip install matplotlib. Error: {imp_error}"
+                    f"Matplotlib is not available. It ships with the viz extra: pip install 'pamola-core[viz]'. Error: {imp_error}"
                 )
                 return None
             except Exception as e:

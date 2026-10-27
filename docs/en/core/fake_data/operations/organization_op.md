@@ -40,7 +40,7 @@ pamola_core.fake_data.operations.organization_op.FakeOrganizationOperation
            │
            ▼
 ┌──────────────────────┐    ┌─────────────────────┐
-│ OrganizationOperation ├───► OrganizationGenerator│
+│ FakeOrganizationOp.   ├───► OrganizationGenerator│
 └──────────┬──────────┬─┘    └─────────────────────┘
            │          │
            │          │     ┌─────────────────────┐
@@ -57,7 +57,7 @@ pamola_core.fake_data.operations.organization_op.FakeOrganizationOperation
 ```mermaid
 sequenceDiagram
     participant User as User Script
-    participant Op as OrganizationOperation
+    participant Op as FakeOrganizationOperation
     participant Gen as OrganizationGenerator
     participant Map as MappingStore
     participant Met as MetricsCollector
@@ -103,10 +103,10 @@ sequenceDiagram
    - REPLACE: Replace original values in-place
    - ENRICH: Add synthetic values as new columns
 
-3. **Null Value Strategies**:
-   - PRESERVE: Keep null values as null
-   - REPLACE: Generate values for nulls
+3. **Null Value Strategies** (`null_strategy`):
+   - PRESERVE: Keep null values as null (default)
    - EXCLUDE: Skip null values
+   - ANONYMIZE: Anonymize null values
    - ERROR: Raise error on null values
 
 4. **Consistency Mechanisms**:
@@ -124,7 +124,7 @@ sequenceDiagram
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `field_name` | str | Field to process (containing org names) | *required* |
-| `mode` | str | Operation mode ("REPLACE" or "ENRICH") | "ENRICH" |
+| `mode` | str | Operation mode ("REPLACE" or "ENRICH") | "REPLACE" |
 | `output_field_name` | str | Name for output field (if mode="ENRICH") | None (auto-generated) |
 | `organization_type` | str | Type of organization to generate | "general" |
 | `dictionaries` | Dict[str, str] | Paths to dictionaries | None |
@@ -135,20 +135,19 @@ sequenceDiagram
 | `region` | str | Default region for generation | "en" |
 | `preserve_type` | bool | Whether to preserve org type | True |
 | `industry` | str | Specific industry for 'industry' type | None |
-| `batch_size` | int | Size of processing batches | 10000 |
+| `chunk_size` | int | Size of processing chunks | 10000 |
 | `null_strategy` | str | Strategy for NULL values | "PRESERVE" |
 | `consistency_mechanism` | str | Method for ensuring consistency | "prgn" |
 | `mapping_store_path` | str | Path to store mappings | None |
 | `id_field` | str | Field for record identification | None |
 | `key` | str | Key for encryption/PRGN | None |
 | `context_salt` | str | Salt for PRGN | None |
-| `save_mapping` | bool | Whether to save mapping to file | False |
+| `save_mapping` | bool | Whether to save mapping to file (written encrypted; requires `use_encryption=True` and `encryption_key`) | False |
 | `column_prefix` | str | Prefix for new column | "_" |
 | `collect_type_distribution` | bool | Whether to collect type distribution | True |
 | `type_field` | str | Field containing organization types | None |
 | `region_field` | str | Field containing region codes | None |
 | `detailed_metrics` | bool | Whether to collect detailed metrics | False |
-| `error_logging_level` | str | Level for error logging | "WARNING" |
 | `max_retries` | int | Maximum retries for generation on error | 3 |
 
 ## Main Methods
@@ -161,24 +160,25 @@ sequenceDiagram
 | `_analyze_type_distribution()` | Analyze org type distribution | `df` | Dictionary with metrics |
 | `_analyze_region_distribution()` | Analyze region distribution | `df` | Dictionary with metrics |
 | `_analyze_prefix_suffix_distribution()` | Analyze prefix/suffix usage | `df` | Dictionary with metrics |
-| `_collect_metrics()` | Collect comprehensive metrics | `df` | Dictionary with metrics |
+| `_collect_specific_metrics()` | Collect organization-specific metrics | `df` | Dictionary with metrics |
 | `_calculate_quality_metrics()` | Calculate quality metrics | `original_series`, `generated_series` | Dictionary with metrics |
-| `_save_metrics()` | Save metrics and visualizations | `metrics_data`, `task_dir` | Path to metrics file |
+| `_save_metrics()` | Save metrics through the DataWriter (inherited from `GeneratorOperation`) | `metrics`, `writer`, `result`, `reporter`, `progress_tracker` | bool |
 
 ## Usage Examples
 
 ### Basic Usage in a Task Script
 
 ```python
-from pamola_core.fake_data.operations.organization_op import OrganizationOperation
+from pamola_core import FakeOrganizationOperation
 from pamola_core.utils.ops.op_data_source import DataSource
 from pathlib import Path
+from unittest.mock import MagicMock
 
 # Create data source from a CSV file
 data_source = DataSource.from_file_path("companies.csv")
 
 # Create the operation
-org_op = OrganizationOperation(
+org_op = FakeOrganizationOperation(
     field_name="company_name",
     mode="REPLACE",
     organization_type="general"
@@ -188,13 +188,12 @@ org_op = OrganizationOperation(
 result = org_op.execute(
     data_source=data_source,
     task_dir=Path("./task_output"),
-    reporter=None
+    reporter=MagicMock()  # or a TaskReporter
 )
 
-# Check result and access processed data
+# Check result; the processed data is written to task_output/output/
 if result.status.name == "SUCCESS":
-    processed_df = result.data
-    print(f"Processed {len(processed_df)} records")
+    print(f"Metrics: {result.metrics}")
 else:
     print(f"Operation failed: {result.error_message}")
 ```
@@ -203,7 +202,7 @@ else:
 
 ```python
 # Create operation with advanced settings
-org_op = OrganizationOperation(
+org_op = FakeOrganizationOperation(
     field_name="institution_name",
     mode="ENRICH",
     output_field_name="synthetic_institution",
@@ -216,19 +215,26 @@ org_op = OrganizationOperation(
     },
     region="ru",
     preserve_type=True,
-    null_strategy="REPLACE",
+    null_strategy="PRESERVE",
     consistency_mechanism="mapping",
     mapping_store_path="./mappings/institutions.json",
-    save_mapping=True,
+    save_mapping=True,              # mapping is written encrypted:
+    use_encryption=True,            # requires use_encryption
+    encryption_key="<task key>",    # and the task encryption key
     detailed_metrics=True,
     type_field="institution_type",
     region_field="country_code"
 )
 
-# Execute with reporter
-from pamola_core.utils.task_reporting import Reporter
-reporter = Reporter()
-result = org_op.execute(data_source, Path("./output"), reporter)
+# Execute with a task reporter
+from pamola_core.utils.tasks.task_reporting import TaskReporter
+reporter = TaskReporter(
+    task_id="fake_orgs",
+    task_type="fake_data",
+    description="Generate synthetic organizations",
+    report_path=Path("./output/report.json"),
+)
+result = org_op.execute(data_source=data_source, task_dir=Path("./output"), reporter=reporter)
 ```
 
 ## Operation Metrics

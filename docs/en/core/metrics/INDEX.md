@@ -8,23 +8,24 @@ Quick navigation guide for all metrics module documentation.
 
 ## Commons (Utilities & Shared Components)
 
-Reusable utilities for metric calculation, data processing, and quality assessment.
+Reusable utilities for metric calculation, data processing, and quality assessment. These
+modules in `pamola_core.metrics.commons` do not have dedicated pages yet; see their docstrings.
+Several of their entry points are part of the public API (`SchemaManager`, `RuleCode`,
+`calculate_quality_with_rules`, `calculate_provisional_risk`, `calculate_predicted_utility`).
 
-### Data Processing & Validation
-- **[Preprocessing](./commons/preprocessing.md)** - Convert mixed data types to numeric format for distance calculations
-- **[Validation](./commons/validation.md)** - Dataset compatibility and metric input validation
-- **[Validation Rules](./commons/validation_rules.md)** - Extensible framework for data quality rules (email, phone, date, SSN validation)
-
-### Aggregation & Normalization
-- **[Aggregation](./commons/aggregation.md)** - Aggregate column/metric scores into dataset-level metrics
-- **[Normalize](./commons/normalize.md)** - Normalize values, arrays, and metrics to standard scales
-- **[Safe Instantiate](./commons/safe_instantiate.md)** - Safe class instantiation from dynamic config
-
-### Scoring & Assessment
-- **[Quality Scoring](./commons/quality_scoring.md)** - Comprehensive data quality calculation (completeness, validity, diversity)
-- **[Predicted Utility Scoring](./commons/predicted_utility_scoring.md)** - Quick utility assessment on sampled subsets
-- **[Risk Scoring](./commons/risk_scoring.md)** - Re-identification risk estimation with attribute role detection
-- **[Schema Manager](./commons/schema_manager.md)** - Field definitions, validation rule assignment, schema persistence
+| Module | Purpose |
+|--------|---------|
+| `preprocessing` | Convert mixed data types to numeric format for distance calculations |
+| `validation` | Dataset compatibility and metric input validation |
+| `validation_rules` | Extensible framework for data quality rules (email, phone, date, SSN validation) |
+| `aggregation` | Aggregate column/metric scores into dataset-level metrics |
+| `normalize` | Normalize values, arrays, and metrics to standard scales |
+| `safe_instantiate` | Safe class instantiation from dynamic config |
+| `quality_scoring` | Data quality calculation (completeness, validity, diversity) |
+| `predicted_utility_scoring` | Quick utility assessment on sampled subsets |
+| `risk_scoring` | Re-identification risk estimation with attribute role detection |
+| `schema_manager` | Field definitions, validation rule assignment, schema persistence |
+| `model_budget` | Row budgets for the model-based utility metrics |
 
 ## Fidelity Metrics
 
@@ -46,11 +47,12 @@ Evaluate disclosure risk and privacy preservation.
 
 ### Distance-Based
 - **[Distance to Closest Record](./privacy/distance.md)** - DCR privacy metric with FAISS support for large-scale nearest neighbor search
+- **[CVPL linkage exposure](./privacy/cvpl.md)** - Blocked, projected cosine linkage of a release against its source: existence of a link, and (with ground truth) the probability of the right identity; not a legal verdict
 
 ### Risk & Disclosure
 - **[Disclosure Risk](./privacy/disclosure_risk.md)** - Prosecutor, journalist, marketer risk models
 - **[Identity Risk](./privacy/identity.md)** - Record uniqueness and identity disclosure risk
-- **[Neighbor Risk](./privacy/neighbor.md)** - Neighborhood-based privacy risk assessment
+- **[Nearest Neighbor Distance Ratio (NNDR)](./privacy/neighbor.md)** - Ratio of first to second nearest-neighbor distance
 
 ### Operations
 - **[Privacy Operations](./operations/privacy_ops.md)** - PrivacyMetricOperation wrapper for privacy metric workflows
@@ -75,18 +77,6 @@ Assess data utility and analytical value after anonymization.
 ### Operations
 - **[Utility Operations](./operations/utility_ops.md)** - UtilityMetricOperation wrapper for utility metric workflows
 
-## Quality Metrics
-
-Assess data quality, distribution similarity, and synthetic data fidelity.
-
-### Distribution Comparison
-- **[Kolmogorov-Smirnov Test](./quality/kolmogorov_smirnov_test.md)** - Non-parametric distribution test
-- **[Kullback-Leibler Divergence](./quality/kullback_leibler_divergence.md)** - Information-theoretic distribution divergence
-- **[Wasserstein Distance](./quality/wasserstein_distance.md)** - Optimal transport distance for distributions
-
-### Statistical Relationships
-- **[Pearson Correlation](./quality/pearson_correlation.md)** - Linear relationship preservation in anonymized data
-
 ## Operations Wrappers
 
 Higher-level operation interfaces for metric workflows.
@@ -109,41 +99,19 @@ Higher-level operation interfaces for metric workflows.
 
 ### "Does my synthetic data match the original?"
 → Start with **[Fidelity Operations](./operations/fidelity_ops.md)**
-→ Then explore **[Statistical Fidelity](./fidelity/statistical_fidelity.md)**, **[KL Divergence](./fidelity/distribution/kl_divergence.md)**, **[Wasserstein Distance](./quality/wasserstein_distance.md)**
+→ Then explore **[Statistical Fidelity](./fidelity/statistical_fidelity.md)**, **[KL Divergence](./fidelity/distribution/kl_divergence.md)**, **[KS Test](./fidelity/distribution/ks_test.md)**
 
 ### "What's the data quality before metrics?"
-→ Start with **[Quality Scoring](./commons/quality_scoring.md)**
-→ Then explore **[Validation Rules](./commons/validation_rules.md)**
+→ Start with `calculate_quality_with_rules()` (`pamola_core.metrics.commons`)
+→ Then explore `pamola_core.metrics.commons.validation_rules`
 
 ### "How risky is this data?"
-→ Start with **[Risk Scoring](./commons/risk_scoring.md)**
+→ Start with `calculate_provisional_risk()` (`pamola_core.metrics.commons.risk_scoring`)
 → Then explore **[Disclosure Risk](./privacy/disclosure_risk.md)**, **[Distance to Closest Record](./privacy/distance.md)**
-
----
-
-## Documentation Statistics
-
-| Category | Count | Status |
-|----------|-------|--------|
-| Total documented metrics | 31+ | Complete |
-| Commons utilities | 9 | Complete |
-| Fidelity metrics | 3 | Complete |
-| Privacy metrics | 3 | Complete |
-| Utility metrics | 5 | Complete |
-| Quality metrics | 4 | Complete |
-| Operations wrappers | 3 | Complete |
-| Framework/Base | 1 | Complete |
 
 ---
 
 ## Related Documentation
 
-- **[Project Overview & PDR](../../../project-overview-pdr.md)** - Project requirements and architecture
-- **[Code Standards](../../../code-standards.md)** - Development guidelines
-- **[System Architecture](../../../system-architecture.md)** - System design documentation
-- **[Codebase Summary](../../../codebase-summary.md)** - Detailed codebase structure
-
----
-
-*Last Updated: March 2026*
-*Documentation Status: Complete & Current*
+- **[Documentation Index](../README.md)** - All PAMOLA.CORE module documentation
+- **[Attacks](../attacks/index.md)** - Linkage and attribute inference attacks

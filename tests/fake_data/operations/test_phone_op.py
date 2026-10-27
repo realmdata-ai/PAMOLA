@@ -5,6 +5,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
+
+from pamola_core.errors.exceptions.resources import FakeDataError
 from pamola_core.fake_data import FakePhoneOperation
 from pamola_core.fake_data.generators.phone import PhoneGenerator
 from pamola_core.utils.ops.op_registry import unregister_operation, get_operation_class
@@ -45,7 +47,8 @@ class TestFakePhoneOperationInit(unittest.TestCase):
         self.assertEqual(op.max_retries, 3)
 
         self.assertIsNone(op.id_field)
-        self.assertIsNone(op.key)
+        self.assertFalse(op.keyed)  # no key given: a random per-run key is used (ASB-1)
+        self.assertEqual(len(op.key), 64)
         self.assertIsNone(op.context_salt)
         self.assertEqual(op.column_prefix, "_")
 
@@ -70,7 +73,7 @@ class TestFakePhoneOperationInit(unittest.TestCase):
         self.assertEqual(config["preserve_country_code"], True)
         self.assertEqual(config["preserve_operator_code"], False)
         self.assertIsNone(config["region"])
-        self.assertIsNone(config["key"])
+        self.assertEqual(len(config["key"]), 64)  # random per-run key (ASB-1)
         self.assertIsNone(config["context_salt"])
         self.assertIsNone(config["country_codes"])
         self.assertIsNone(config["operator_codes_dict"])
@@ -103,6 +106,8 @@ class TestFakePhoneOperationInit(unittest.TestCase):
             "key": "my-secret-key",
             "context_salt": "context-123",
             "save_mapping": True,
+            "use_encryption": True,
+            "encryption_key": "unit-test-task-key",
             "column_prefix": "_",
             "country_code_field": "country_code",
             "detailed_metrics": True,
@@ -400,6 +405,8 @@ class PrepareData:
             "key": "my-secret-key",
             "context_salt": "context-123",
             "save_mapping": True,
+            "use_encryption": True,
+            "encryption_key": "unit-test-task-key",
             "column_prefix": "_",
             "country_code_field": "country_code",
             "detailed_metrics": True,
@@ -466,11 +473,11 @@ class TestFakePhoneOperationExecute(unittest.TestCase):
                     msg=f"Artifact file does not exist: {artifact.path}"
                 )
                 self.assertTrue(
-                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png")),
+                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png", ".md")),
                     msg=f"Unexpected artifact file type: {artifact.path}"
                 )
                 self.assertIsInstance(artifact.description, str)
-                self.assertIn(artifact.category, ["output", "metrics", "visualization"])
+                self.assertIn(artifact.category, ["output", "metrics", "visualization", "mapping", "config", "report"])
                 self.assertIsInstance(artifact.tags, list)
                 self.assertIsInstance(artifact.creation_time, str)
                 self.assertIsInstance(artifact.size, int)
@@ -528,11 +535,11 @@ class TestFakePhoneOperationExecute(unittest.TestCase):
                     msg=f"Artifact file does not exist: {artifact.path}"
                 )
                 self.assertTrue(
-                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png")),
+                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png", ".md")),
                     msg=f"Unexpected artifact file type: {artifact.path}"
                 )
                 self.assertIsInstance(artifact.description, str)
-                self.assertIn(artifact.category, ["output", "metrics", "visualization"])
+                self.assertIn(artifact.category, ["output", "metrics", "visualization", "mapping", "config", "report"])
                 self.assertIsInstance(artifact.tags, list)
                 self.assertIsInstance(artifact.creation_time, str)
                 self.assertIsInstance(artifact.size, int)

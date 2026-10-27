@@ -4,7 +4,7 @@ Module: Directory Manager
 Description: Task directory structure management and path resolution
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for managing task directory structures,
 ensuring proper path validation, and generating standardized paths for

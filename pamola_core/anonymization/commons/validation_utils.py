@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
 Updated:       2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    This module serves as a complete facade for the validation framework, providing

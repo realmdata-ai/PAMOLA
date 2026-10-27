@@ -7,7 +7,7 @@ Version:       1.0.0
 Status:        development
 Author:        PAMOLA Core Team
 Created:       2025-07-10
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    Comprehensive test suite for UniformTemporalNoiseOperation class.

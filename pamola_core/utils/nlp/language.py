@@ -4,7 +4,7 @@ Module: Language Detection and Processing
 Description: Utilities for language detection, normalization, and multilingual text analysis
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides enhanced functions for detecting text language with
 graceful degradation when specialized libraries are not available.
@@ -41,6 +41,16 @@ if _LANGDETECT_AVAILABLE:
 
     # Set seed for consistent language detection
     DetectorFactory.seed = 0
+
+from pamola_core.utils.nlp.remote_resources import (
+    disabled_reason,
+    download_already_failed,
+    mark_download_failed,
+    record_degraded,
+    remote_downloads_allowed,
+)
+
+_FASTTEXT_RESOURCE = 'fasttext:lid.176'
 
 # Check for FastText availability
 _FASTTEXT_AVAILABLE = DependencyManager.check_dependency('fasttext')
@@ -158,23 +168,92 @@ def _get_fasttext_model():
     try:
         import fasttext
 
-        # Check if the model exists, if not download it
-        model_path = os.path.join(
+        # Where the 125 MB model lives. Default is the package's own resources
+        # directory; `PAMOLA_MODEL_DIR` overrides it, following the same
+        # convention as `PAMOLA_STOPWORDS_DIR` in stopwords.py.
+        #
+        # The override matters beyond tests: an installed package may sit in a
+        # read-only location (system site-packages, a container image, a
+        # zipped install), and a library that can only cache into its own
+        # install directory simply fails there.
+        default_model_dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            'resources', 'models', 'lid.176.bin'
+            'resources', 'models'
         )
-
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        model_dir = os.environ.get('PAMOLA_MODEL_DIR', default_model_dir)
+        model_path = os.path.join(model_dir, 'lid.176.bin')
 
         if not os.path.exists(model_path):
-            # Download model from official repository
+            # Offline by default: fetch the 125 MB model only on explicit
+            # opt-in (PAMOLA_ALLOW_REMOTE_DOWNLOADS=1). Otherwise record the
+            # degradation once and let detection fall back to langdetect /
+            # heuristics.
+            if not remote_downloads_allowed():
+                record_degraded(
+                    _FASTTEXT_RESOURCE,
+                    disabled_reason(f"FastText model '{model_path}'")
+                    + " Language detection falls back to langdetect/heuristics.",
+                )
+                return None
+            if download_already_failed(_FASTTEXT_RESOURCE):
+                return None
+
+            # Create the directory only when there is something to put in it.
+            # Doing it unconditionally left an empty `resources/models/` inside
+            # the package tree on every call, including calls that never
+            # downloaded anything.
+            created_dir = not os.path.isdir(model_dir)
+            os.makedirs(model_dir, exist_ok=True)
+
+            # Download to a temporary file and publish by rename.
+            #
+            # `urlretrieve` used to write straight to `model_path`. A download
+            # interrupted partway through therefore left a truncated
+            # `lid.176.bin` behind — and since the next call only checks that
+            # the path *exists*, it would try to load the broken file, fail,
+            # be swallowed by the `except` below, and return None. One dropped
+            # connection disabled FastText detection permanently, with nothing
+            # but a warning in the log to say so.
+            #
+            # `os.replace` is atomic within a filesystem, so `model_path` is
+            # either absent or complete; there is no third state to recover
+            # from.
+            import tempfile
             import urllib.request
+
             logger.info("Downloading FastText language identification model...")
-            urllib.request.urlretrieve(
-                'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin',
-                model_path
-            )
+            fd, tmp_path = tempfile.mkstemp(dir=model_dir, suffix='.part')
+            os.close(fd)
+            try:
+                urllib.request.urlretrieve(
+                    'https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin',
+                    tmp_path
+                )
+                os.replace(tmp_path, model_path)
+            except BaseException as download_error:
+                # Leave no trace of a failed attempt.
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                if created_dir:
+                    # Succeeds only if still empty; never removes anyone's data.
+                    try:
+                        os.rmdir(model_dir)
+                    except OSError:
+                        pass
+                if not isinstance(download_error, Exception):
+                    raise
+                # Opted in, but the network is unavailable: one actionable
+                # signal, remembered so later calls do not retry per record.
+                mark_download_failed(
+                    _FASTTEXT_RESOURCE,
+                    f"download of the FastText language model failed "
+                    f"({download_error!r}); check network access or place "
+                    f"'lid.176.bin' in '{model_dir}'. Language detection falls "
+                    "back to langdetect/heuristics.",
+                )
+                return None
 
         # Load the model
         model = fasttext.load_model(model_path)

@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-06-10
 Modified:      2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module provides shared utilities for pseudonymization operations within
@@ -488,3 +488,18 @@ def estimate_collision_probability(n_values: int, hash_bits: int = 256) -> float
     probability = 1 - math.exp(exponent)
 
     return probability
+
+
+def scrubbed_config(config: Any) -> Any:
+    """A copy of an operation config whose declared ``SENSITIVE_KEYS`` are redacted.
+
+    Used by the pseudonymization operations' ``__getstate__``: what leaves the object through
+    ``pickle`` / ``copy`` / Dask tokenization must not carry keys, salts or peppers.
+    """
+    if config is None or not hasattr(config, "to_safe_dict"):
+        return config
+    import copy
+
+    clone = copy.copy(config)
+    clone._params = config.to_safe_dict()
+    return clone

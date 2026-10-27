@@ -51,7 +51,6 @@ Synthetic HR profiles and resume dataset simulating Canadian IT/Finance/Marketin
 | `HR_RESUMES_CA_V2_10k.csv` | 10,000 | Main synthetic profiles dataset |
 | `HR_RESUMES_SAMPLE_CA.csv` | ~100 | Small sample for quick testing |
 | `HR_RESUMES_SAMPLE_CA_10k.csv` | 10,000 | Full sample variant |
-| `HR_JOB_SAMPLE.csv` | ~500 | Synthetic job postings |
 | `HR_RESUMES_DICTIONARY_CA.csv` | - | Field definitions and metadata |
 | `HR_RESUMES_CA_V2_passport.json` | - | Generation parameters and statistics |
 
@@ -277,7 +276,6 @@ hr_job_resume/
 ├── HR_RESUMES_CA_V2_10k.csv       # Main dataset (10K profiles)
 ├── HR_RESUMES_SAMPLE_CA.csv       # Small sample
 ├── HR_RESUMES_SAMPLE_CA_10k.csv   # Full sample variant
-├── HR_JOB_SAMPLE.csv              # Job postings sample
 ├── HR_RESUMES_DICTIONARY_CA.csv   # Field definitions
 ├── HR_RESUMES_CA_V2_passport.json # Generation metadata
 └── README.md                      # This documentation
@@ -351,6 +349,6 @@ See [LICENSE](../../../LICENSE) for full terms.
 
 ---
 
-**Maintainer:** [Realm Inveo Inc.](https://realmdata.io)  
-**Repository:** [github.com/DGT-Network/PAMOLA](https://github.com/DGT-Network/PAMOLA)  
+**Maintainer:** [Realm Inveo Inc.](https://realmdata.ai)  
+**Repository:** [github.com/realmdata-ai/PAMOLA](https://github.com/realmdata-ai/PAMOLA)  
 **Version:** 2.0.0 (Epic 2 Testing Suite)

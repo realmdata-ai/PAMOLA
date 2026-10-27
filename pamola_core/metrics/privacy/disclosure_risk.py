@@ -13,15 +13,15 @@ Key features:
 These metrics help data custodians understand the re-identification risks
 associated with sharing or publishing anonymized data.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
-This software is licensed under the BSD 3-Clause License.
+This software is licensed under the MIT License.
 For details, see the LICENSE file or visit:
 
-    https://opensource.org/licenses/BSD-3-Clause
-    https://github.com/DGT-Network/PAMOLA/blob/main/LICENSE
+    https://opensource.org/license/mit
+    https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE
 
-Author: Realm Inveo Inc. & DGT Network Inc.
+Author: Realm Inveo Inc.
 """
 
 import pandas as pd
@@ -235,7 +235,7 @@ class KAnonymityRiskMetric:
         dict
             Dictionary with k-anonymity risk metrics:
             - "min_k": The minimum k value in the dataset
-            - "compliant": Whether the dataset meets the k-threshold
+            - "threshold_met": Whether the minimum k reaches the k-threshold
             - "groups_below_threshold": Number of groups with k below threshold
             - "records_in_small_groups": Number of records in groups with k below threshold
             - "k_distribution": Distribution of group sizes (optional)
@@ -254,12 +254,12 @@ class KAnonymityRiskMetric:
             min_k = group_sizes.min()
             groups_below_threshold = (group_sizes < self.k_threshold).sum()
             records_in_small_groups = group_sizes[group_sizes < self.k_threshold].sum()
-            compliant = min_k >= self.k_threshold
+            threshold_met = min_k >= self.k_threshold
 
             # Prepare result
             result = {
                 "min_k": min_k,
-                "compliant": compliant,
+                "threshold_met": threshold_met,
                 "k_threshold": self.k_threshold,
                 "groups_below_threshold": int(groups_below_threshold),
                 "records_in_small_groups": int(records_in_small_groups),
@@ -283,7 +283,7 @@ class KAnonymityRiskMetric:
             self.last_result = result
 
             logger.info(
-                f"k-Anonymity risk analysis: Minimum k = {min_k}, Compliant = {compliant}"
+                f"k-Anonymity risk analysis: Minimum k = {min_k}, Threshold met = {threshold_met}"
             )
             return result
 

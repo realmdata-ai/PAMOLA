@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   Provides functions for estimating re-identification risk in datasets based on

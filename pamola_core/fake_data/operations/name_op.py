@@ -16,8 +16,10 @@ from pamola_core.fake_data.schemas.name_op_core_schema import FakeNameOperationC
 from pamola_core.fake_data.commons.prgn import PRNGenerator
 from pamola_core.fake_data.generators.name import NameGenerator
 import pamola_core.utils.io as io
+from pamola_core.fake_data.commons.prgn import resolve_generation_key
 from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.utils.ops.op_registry import register
+from pamola_core.errors.exceptions.resources import FakeDataError
 from pamola_core.utils.ops.op_result import OperationResult
 from pamola_core.utils.progress import HierarchicalProgressTracker
 
@@ -76,6 +78,7 @@ class FakeNameOperation(GeneratorOperation):
         **kwargs : dict
             Additional parameters forwarded to GeneratorOperation and BaseOperation.
         """
+        key, keyed = resolve_generation_key(key)  # random per-run key when none is given
         # Description fallback
         kwargs.setdefault(
             "description",
@@ -128,6 +131,7 @@ class FakeNameOperation(GeneratorOperation):
         # Save config attributes to self
         for k, v in config.to_dict().items():
             setattr(self, k, v)
+        self.keyed = keyed
 
         # Operation metadata
         self.operation_name = self.__class__.__name__
@@ -167,13 +171,8 @@ class FakeNameOperation(GeneratorOperation):
             data_source, task_dir, reporter, progress_tracker, **kwargs
         )
 
-        # Save mapping if requested
-        if self.save_mapping and hasattr(self, "mapping_store") and self.mapping_store:
-            mapping_dir = Path(task_dir) / "maps"
-            io.ensure_directory(mapping_dir)
-            mapping_path = mapping_dir / f"{self.name}_{self.field_name}_mapping.json"
-            self.mapping_store.save_json(mapping_path)
-            self.logger.info(f"Saved mapping to {Path(mapping_path).name}")
+        # Save mapping if requested (encrypted PROTECTED_MAPPING only)
+        self._save_protected_mapping(task_dir, result, reporter)
 
         return result
 
@@ -238,10 +237,22 @@ class FakeNameOperation(GeneratorOperation):
                 synthetic_value = self.process_value(value, **gen_params)
                 generated_values.append(synthetic_value)
             except Exception as e:
+                # Fail closed: a failed transformation must never leave the
+                # original identifier in the output, and the original value
+                # must not reach the log or the exception text.
                 self.logger.error(
-                    f"Error generating name for value '{value}': {str(e)}"
+                    "Generation of %s failed at row position %d (%s)",
+                    "name",
+                    idx,
+                    type(e).__name__,
                 )
-                generated_values.append(value if pd.notna(value) else np.nan)
+                raise FakeDataError(
+                    field_name=self.field_name,
+                    reason=(
+                        f"generation failed at row position {idx} "
+                        f"({type(e).__name__}); the original value was not written"
+                    ),
+                ) from None
 
         # Update the dataframe with generated values
         result[self.output_field_name] = generated_values

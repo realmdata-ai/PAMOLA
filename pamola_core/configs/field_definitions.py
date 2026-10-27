@@ -26,7 +26,7 @@ Field Types:
 - long: Integer numeric values
 - date: Date values (may be stored as text but with date semantics)
 
-(C) 2025 BDA
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
 Author: V.Khvatov
 """
@@ -126,7 +126,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG,
         "category": PrivacyCategory.INDIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.PSEUDONYMIZATION,
-        "description": "Уникальный идентификатор резюме, требует обратимой анонимизации для связи записей",
+        "description": "Unique resume identifier; requires reversible anonymization to link records",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -142,7 +142,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.DIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.PSEUDONYMIZATION,
-        "description": "Имя человека, полная замена на синтетический идентификатор",
+        "description": "Person's first name; fully replaced with a synthetic identifier",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -157,7 +157,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.DIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.PSEUDONYMIZATION,
-        "description": "Фамилия человека, полная замена на синтетический идентификатор",
+        "description": "Person's last name; fully replaced with a synthetic identifier",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -172,7 +172,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.PSEUDONYMIZATION,
-        "description": "Отчество, может отсутствовать",
+        "description": "Patronymic (middle name); may be missing",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -188,7 +188,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Пол человека (Мужчина, Женщина, может отсутствовать)",
+        "description": "Person's gender (Male, Female; may be missing)",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -201,7 +201,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Дата рождения в формате YYYY-MM-DD, обобщение до возрастных групп",
+        "description": "Date of birth in YYYY-MM-DD format; generalized to age groups",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -217,7 +217,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Должность, на которую претендует человек, обобщение до категорий должностей",
+        "description": "Position the person is applying for; generalized to job categories",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -231,7 +231,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Уровень образования (категориальные значения)",
+        "description": "Education level (categorical values)",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -244,7 +244,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DOUBLE,
         "category": PrivacyCategory.SENSITIVE_ATTRIBUTE,
         "strategy": AnonymizationStrategy.NOISE_ADDITION,
-        "description": "Зарплата (много нулей), добавление случайного шума",
+        "description": "Salary (many zeros); random noise added",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -258,7 +258,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Валюта зарплаты",
+        "description": "Salary currency",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -273,7 +273,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Название региона или города, обобщение до региона",
+        "description": "Region or city name; generalized to region",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -286,7 +286,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Название станции метро, обобщение до района",
+        "description": "Metro station name; generalized to district",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -301,7 +301,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Готовность к переезду",
+        "description": "Willingness to relocate",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -314,7 +314,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Тип времени в пути",
+        "description": "Commute time type",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY
@@ -326,7 +326,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Готовность к командировкам (справочник - мало значений)",
+        "description": "Willingness to travel on business (lookup list with few values)",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY
@@ -338,7 +338,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "График работы, кодирование списка значений",
+        "description": "Work schedule; list of values is encoded",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -352,7 +352,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Типы занятости, кодирование списка значений",
+        "description": "Employment types; list of values is encoded",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -368,7 +368,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Типы водительских прав",
+        "description": "Driver's license categories",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -381,7 +381,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.KEEP_ORIGINAL,
-        "description": "Наличие транспортного средства",
+        "description": "Has own vehicle",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -396,7 +396,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.DIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.SUPPRESSION,
-        "description": "Электронная почта - прямой идентификатор, удаление",
+        "description": "Email address - direct identifier; removed",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -410,7 +410,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.DIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.SUPPRESSION,
-        "description": "Домашний телефон, удаление",
+        "description": "Home phone; removed",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -423,7 +423,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.DIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.SUPPRESSION,
-        "description": "Рабочий телефон, удаление",
+        "description": "Work phone; removed",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -436,7 +436,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.DIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.SUPPRESSION,
-        "description": "Мобильный телефон, удаление",
+        "description": "Mobile phone; removed",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -452,7 +452,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Названия ключевых навыков, группировка по категориям",
+        "description": "Key skill names; grouped by category",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -466,7 +466,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Названия специализаций, группировка",
+        "description": "Specialization names; grouped",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -482,7 +482,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Названия дополнительного образования, обработка именованных сущностей",
+        "description": "Additional education names; named-entity processing",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.TEXT_ANALYSIS,
@@ -495,7 +495,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Организации дополнительного образования, обработка именованных сущностей",
+        "description": "Additional education organizations; named-entity processing",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -508,7 +508,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Дипломы дополнительного образования",
+        "description": "Additional education diplomas",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY
@@ -520,7 +520,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Даты окончания дополнительного образования, обобщение до года",
+        "description": "Additional education completion dates; generalized to year",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -535,7 +535,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Названия начального образования",
+        "description": "Primary education names",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -548,7 +548,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Даты окончания начального образования, обобщение до года",
+        "description": "Primary education completion dates; generalized to year",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -563,7 +563,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Названия аттестационного образования",
+        "description": "Certification program names",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -576,7 +576,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Результаты аттестационного образования",
+        "description": "Certification program results",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY
@@ -588,7 +588,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Организации аттестационного образования",
+        "description": "Certification program organizations",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -601,7 +601,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Даты окончания аттестационного образования, обобщение до года",
+        "description": "Certification program completion dates; generalized to year",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -616,7 +616,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Названия основного образования (университет)",
+        "description": "Main education names (university)",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -629,7 +629,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Факультеты основного образования",
+        "description": "Main education faculties",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -642,7 +642,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Дипломы основного образования",
+        "description": "Main education diplomas",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY
@@ -654,7 +654,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Даты окончания основного образования, обобщение до года",
+        "description": "Main education completion dates; generalized to year",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -669,7 +669,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Даты начала опыта работы, обобщение до года",
+        "description": "Work experience start dates; generalized to year",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -682,7 +682,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.DATE,
         "category": PrivacyCategory.QUASI_IDENTIFIER,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Даты окончания опыта работы, обобщение до года",
+        "description": "Work experience end dates; generalized to year",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.DISTRIBUTION,
@@ -695,7 +695,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Организации, в которых работал человек",
+        "description": "Organizations where the person worked",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -708,7 +708,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.NER_LLM_RECONSTRUCTION,
-        "description": "Описания опыта работы",
+        "description": "Work experience descriptions",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.TEXT_ANALYSIS,
@@ -721,7 +721,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.LONG_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.GENERALIZATION,
-        "description": "Должности в опыте работы",
+        "description": "Positions held in work experience",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -734,7 +734,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.NON_SENSITIVE,
         "strategy": AnonymizationStrategy.SUPPRESSION,
-        "description": "URL компаний из опыта работы",
+        "description": "Company URLs from work experience",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.FREQUENCY,
@@ -749,7 +749,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.INDIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.PSEUDONYMIZATION,
-        "description": "Составное поле для идентификации (имя + фамилия)",
+        "description": "Composite field for identification (first name + last name)",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS,
@@ -762,7 +762,7 @@ FIELD_DEFINITIONS = {
         "type": FieldType.SHORT_TEXT,
         "category": PrivacyCategory.INDIRECT_IDENTIFIER,
         "strategy": AnonymizationStrategy.PSEUDONYMIZATION,
-        "description": "Уникальный идентификатор человека (хеш от комбинации идентифицирующих полей)",
+        "description": "Unique person identifier (hash of a combination of identifying fields)",
         "profiling_tasks": [
             ProfilingTask.COMPLETENESS,
             ProfilingTask.UNIQUENESS
@@ -832,7 +832,7 @@ def get_fields_by_strategy(strategy: AnonymizationStrategy) -> Dict[str, Dict[st
     return {
         field_name: field_def
         for field_name, field_def in FIELD_DEFINITIONS.items()
-        if field_def.get("strategy") == strategy.value  # Используем .value для получения строкового значения
+        if field_def.get("strategy") == strategy.value  # Use .value to get the string value
     }
 
 

@@ -14,15 +14,15 @@ These visualizations help in:
 Note: For visualizations related to other anonymization models (l-diversity,
 t-closeness, etc.), please use their respective visualization modules.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
-This software is licensed under the BSD 3-Clause License.
+This software is licensed under the MIT License.
 For details, see the LICENSE file or visit:
 
-    https://opensource.org/licenses/BSD-3-Clause
-    https://github.com/DGT-Network/PAMOLA/blob/main/LICENSE
+    https://opensource.org/license/mit
+    https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE
 
-Author: Realm Inveo Inc. & DGT Network Inc.
+Author: Realm Inveo Inc.
 """
 
 import logging
@@ -30,13 +30,18 @@ import os
 from datetime import datetime
 from typing import List, Tuple, Optional
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 
 from pathlib import Path
 from pamola_core.utils.io import save_plot  # Use centralized function
 from pamola_core.errors.exceptions import ColumnNotFoundError, ValidationError
+
+# The plotting stack ships with the `viz` extra: a missing one is reported as such,
+# not as a bare ModuleNotFoundError.
+from pamola_core.utils.optional_deps import require_optional
+
+plt = require_optional("matplotlib.pyplot", extra="viz")
+sns = require_optional("seaborn", extra="viz")
 
 
 # Configure logging

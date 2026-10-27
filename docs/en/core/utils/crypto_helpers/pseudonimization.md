@@ -5,7 +5,7 @@
 **Module:** `pamola.pamola_core.utils.crypto_helpers.pseudonymization`  
 **Version:** 1.1.0  
 **Package:** PAMOLA.CORE - Privacy-Preserving AI Data Processors  
-**License:** BSD 3-Clause
+**License:** MIT
 
 ## Purpose
 

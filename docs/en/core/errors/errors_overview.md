@@ -146,7 +146,7 @@ All specialized exceptions inherit from `BasePamolaError` to ensure consistent e
 ### Raising a Simple Error
 
 ```python
-from pamola_core.errors import BasePamolaError
+from pamola_core.errors.base import BasePamolaError
 from pamola_core.errors.codes.registry import ErrorCode
 
 # Manually construct

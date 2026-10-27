@@ -177,7 +177,7 @@ def _validate_params(self, params: Dict[str, Any]) -> None:
 
     Raises:
     -------
-    ConfigError
+    ConfigurationError
         If parameters don't conform to schema.
         
     Satisfies:
@@ -186,7 +186,7 @@ def _validate_params(self, params: Dict[str, Any]) -> None:
     """
     # Use the helper function from json_utils for validation
     from pamola_core.utils.io_helpers.json_utils import validate_json_schema
-    validate_json_schema(params, self.schema, ConfigError)
+    validate_json_schema(params, self.schema, ConfigurationError)
 ```
 
 ### load Method
@@ -211,7 +211,7 @@ def load(cls: Type[T], path: Union[str, Path]) -> T:
         
     Raises:
     -------
-    ConfigError
+    ConfigurationError
         If the loaded data doesn't conform to schema.
         
     Satisfies:
@@ -467,7 +467,8 @@ result = custom_op.run(
 ### Validation and Error Handling
 
 ```python
-from pamola_core.utils.ops.op_config import OperationConfig, ConfigError
+from pamola_core.utils.ops.op_config import OperationConfig
+from pamola_core.errors.exceptions import ConfigurationError
 from typing import Dict, Any
 
 # Define a configuration with strict schema
@@ -491,7 +492,7 @@ try:
         age=15,  # Below minimum of 18
         email="john.doe@example.com"
     )
-except ConfigError as e:
+except ConfigurationError as e:
     print(f"Validation error: {str(e)}")
 
 # This will pass validation
@@ -506,10 +507,10 @@ try:
     # Update with invalid parameter
     try:
         config.update(age=150)  # Above maximum of 100
-    except ConfigError as e:
+    except ConfigurationError as e:
         print(f"Update validation error: {str(e)}")
         
-except ConfigError as e:
+except ConfigurationError as e:
     print(f"Unexpected validation error: {str(e)}")
 ```
 
@@ -625,7 +626,7 @@ except ConfigError as e:
    def to_dict(self):
        config = super().to_dict()
        if "api_key" in config:
-           config["api_key"] = "***REDACTED***"
+           config["api_key"] = "*REDACTED*"
        return config
    ```
 

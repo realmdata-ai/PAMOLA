@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     Provides a comprehensive library of masking presets and configuration utilities
@@ -225,7 +225,7 @@ class EmailMaskingPresets(BaseMaskingPresets):
                 random_mask=True,
                 mask_char_pool="ABCDEFGHIJKLMNOPQRSTUVWXYZ",
                 preserve_format=True,
-                description="GDPR compliant with random masking",
+                description="Random masking that keeps the first character; a technical measure, not a GDPR compliance claim",
                 example="user@example.com → uRTQ@example.com",
             ),
             "UTILITY_BALANCED": MaskingConfig(
@@ -531,7 +531,7 @@ class CreditCardMaskingPresets(BaseMaskingPresets):
                 preserve_format=True,
                 unmasked_prefix=6,
                 unmasked_suffix=4,
-                description="PCI compliant: first 6 (BIN) and last 4",
+                description="Keep first 6 (BIN) and last 4 digits, the display layout commonly used for PCI DSS; not a compliance claim",
                 example="4111-1111-1111-1111 → 4111-11**-****-1111",
             ),
             "STRICT": MaskingConfig(

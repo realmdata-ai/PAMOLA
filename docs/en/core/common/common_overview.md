@@ -1,8 +1,6 @@
 # Common Module Documentation
 
 **Module:** `pamola_core.common`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -48,7 +46,6 @@ pamola_core/common/
 │   ├── encryption_mode.py      # Encryption modes
 │   ├── mask_strategy_enum.py   # Masking strategies
 │   ├── distance_metric_type.py # Distance metrics
-│   ├── fidelity_metrics.py     # Fidelity metrics
 │   ├── privacy_metrics_type.py # Privacy metrics
 │   ├── utility_metrics_type.py # Utility metrics
 │   ├── datetime_generalization.py # DateTime methods
@@ -164,12 +161,11 @@ External:
 ### Import Enumerations
 
 ```python
-from pamola_core.common.enum import (
-    EncryptionMode,
-    MaskStrategyEnum,
-    PrivacyMetricsType,
-    UtilityMetricsType
-)
+# pamola_core.common.enum exports nothing at package level; import from the modules
+from pamola_core.common.enum.encryption_mode import EncryptionMode
+from pamola_core.common.enum.mask_strategy_enum import MaskStrategyEnum
+from pamola_core.common.enum.privacy_metrics_type import PrivacyMetricsType
+from pamola_core.common.enum.utility_metrics_type import UtilityMetricsType
 
 # Use encryption mode
 mode = EncryptionMode.SIMPLE

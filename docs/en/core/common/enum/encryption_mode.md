@@ -107,20 +107,15 @@ print(mode)  # EncryptionMode.SIMPLE
 
 ```python
 from pamola_core.common.enum.encryption_mode import EncryptionMode
-from pamola_core.utils.tasks.base_task import TaskConfig
+from pamola_core.utils.tasks.task_config import load_task_config
 
-# Create task configuration with encryption
-config = TaskConfig(
-    encryption_mode=EncryptionMode.AGE,
-    # ... other config
-)
+# TaskConfig resolves encryption_mode from the project/task configuration
+# ("encryption_mode" or project "encryption.mode") and stores it as an EncryptionMode
+config = load_task_config("t_1A_profile", "profiling")
+print(config.encryption_mode)  # e.g. EncryptionMode.NONE
 
-# Or use string and convert
-mode_str = "age"
-config = TaskConfig(
-    encryption_mode=EncryptionMode.from_string(mode_str),
-    # ... other config
-)
+# Override at runtime (strings are converted with EncryptionMode.from_string)
+config.override_with_args({"use_encryption": True, "encryption_mode": EncryptionMode.AGE.value})
 ```
 
 ### Conditional Logic Based on Encryption

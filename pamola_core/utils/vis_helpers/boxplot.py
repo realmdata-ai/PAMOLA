@@ -4,7 +4,7 @@ Module: Boxplot Visualization Implementation
 Description: Thread-safe boxplot visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for boxplots using both
 Plotly (primary) and Matplotlib (fallback) backends to create
@@ -333,7 +333,7 @@ class PlotlyBoxPlot(PlotlyFigure):
                 # Define go as None to ensure it's defined in except block
                 go = None
                 logger.error(
-                    f"Plotly is not available. Please install it with: pip install plotly. Error: {imp_error}"
+                    f"Plotly is not available. It ships with the viz extra: pip install 'pamola-core[viz]'. Error: {imp_error}"
                 )
                 # Try to use matplotlib as fallback
                 fallback = MatplotlibBoxPlot()
@@ -655,7 +655,7 @@ class MatplotlibBoxPlot(MatplotlibFigure):
                 # Define plt as None to ensure it's defined in except block
                 plt = None
                 logger.error(
-                    f"Matplotlib is not available. Please install it with: pip install matplotlib. Error: {imp_error}"
+                    f"Matplotlib is not available. It ships with the viz extra: pip install 'pamola-core[viz]'. Error: {imp_error}"
                 )
                 return None
             except Exception as e:

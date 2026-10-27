@@ -144,7 +144,7 @@ repr(error)  # "BasePamolaError(code=TEST_ERROR, message=This is a long error me
 ### Basic Error Creation
 
 ```python
-from pamola_core.errors import BasePamolaError
+from pamola_core.errors.base import BasePamolaError
 from pamola_core.errors.codes.registry import ErrorCode
 
 # Create and raise a simple error
@@ -201,7 +201,7 @@ except BasePamolaError as e:
 ### Subclassing for Domain-Specific Errors
 
 ```python
-from pamola_core.errors import BasePamolaError
+from pamola_core.errors.base import BasePamolaError
 from pamola_core.errors.codes.registry import ErrorCode
 
 class DataSourceError(BasePamolaError):
@@ -313,7 +313,7 @@ details = {
 Create domain-specific subclasses to simplify error handling and add custom logic.
 
 ```python
-from pamola_core.errors import BasePamolaError
+from pamola_core.errors.base import BasePamolaError
 
 class ValidationError(BasePamolaError):
     """Base validation error for the module."""

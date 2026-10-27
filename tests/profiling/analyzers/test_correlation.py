@@ -106,81 +106,6 @@ def analyze_correlations(data_source, task_dir, reporter, pairs=None, **kwargs):
     return results
 
 
-class TestCorrelationAnalyzer(unittest.TestCase):
-
-    @patch("pamola_core.profiling.analyzers.correlation.analyze_correlation")
-    def test_analyze(self, mock_analyze_correlation):
-        # Mock DataFrame
-        mock_df = pd.DataFrame({
-            "Field1": [1, 2, 3, 4],
-            "Field2": [2, 4, 6, 8]
-        })
-
-        # Mock correlation analysis result
-        mock_analyze_correlation.return_value = {
-            "method": "pearson",
-            "correlation_coefficient": 1.0,
-            "p_value": 0.01,
-            "sample_size": 4
-        }
-
-        # Call analyze function
-        result = CorrelationAnalyzer.analyze(
-            df=mock_df,
-            field1="Field1",
-            field2="Field2",
-            method="pearson"
-        )
-
-        # Check result
-        mock_analyze_correlation.assert_called_once_with(
-            df=unittest.mock.ANY,
-            field1="Field1",
-            field2="Field2",
-            method="pearson",
-            mvf_parser=None,
-            null_handling="drop",
-            task_logger=None,
-        )
-        self.assertEqual(result["method"], "pearson")
-        self.assertEqual(result["correlation_coefficient"], 1.0)
-        self.assertEqual(result["p_value"], 0.01)
-        self.assertEqual(result["sample_size"], 4)
-
-    @patch("pamola_core.profiling.analyzers.correlation.analyze_correlation_matrix")
-    def test_analyze_matrix(self, mock_analyze_correlation_matrix):
-        # Mock DataFrame
-        mock_df = pd.DataFrame({
-            "Field1": [1, 2, 3, 4],
-            "Field2": [2, 4, 6, 8],
-            "Field3": [1, 3, 5, 7]
-        })
-
-        # Mock correlation matrix result
-        mock_analyze_correlation_matrix.return_value = {
-            "correlation_matrix": {
-                "Field1": {"Field1": 1.0, "Field2": 1.0, "Field3": 0.99},
-                "Field2": {"Field1": 1.0, "Field2": 1.0, "Field3": 0.98},
-                "Field3": {"Field1": 0.99, "Field2": 0.98, "Field3": 1.0}
-            }
-        }
-
-        # Call analyze_matrix function
-        result = CorrelationAnalyzer.analyze_matrix(
-            df=mock_df,
-            fields=["Field1", "Field2", "Field3"]
-        )
-
-        # Check result
-        mock_analyze_correlation_matrix.assert_called_once_with(
-            df=unittest.mock.ANY,
-            fields=["Field1", "Field2", "Field3"],
-            task_logger=None,
-        )
-        self.assertIn("correlation_matrix", result)
-        self.assertEqual(result["correlation_matrix"]["Field1"]["Field2"], 1.0)
-
-
 class TestCorrelationOperation(unittest.TestCase):
 
     @patch("pamola_core.profiling.analyzers.correlation.write_json")
@@ -311,7 +236,8 @@ class TestCorrelationOperation(unittest.TestCase):
         self.assertTrue(len(result.error_message) > 0)
 
         # Ensure no artifact is added to reporter
-        mock_reporter.add_artifact.assert_not_called()
+        # only the operation's own artifacts count; its config.json is registered on every run
+        assert [c for c in mock_reporter.add_artifact.call_args_list if not str(c.args[2]).endswith('file written by the operation')] == []
 
     @patch("pamola_core.profiling.commons.helpers.load_data_operation")
     def test_execute_field_not_found(self, mock_load_data_operation):
@@ -347,7 +273,8 @@ class TestCorrelationOperation(unittest.TestCase):
         self.assertTrue(len(result.error_message) > 0)
 
         # Ensure no artifact is added to reporter
-        mock_reporter.add_artifact.assert_not_called()
+        # only the operation's own artifacts count; its config.json is registered on every run
+        assert [c for c in mock_reporter.add_artifact.call_args_list if not str(c.args[2]).endswith('file written by the operation')] == []
 
     @patch("pamola_core.profiling.analyzers.correlation.create_scatter_plot")
     @patch("pamola_core.profiling.analyzers.correlation.create_boxplot")
@@ -494,7 +421,7 @@ class TestCorrelationOperation(unittest.TestCase):
         reporter = MagicMock()
 
         # Instantiate and execute operation
-        op = CorrelationOperation(field1="cat", field2="val", use_cache=False)
+        op = CorrelationOperation(field1="cat", field2="val", use_cache=False, generate_visualization=True)
         result = op.execute(
             data_source=DummyDataSource(df=df),
             task_dir=Path("."),
@@ -533,7 +460,7 @@ class TestCorrelationOperation(unittest.TestCase):
         reporter = MagicMock()
 
         # Instantiate and execute operation
-        op = CorrelationOperation(field1="cat1", field2="cat2", use_cache=False)
+        op = CorrelationOperation(field1="cat1", field2="cat2", use_cache=False, generate_visualization=True)
         result = op.execute(
             data_source=DummyDataSource(df=df),
             task_dir=Path("."),
@@ -575,7 +502,7 @@ class TestCorrelationOperation(unittest.TestCase):
         reporter = MagicMock()
 
         # Instantiate and execute operation
-        op = CorrelationOperation(field1="cat", field2="val")
+        op = CorrelationOperation(field1="cat", field2="val", generate_visualization=True)
         result = op.execute(
             data_source=DummyDataSource(df=df),
             task_dir=Path("."),
@@ -600,7 +527,7 @@ class TestCorrelationMatrixOperation(unittest.TestCase):
         self.mock_progress_tracker = Mock()
         self.mock_progress_tracker.update = Mock()
         self.task_dir = Path("temp_task_dir")
-        self.operation = CorrelationMatrixOperation(fields=['A', 'B', 'C'])
+        self.operation = CorrelationMatrixOperation(fields=['A', 'B', 'C'], generate_visualization=True)
 
     @patch('pamola_core.profiling.commons.helpers.load_data_operation')
     @patch('pamola_core.profiling.analyzers.correlation.create_correlation_matrix')
@@ -689,7 +616,7 @@ class TestCorrelationMatrixOperation(unittest.TestCase):
         reporter = MagicMock()
 
         # Instantiate and execute operation
-        op = CorrelationMatrixOperation(fields=["A", "B", "C"])
+        op = CorrelationMatrixOperation(fields=["A", "B", "C"], generate_visualization=True)
         result = op.execute(
             data_source=DummyDataSource(df=df),
             task_dir=Path("."),

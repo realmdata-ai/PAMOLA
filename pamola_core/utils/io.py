@@ -6,7 +6,7 @@ Version:       2.0.1+refactor.2025.06.03
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
    Unified interface and orchestrator for reading, writing, encrypting, and managing datasets.
    This module provides a high-level facade for robust file I/O operations, designed to handle
@@ -65,14 +65,20 @@ from typing import Counter, Dict, List, Union, Optional, Iterator, Any, Tuple
 import dask
 import dask.dataframe as dd
 import pandas as pd
-import plotly.graph_objects as go
-from PIL import Image
 
 from pamola_core.errors.codes import ErrorCode
+from pamola_core.utils.optional_deps import optional_import
+from pamola_core.utils.safe_deserialization import (
+    gate_pickle,
+    is_pickle_format,
+    reject_pickle_for_bulk_read,
+    require_unsafe_pickle_opt_in,
+)
 from pamola_core.errors.exceptions import (
     DependencyMissingError,
     DataError,
     DataWriteError,
+    DuplicateColumnError,
     FileValidationError,
     InvalidParameterError,
     PamolaFileNotFoundError,
@@ -1466,6 +1472,28 @@ def save_visualization(
     encryption_key: Optional[str] = None,
     **kwargs,
 ) -> Path:
+    """Save a figure; inside a rendering worker the write is cancellable (see ``render_guard``).
+
+    Documented on ``_save_visualization_impl``.
+    """
+    from pamola_core.utils.vis_helpers.render_guard import guarded_write
+
+    final_path = Path(file_path)
+    if not str(final_path).lower().endswith(f".{format.lower()}"):
+        final_path = final_path.with_suffix(f".{format.lower()}")
+    with guarded_write(final_path):
+        return _save_visualization_impl(
+            figure, file_path, format=format, encryption_key=encryption_key, **kwargs
+        )
+
+
+def _save_visualization_impl(
+    figure: Any,
+    file_path: Union[str, Path],
+    format: str = "png",
+    encryption_key: Optional[str] = None,
+    **kwargs,
+) -> Path:
     """
     Universal function for saving visualizations of different types.
 
@@ -1509,8 +1537,20 @@ def save_visualization(
         file_path, encryption_key, suffix=f".{format}"
     ) as output_path:
         try:
-            # Handle Plotly figure
-            if isinstance(figure, go.Figure):
+            # Handle Plotly figure.
+            #
+            # Imported here, not at module scope: plotly is a `viz` extra, and
+            # this module is on the path of `import pamola_core`, so a
+            # top-level import would make the base install unimportable.
+            # `optional_import` rather than `require_optional` because a
+            # missing plotly simply means the figure cannot be a plotly one —
+            # the matplotlib and PIL branches below still apply.
+            # Pillow is in the same position as plotly: used only by this
+            # visualisation helper, so it ships with the `viz` extra and must
+            # not be imported at module scope.
+            Image = optional_import("PIL.Image")
+            go = optional_import("plotly.graph_objects")
+            if go is not None and isinstance(figure, go.Figure):
                 if format.lower() == "html":
                     figure.write_html(output_path, **kwargs)
                 else:
@@ -1536,7 +1576,7 @@ def save_visualization(
                     figure.savefig(output_path, format=format, dpi=dpi, **kwargs)
 
             # Handle PIL Image
-            elif isinstance(figure, Image.Image):
+            elif Image is not None and isinstance(figure, Image.Image):
                 # Get DPI from kwargs or use default
                 dpi = kwargs.pop("dpi", 300)
                 figure.save(
@@ -1547,6 +1587,7 @@ def save_visualization(
             elif (
                 isinstance(figure, dict)
                 and "image" in figure
+                and Image is not None
                 and isinstance(figure["image"], Image.Image)
             ):
                 # Get DPI from kwargs or use default
@@ -1555,9 +1596,40 @@ def save_visualization(
                     output_path, format=format.upper(), dpi=(dpi, dpi), **kwargs
                 )
 
+            elif (
+                go is None
+                and optional_import("matplotlib") is None
+                and not hasattr(figure, "savefig")
+            ):
+                # Neither plotting backend is importable, so this figure cannot
+                # have come from one — the user is running a base install and
+                # asking it to draw. Say what to install.
+                #
+                # Pillow is deliberately not part of this test: it arrives
+                # transitively via dask[complete] -> bokeh even when `viz` is
+                # absent, so treating it as evidence of a drawing backend makes
+                # this branch unreachable on exactly the installs it exists for.
+                raise DependencyMissingError(
+                    dependency_name="matplotlib/plotly",
+                    reason=(
+                        "no visualization backend is installed, so "
+                        f"{type(figure).__name__} cannot be saved. They ship "
+                        "with the viz extra: pip install 'pamola-core[viz]'"
+                    ),
+                )
+
             else:
+                # NOTE: this call previously passed a single message argument,
+                # which raised TypeError from the constructor instead of the
+                # intended error — TypeValidationError requires param_name,
+                # expected_type and actual_type. It was unreachable while the
+                # plotting stack was a hard dependency, and surfaced the moment
+                # it became optional.
                 raise TypeValidationError(
-                    f"Unsupported visualization type: {type(figure)}"
+                    param_name="figure",
+                    expected_type="plotly Figure, matplotlib Figure, PIL Image "
+                    "or {'image': PIL Image}",
+                    actual_type=type(figure).__name__,
                 )
 
             logger.info(f"Visualization saved to {file_path}")
@@ -1770,7 +1842,9 @@ def read_dataframe(
     skiprows : Union[int, List[int]], optional
         Row indices to skip or number of rows to skip from the start
     **kwargs
-        Additional arguments to pass to the underlying read function
+        Additional arguments to pass to the underlying read function.
+        ``allow_unsafe_pickle=True`` is required to read the "pickle" format,
+        which executes code from the file (refused by default).
 
     Returns
     --------
@@ -1786,6 +1860,8 @@ def read_dataframe(
     # Infer format from file extension if not specified
     if file_format is None:
         file_format = format_utils.detect_format_from_extension(file_path)
+    if is_pickle_format(file_format, file_path):
+        file_format = "pickle"
 
     logger.info(f"Reading file {file_path} as {file_format}")
     start_time = time.time()
@@ -1894,6 +1970,11 @@ def read_dataframe(
             **kwargs,
         )
     elif file_format.lower() == "pickle":
+        # Unpickling executes code from the file: never implicit (see
+        # docs/en/core/security_loading_files.md).
+        require_unsafe_pickle_opt_in(
+            kwargs.pop("allow_unsafe_pickle", False), file_path
+        )
         # Handle encrypted pickle files
         with temporary_decrypted_file(
             file_path, encryption_key, suffix=".pkl", encryption_mode=encryption_mode
@@ -1992,6 +2073,9 @@ def read_multi_file_dask(
     """
     # Get file format of the first file
     file_format = file_paths[0].suffix.lower().lstrip(".")
+    for _path in file_paths:
+        if is_pickle_format(None, _path):
+            reject_pickle_for_bulk_read(_path)  # pickle is never read through the Dask path
 
     with temporary_decrypted_files(
         file_paths=file_paths, encryption_key=encryption_key, suffix=f".{file_format}"
@@ -2345,6 +2429,22 @@ def load_settings_operation(data_source, data_source_name, **kwargs) -> Dict[str
     }
 
 
+def _require_unique_columns(df: Any, dataset_name: Optional[str] = None) -> None:
+    """Raise ``DuplicateColumnError`` if ``df`` has repeated column names.
+
+    The one framework-level check: every operation loads its input through
+    ``load_data_operation``, so an ambiguous frame is rejected here with the
+    offending names instead of failing later with a pandas error.
+    """
+    columns = getattr(df, "columns", None)
+    if columns is None or columns.is_unique:
+        return
+    raise DuplicateColumnError(
+        duplicated_columns=list(columns[columns.duplicated()].unique()),
+        dataset_name=dataset_name,
+    )
+
+
 def load_data_operation(
     data_source: Any, dataset_name: str = "main", **kwargs
 ) -> pd.DataFrame:
@@ -2369,8 +2469,10 @@ def load_data_operation(
                 param_value=error_info.get("message", "Unknown error"),
                 reason=f"Failed to load input data: {error_info.get('message', 'Unknown error')}",
             )
+        _require_unique_columns(df, dataset_name)
         return df
     elif isinstance(data_source, pd.DataFrame):
+        _require_unique_columns(data_source, dataset_name)
         return data_source
     elif isinstance(data_source, str) or isinstance(data_source, Path):
         # Load from file path

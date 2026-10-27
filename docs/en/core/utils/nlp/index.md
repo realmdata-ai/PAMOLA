@@ -8,7 +8,7 @@ The `pamola_core.utils.nlp` package is a comprehensive natural language processi
 
 The NLP package serves as the foundation for text-based privacy operations in PAMOLA.CORE by providing:
 
-- **Privacy-Preserving Text Processing**: LLM-powered anonymization and transformation
+- **Text Normalization and Tokenization**: Multi-language normalization, tokenization, lemmatization and stop words
 - **Entity Recognition and Extraction**: Multi-language identification of sensitive entities
 - **Text Analysis and Clustering**: Similarity matching and diversity assessment for k-anonymity
 - **Efficient Data Processing**: Scalable handling of large text datasets with intelligent caching
@@ -18,7 +18,7 @@ The NLP package serves as the foundation for text-based privacy operations in PA
 ```
 pamola_core/utils/nlp/
 ├── Core Infrastructure
-│   ├── base.py                    # Exception hierarchy, utilities, dependency management
+│   ├── base.py                    # Utilities, resource paths, dependency management
 │   ├── compatibility.py           # Graceful degradation for optional dependencies
 │   └── cache.py                   # Multi-backend caching system (memory/file/model/text)
 │
@@ -33,11 +33,13 @@ pamola_core/utils/nlp/
 ├── Entity Processing
 │   ├── entity_extraction.py       # Generic entity extraction interface
 │   └── entity/                    # Specialized entity extractors
-│       ├── __init__.py
-│       ├── job_positions.py       # Job title extraction
-│       ├── organizations.py       # Company/organization extraction
-│       ├── skills.py              # Technical/soft skills extraction
-│       └── locations.py           # Geographic entity extraction
+│       ├── __init__.py            # create_entity_extractor() factory
+│       ├── base.py                # BaseEntityExtractor
+│       ├── dictionary.py          # Generic dictionary-based extraction
+│       ├── job.py                 # Job title extraction
+│       ├── organization.py        # Company/organization/university extraction
+│       ├── skill.py               # Technical/soft skills extraction
+│       └── transaction.py         # Transaction purpose extraction
 │
 ├── Analysis and Metrics
 │   ├── clustering.py              # Text clustering algorithms
@@ -45,20 +47,12 @@ pamola_core/utils/nlp/
 │   ├── diversity_metrics.py       # Text diversity assessment
 │   └── category_matching.py       # Hierarchical category classification
 │
-├── LLM Integration (llm/)
-│   ├── __init__.py
-│   ├── client.py                  # Multi-provider LLM connectivity
-│   ├── config.py                  # Model configurations and presets
-│   ├── processing.py              # Pre/post-processing pipeline
-│   ├── prompt.py                  # Template management
-│   └── metrics.py                 # Performance tracking
-│
 ├── Data Operations
-│   ├── text_transformer.py        # High-level LLM text processing interface
 │   ├── dataframe_utils.py         # Pandas DataFrame utilities
-│   └── model_manager.py           # NLP model lifecycle management
+│   ├── model_manager.py           # NLP model lifecycle management
+│   └── remote_resources.py        # Opt-in remote model/corpus downloads
 │
-└── __init__.py                    # Package exports and initialization
+└── __init__.py                    # Package marker (exports nothing; import from the modules)
 ```
 
 ## Key Design Principles
@@ -70,7 +64,6 @@ All modules implement fallback strategies to ensure functionality even when spec
 Every component is designed with privacy operations in mind:
 - Entity extraction identifies sensitive information for anonymization
 - Text clustering supports k-anonymity grouping
-- LLM integration includes built-in anonymization prompts
 - Caching respects privacy boundaries
 
 ### 3. **Performance Optimization**
@@ -91,7 +84,7 @@ Every component is designed with privacy operations in mind:
 
 #### base.py
 Provides foundational utilities including:
-- **Exception Hierarchy**: `NLPError`, `ResourceNotFoundError`, `ModelNotAvailableError`, `LLMError` family
+- **Exceptions**: NLP exceptions (`NLPError`, `ResourceNotFoundError`, `ModelNotAvailableError`, ...) are defined in `pamola_core.errors.exceptions`
 - **Dependency Management**: `DependencyManager` for checking and loading optional modules
 - **Common Utilities**: `batch_process()`, `normalize_language_code()`, resource path management
 
@@ -130,12 +123,13 @@ Robust language detection:
 ### Entity Extraction Layer
 
 #### entity_extraction.py
-Unified interface for entity extraction with specialized extractors:
-- Organizations (companies, institutions)
+Unified interface for entity extraction with specialized extractors
+(`entity_type` = `"job"`, `"organization"`, `"university"`, `"skill"`, `"transaction"`, `"generic"`):
+- Organizations (companies, institutions, universities)
 - Job positions (titles, seniority levels)
 - Skills (technical, soft skills)
-- Locations (cities, countries, regions)
-- Personal identifiers (names, emails, phones)
+- Transaction purposes
+- Generic dictionary-based entities
 
 ### Analysis Layer
 
@@ -153,24 +147,6 @@ Assessment of text diversity in datasets:
 - Lexical diversity (TTR, MTLD)
 - Semantic diversity (token overlap)
 - Statistical measures
-
-### LLM Integration Layer
-
-#### text_transformer.py
-Primary interface for LLM-based text processing:
-- Unified API for multiple LLM providers
-- Built-in anonymization templates
-- Intelligent caching and batch processing
-- Checkpoint support for long operations
-- Comprehensive metrics collection
-
-#### llm/ subsystem
-Complete LLM integration framework:
-- **client.py**: WebSocket/HTTP connectivity for LMStudio, OpenAI
-- **config.py**: Model presets and parameter management
-- **processing.py**: Text preprocessing and response validation
-- **prompt.py**: Template library with anonymization prompts
-- **metrics.py**: Token usage and performance tracking
 
 ### Data Operations Layer
 
@@ -191,49 +167,31 @@ Lifecycle management for NLP models:
 
 ### Basic Text Processing
 ```python
-from pamola_core.utils.nlp import normalize_text, tokenize, extract_entities
+from pamola_core.utils.nlp.text_utils import normalize_text
+from pamola_core.utils.nlp.tokenization import tokenize
+from pamola_core.utils.nlp.entity_extraction import extract_entities
 
 # Normalize text for consistency
 normalized = normalize_text(text, level="advanced")
 
-# Tokenize with language detection
-tokens = tokenize(text, language="auto")
+# Tokenize (language=None detects the language automatically)
+tokens = tokenize(text)
 
-# Extract entities
-entities = extract_entities(text, entity_type="all")
-```
-
-### LLM-Based Anonymization
-```python
-from pamola_core.utils.nlp.text_transformer import TextTransformer
-
-# Initialize transformer
-transformer = TextTransformer(
-    llm_config={'provider': 'lmstudio', 'model_name': 'gemma-2-2b-it'},
-    processing_config={'batch_size': 10},
-    generation_config={'temperature': 0.3},
-    prompt_template='anonymize_experience_ru',
-    task_dir='./anonymization_output'
-)
-
-# Process DataFrame
-result_df = transformer.process_dataframe(
-    df, 
-    source_column='biography',
-    target_column='biography_anonymized'
-)
+# Extract entities from a list of texts
+entities = extract_entities([text], entity_type="generic")
 ```
 
 ### Entity-Based Anonymization
 ```python
-from pamola_core.utils.nlp import extract_entities, CategoryDictionary
+from pamola_core.utils.nlp.entity_extraction import extract_entities
+from pamola_core.utils.nlp.category_matching import CategoryDictionary
 
-# Extract sensitive entities
-entities = extract_entities(texts, entity_type="person")
+# Extract job-position entities
+entities = extract_entities(texts, entity_type="job")
 
 # Categorize for generalization
 category_dict = CategoryDictionary.from_file('job_categories.json')
-category, score = category_dict.get_best_match(job_title)
+category, score, conflicts = category_dict.get_best_match(job_title)
 ```
 
 ### Text Clustering for K-Anonymity
@@ -255,7 +213,7 @@ for cluster_id, indices in clusters.items():
 The NLP package integrates seamlessly with PAMOLA.CORE anonymization operations:
 
 1. **Pre-processing**: Entity extraction identifies sensitive data
-2. **Anonymization**: Text transformation removes/generalizes PII
+2. **Anonymization**: Category matching and clustering support generalization of free text
 3. **Post-processing**: Validation and quality assessment
 4. **Metrics**: Privacy and utility measurement
 
@@ -271,22 +229,32 @@ The NLP package integrates seamlessly with PAMOLA.CORE anonymization operations:
 ### Environment Variables
 ```bash
 # Resource directories
-export PAMOLA_NLP_RESOURCES=/path/to/resources
 export PAMOLA_STOPWORDS_DIR=/path/to/stopwords
 export PAMOLA_TOKENIZATION_DIR=/path/to/tokenization
+export PAMOLA_DICTIONARIES_DIR=/path/to/dictionaries
+export PAMOLA_ENTITIES_DIR=/path/to/entities
 
 # Cache configuration
-export PAMOLA_CACHE_SIZE=1000
+export PAMOLA_MAX_CACHE_SIZE=1000
 export PAMOLA_CACHE_TTL=3600
 export PAMOLA_DISABLE_CACHE=0
 
-# Model paths
-export PAMOLA_FASTTEXT_MODEL=/path/to/fasttext/model
+# Model management
+export PAMOLA_MODEL_DIR=/path/to/models
+export PAMOLA_MAX_MODELS=5
+
+# Remote model/corpus downloads (FastText, spaCy, NLTK, Hugging Face Hub).
+# OFF by default: pamola-core opens no network connection unless you set this.
+# Without it, missing models are not fetched; the affected feature falls back to
+# a simpler method and the gap is listed in the operation result
+# (metric `nlp_resources_degraded`). With it set but no network, the failure is
+# reported once per resource instead of being retried per record.
+export PAMOLA_ALLOW_REMOTE_DOWNLOADS=1
 ```
 
 ### Dependency Management
 The package automatically detects available libraries and adjusts functionality:
-- **Required**: Python 3.6+, pandas
+- **Required**: Python 3.11-3.12, pandas
 - **Optional**: nltk, spacy, transformers, langdetect, fasttext, pymorphy2
 
 ## Best Practices
@@ -294,11 +262,10 @@ The package automatically detects available libraries and adjusts functionality:
 1. **Use Appropriate Cache Backend**
    - Memory cache for speed
    - File cache for persistence
-   - Redis cache for distributed systems
 
 2. **Configure Batch Sizes**
-   - Start small (5-10) for LLM operations
-   - Increase for simple operations (100-1000)
+   - Use larger batches (100-1000) for simple operations
+   - Use smaller batches for model-based (spaCy/transformers) processing
 
 3. **Monitor Resource Usage**
    - Enable memory profiling for large datasets

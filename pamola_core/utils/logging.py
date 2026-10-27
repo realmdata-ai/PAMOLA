@@ -4,7 +4,7 @@ Module: Logging Configuration
 Description: Standardized logging configuration for PAMOLA projects
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides utilities for configuring and managing logging
 throughout the PAMOLA ecosystem, ensuring consistent log formatting and output.

@@ -1,8 +1,8 @@
 # Configuration file for the Sphinx documentation builder.
 #
 # PAMOLA.CORE — Privacy-Preserving AI Data Processors
-# (C) 2024 Realm Inveo Inc. and DGT Network Inc.
-# License: BSD 3-Clause
+# Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
+# License: MIT
 #
 # Full documentation: https://www.sphinx-doc.org/en/master/usage/configuration.html
 
@@ -37,8 +37,8 @@ logging.getLogger("sphinx").addFilter(_SuppressDuplicateObject())
 # Project information
 # ---------------------------------------------------------------------------
 project = "PAMOLA.CORE"
-copyright = "2024, Realm Inveo Inc. and DGT Network Inc."
-author = "Realm Inveo Inc. and DGT Network Inc."
+copyright = "2024-2026, Realm Inveo Inc. (REALMDATA)"
+author = "Realm Inveo Inc. (REALMDATA)"
 
 # Read version from pamola_core._version so the docs always match the package.
 try:
@@ -220,7 +220,7 @@ html_theme = "alabaster"
 
 html_theme_options = {
     "description": "Privacy-preserving data operations for AI pipelines",
-    "github_user": "DGT-Network",
+    "github_user": "realmdata-ai",
     "github_repo": "PAMOLA",
     "github_banner": True,
     "fixed_sidebar": True,
@@ -266,8 +266,7 @@ PAMOLA Core API Reference
 =========================
 
 **PAMOLA Core** is an open-source Python library for privacy-preserving data
-operations developed by `Realm Inveo Inc. <https://realminveo.com>`_ and
-`DGT Network Inc. <https://dgt.world>`_.
+operations developed by `Realm Inveo Inc. (REALMDATA) <https://realmdata.ai>`_.
 
 Complete reference for every public symbol exported by ``pamola_core``.
 All public APIs are importable directly from the top-level package.

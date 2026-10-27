@@ -5,7 +5,7 @@ Module: tests.utils.ops.test_op_config
 Description: Unit tests for the operation configuration module
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Run with pytest -xvs tests/utils/ops/test_op_config.py
 """

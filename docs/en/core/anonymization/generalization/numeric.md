@@ -253,27 +253,13 @@ def __init__(self,
              binning_method: str = "equal_width",
              precision: int = 0,
              range_limits: Optional[List[Tuple[float, float]]] = None,
-             mode: str = "REPLACE",
-             output_field_name: Optional[str] = None,
-             column_prefix: str = "_",
-             null_strategy: str = "PRESERVE",
-             batch_size: int = 10000,
-             adaptive_batch_size: bool = True,
-             use_cache: bool = True,
-             use_encryption: bool = False,
-             encryption_key: Optional[Union[str, Path]] = None,
-             condition_field: Optional[str] = None,
-             condition_values: Optional[List] = None,
-             condition_operator: str = "in",
-             ka_risk_field: Optional[str] = None,
-             risk_threshold: float = 5.0,
-             vulnerable_record_strategy: str = "suppress",
-             output_format: str = "csv",
              quasi_identifiers: Optional[List[str]] = None,
-             continue_on_error: bool = False,
-             error_batch_handling: str = "log",
-             description: str = "")
+             **kwargs)
 ```
+
+`**kwargs` are passed to `AnonymizationOperation` (conditional and risk-based processing) and
+`BaseOperation` (mode, null handling, engine, chunking, caching, encryption, output); the most
+common ones are listed below. Unknown keyword arguments raise `TypeError`.
 
 ### 5.2 Parameter Details
 
@@ -289,9 +275,10 @@ def __init__(self,
 | `output_field_name` | str | None | Custom name for output field in ENRICH mode |
 | `column_prefix` | str | "_" | Prefix for auto-generated field names |
 | `null_strategy` | str | "PRESERVE" | Null handling: "PRESERVE", "EXCLUDE", "ERROR", "ANONYMIZE" |
-| `batch_size` | int | 10000 | Records per processing batch |
-| `adaptive_batch_size` | bool | True | Automatically adjust batch size based on memory |
-| `use_cache` | bool | True | Enable result caching |
+| `chunk_size` | int | 10000 | Records per processing chunk |
+| `adaptive_chunk_size` | bool | True | Automatically adjust chunk size based on memory |
+| `engine` | str | "auto" | Processing engine: "auto", "pandas", "dask" |
+| `use_cache` | bool | False | Enable result caching |
 | `use_encryption` | bool | False | Encrypt output files |
 | `encryption_key` | Union[str, Path] | None | Encryption key path or string |
 | `condition_field` | str | None | Field for conditional processing |
@@ -302,8 +289,6 @@ def __init__(self,
 | `vulnerable_record_strategy` | str | "suppress" | Strategy for vulnerable records: "suppress", "generalize" |
 | `output_format` | str | "csv" | Output format: "csv", "parquet", "arrow" |
 | `quasi_identifiers` | List[str] | None | Fields for k-anonymity calculation |
-| `continue_on_error` | bool | False | Continue processing on batch errors |
-| `error_batch_handling` | str | "log" | Error handling: "skip", "fail", "log" |
 | `description` | str | "" | Operation description |
 
 ### 5.3 Key Methods
@@ -420,7 +405,7 @@ operation = NumericGeneralizationOperation(
     null_strategy="ANONYMIZE"
 )
 
-result = operation.execute(data_source, task_dir)
+result = operation.execute(data_source, task_dir, reporter)
 ```
 
 ### 6.4 Conditional Processing
@@ -456,13 +441,11 @@ operation = NumericGeneralizationOperation(
     strategy="binning",
     bin_count=20,
     binning_method="quantile",
-    batch_size=50000,
-    adaptive_batch_size=True,
+    chunk_size=50000,
+    adaptive_chunk_size=True,
     use_encryption=True,
     encryption_key=Path("keys/data_key.pem"),
-    output_format="parquet",
-    continue_on_error=True,
-    error_batch_handling="skip"
+    output_format="parquet"
 )
 
 # Execute with custom output settings
@@ -560,8 +543,8 @@ Factors affecting performance:
    operation = NumericGeneralizationOperation(
        field_name="value",
        strategy="binning",
-       batch_size=100000,
-       adaptive_batch_size=True,
+       chunk_size=100000,
+       adaptive_chunk_size=True,
        output_format="parquet"
    )
    ```
@@ -571,8 +554,8 @@ Factors affecting performance:
    operation = NumericGeneralizationOperation(
        field_name="value",
        strategy="rounding",
-       batch_size=5000,
-       adaptive_batch_size=False
+       chunk_size=5000,
+       adaptive_chunk_size=False
    )
    ```
 
@@ -658,18 +641,14 @@ operation = NumericGeneralizationOperation(
     field_name="amount",
     strategy="binning",
     null_strategy="PRESERVE",  # Don't fail on nulls
-    continue_on_error=True,     # Continue on batch errors
-    error_batch_handling="log", # Log errors but continue
-    adaptive_batch_size=True    # Handle memory pressure
+    adaptive_chunk_size=True   # Handle memory pressure
 )
 
 # Strict configuration for testing
 operation = NumericGeneralizationOperation(
     field_name="amount",
     strategy="binning",
-    null_strategy="ERROR",       # Fail on nulls
-    continue_on_error=False,     # Stop on first error
-    error_batch_handling="fail"  # Fail immediately
+    null_strategy="ERROR"  # Fail on nulls
 )
 ```
 
@@ -700,7 +679,7 @@ for field in ["age", "income", "score"]:
         bin_count=5 if field != "age" else None,
         precision=-1 if field == "age" else None
     )
-    result = operation.execute(data_source, task_dir)
+    result = operation.execute(data_source, task_dir, reporter)
     
     if result.status != OperationStatus.SUCCESS:
         logger.error(f"Failed to generalize {field}: {result.error_message}")

@@ -4,7 +4,7 @@ Module: Operation Configuration
 Description: Configuration management for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides classes for managing operation configuration,
 including parameter validation, storage, and serialization.
@@ -102,9 +102,12 @@ class OperationConfig(Generic[T]):
         Used by save()/save_config() to ensure secrets (encryption keys,
         passwords) never reach disk in plaintext.
         """
-        safe = self._params.copy()
+        from pamola_core.utils.redaction import redact_sensitive_parameters
+
+        safe = redact_sensitive_parameters(self._params, self.SENSITIVE_KEYS)
+        # declared keys are redacted even when None-valued parameters were set explicitly
         for key in self.SENSITIVE_KEYS:
-            if key in safe:
+            if key in safe and safe[key] is not None:
                 safe[key] = SENSITIVE_VALUE_PLACEHOLDER
         return safe
 

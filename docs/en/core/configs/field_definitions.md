@@ -176,7 +176,7 @@ Each field in `FIELD_DEFINITIONS` contains:
     "type": FieldType.DOUBLE,
     "category": PrivacyCategory.SENSITIVE_ATTRIBUTE,
     "strategy": AnonymizationStrategy.NOISE_ADDITION,
-    "description": "Зарплата (много нулей), добавление случайного шума",
+    "description": "Salary (many zeros); random noise added",
     "profiling_tasks": [
         ProfilingTask.COMPLETENESS,
         ProfilingTask.DISTRIBUTION,

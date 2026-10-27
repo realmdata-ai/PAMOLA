@@ -14,15 +14,15 @@ Key features:
 This class is useful for data preprocessing, validation, generalization, and privacy-preserving transformations in machine learning
 and data analytics workflows.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
-This software is licensed under the BSD 3-Clause License.
+This software is licensed under the MIT License.
 For details, see the LICENSE file or visit:
 
-    https://opensource.org/licenses/BSD-3-Clause
-    https://github.com/DGT-Network/PAMOLA/blob/main/LICENSE
+    https://opensource.org/license/mit
+    https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE
 
-Author: Realm Inveo Inc. & DGT Network Inc.
+Author: Realm Inveo Inc.
 """
 
 import datetime

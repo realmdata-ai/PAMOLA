@@ -1,37 +1,53 @@
 """
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
-This file is part of the PAMOLA ecosystem, a comprehensive suite for
-anonymization-enhancing technologies. PAMOLA.CORE serves as the open-source
-foundation for anonymization-preserving data processing.
+Part of PAMOLA.CORE, the open-source privacy-engineering library of the PAMOLA ecosystem.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
+Licensed under the MIT License; see the LICENSE file or
+https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE
 
-This software is licensed under the BSD 3-Clause License.
-For details, see the LICENSE file or visit:
+Package: pamola_core.attacks (experimental - API may change)
+Type: Internal package. Not exported from pamola_core.__init__.
 
-    https://opensource.org/licenses/BSD-3-Clause
-    https://github.com/DGT-Network/PAMOLA/blob/main/LICENSE
+Author: Realm Inveo Inc.
 
-Package: pamola_core.attacks (experimental — API may change)
-Type: Public API Package
+Scope
+-----
+This package carries only the attacks that measure **anonymization** quality:
 
-Author: Realm Inveo Inc. & DGT Network Inc.
+* ``LinkageAttack``       - record linkage, including the CVPL variant
+                            (TruncatedSVD + cosine similarity)
+* ``AttributeInference``  - attribute disclosure from quasi-identifiers
+
+These cover linkability and inference. **Singling-out is not implemented**: the
+``singling_out`` module was removed before 1.0 (it had no tests and contradicted
+the documented scope).
+
+Four modules were removed in the 1.0 cleanup:
+
+* ``singling_out`` - untested; see above.
+
+* ``membership_inference`` - membership inference is a model-privacy question,
+  not an anonymization one; it belongs to the SYNT/BEST track.
+* ``distance_to_closest_record`` and ``nearest_neighbor_distance_ratio`` -
+  these duplicated ``pamola_core.metrics.privacy.distance`` and
+  ``pamola_core.metrics.privacy.neighbor``, which are the *live*
+  implementations: ``PrivacyMetricOperation`` imports the metrics versions and
+  has never imported these. The copies here were dead code (77 and 76 lines
+  against 365 and 149).
+
+DCR and NNDR remain fully available - import them from
+``pamola_core.metrics.privacy``.
 """
 
 __all__ = [
     # Base
     "AttackInitialization",
     "BaseAttack",
-    # Core attacks
+    # Anonymization-facing attacks
     "LinkageAttack",
-    "MembershipInference",
-    "MembershipInferenceAttack",
     "AttributeInference",
     "AttributeInferenceAttack",
-    "DistanceToClosestRecord",
-    "DistanceToClosestRecordAttack",
-    "NearestNeighborDistanceRatio",
-    "NearestNeighborDistanceRatioAttack",
     # Metrics
     "AttackMetrics",
 ]
@@ -41,17 +57,7 @@ from pamola_core.attacks.base import AttackInitialization as BaseAttack
 
 from pamola_core.attacks.linkage_attack import LinkageAttack
 
-from pamola_core.attacks.membership_inference import MembershipInference
-from pamola_core.attacks.membership_inference import MembershipInference as MembershipInferenceAttack
-
 from pamola_core.attacks.attribute_inference import AttributeInference
 from pamola_core.attacks.attribute_inference import AttributeInference as AttributeInferenceAttack
 
-from pamola_core.attacks.distance_to_closest_record import DistanceToClosestRecord
-from pamola_core.attacks.distance_to_closest_record import DistanceToClosestRecord as DistanceToClosestRecordAttack
-
-from pamola_core.attacks.nearest_neighbor_distance_ratio import NearestNeighborDistanceRatio
-from pamola_core.attacks.nearest_neighbor_distance_ratio import NearestNeighborDistanceRatio as NearestNeighborDistanceRatioAttack
-
 from pamola_core.attacks.attack_metrics import AttackMetrics
-

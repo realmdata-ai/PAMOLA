@@ -1,7 +1,5 @@
 # Common Module Documentation Index
 
-**Last Updated:** 2026-03-23
-**Documentation Version:** 1.0
 **Module:** `pamola_core.common`
 
 ## Overview
@@ -24,22 +22,18 @@ docs/en/core/common/
 │   ├── fidelity_metrics.md            (Statistical similarity metrics)
 │   ├── privacy_metrics_type.md        (Privacy evaluation metrics)
 │   └── [Additional enums available]
-├── helpers/                           (Helper utilities)
-│   └── helpers_overview.md            (Data manipulation helpers)
-├── logging/                           (Logging functionality)
-│   └── logging_config.md              (Privacy-aware logging)
-├── validation/                        (Validation utilities)
-│   └── validation_helpers.md          (Column validation)
-└── regex/                             (Pattern references)
-    └── (patterns.py documentation in patterns)
 ```
+
+The `pamola_core.common` sub-packages `helpers/`, `logging/`, `validation/` and `regex/` have no
+dedicated pages yet; they are summarised in [common_overview.md](./common_overview.md) and
+documented by their docstrings.
 
 ## Quick Navigation
 
 ### Getting Started
 1. **New to the module?** Start with [common_overview.md](./common_overview.md)
 2. **Need specific enum?** Check [enums_reference.md](./enum/enums_reference.md)
-3. **Working with data?** See [helpers_overview.md](./helpers/helpers_overview.md)
+3. **Working with data?** See the helpers section of [common_overview.md](./common_overview.md)
 
 ### By Component
 
@@ -50,7 +44,7 @@ docs/en/core/common/
 | [encryption_mode.md](./enum/encryption_mode.md) | EncryptionMode | Task encryption configuration |
 | [mask_strategy.md](./enum/mask_strategy.md) | MaskStrategyEnum | Anonymization masking strategies |
 | [distance_metric_type.md](./enum/distance_metric_type.md) | DistanceMetricType | Distance calculations |
-| [fidelity_metrics.md](./enum/fidelity_metrics.md) | FidelityMetrics(Type) | Statistical similarity metrics |
+| [fidelity_metrics.md](./enum/fidelity_metrics.md) | FidelityMetricsType | Statistical similarity metrics |
 | [privacy_metrics_type.md](./enum/privacy_metrics_type.md) | PrivacyMetricsType | Privacy preservation metrics |
 
 #### Core Modules
@@ -58,9 +52,9 @@ docs/en/core/common/
 |----------|----------|---------|
 | [constants.md](./constants.md) | Constants class | Operation names, date formats, type mappings |
 | [type_aliases.md](./type_aliases.md) | Type aliases, CryptoConfig | File path types, encryption configuration |
-| [helpers_overview.md](./helpers/helpers_overview.md) | DataHelper, dataset_helper | Data processing and transformation |
-| [logging_config.md](./logging/logging_config.md) | Privacy logging functions | Change tracking and audit trails |
-| [validation_helpers.md](./validation/validation_helpers.md) | check_columns_exist() | Column validation utilities |
+| `pamola_core.common.helpers` (no page) | DataHelper, dataset_helper | Data processing and transformation |
+| `pamola_core.common.logging.privacy_logging` (no page) | Privacy logging functions | Change tracking and audit trails |
+| `pamola_core.common.validation.check_column` (no page) | check_columns_exist() | Column validation utilities |
 
 ## Document Overview
 
@@ -122,10 +116,10 @@ Each enum has detailed documentation covering:
 **Examples:**
 - [encryption_mode.md](./enum/encryption_mode.md) - Task encryption (NONE, SIMPLE, AGE)
 - [mask_strategy.md](./enum/mask_strategy.md) - Masking methods (FIXED, PATTERN, RANDOM, WORDS)
-- [fidelity_metrics.md](./enum/fidelity_metrics.md) - Statistical similarity (KS, KL, JS, WASSERSTEIN)
+- [fidelity_metrics.md](./enum/fidelity_metrics.md) - Statistical similarity (KS, KL)
 - [privacy_metrics_type.md](./enum/privacy_metrics_type.md) - Privacy metrics (k-anonymity, l-diversity, etc.)
 
-### 5. helpers_overview.md
+### 5. `pamola_core.common.helpers` (no dedicated page)
 **Data processing and transformation utilities**
 - DataHelper class (40+ methods for data operations)
 - dataset_helper (train-test splitting)
@@ -137,7 +131,7 @@ Each enum has detailed documentation covering:
 
 **Use this when:** Processing, validating, or transforming data
 
-### 6. logging_config.md
+### 6. `pamola_core.common.logging.privacy_logging` (no dedicated page)
 **Privacy-aware logging and audit trails**
 - save_privacy_logging() - Save logs to JSON
 - log_privacy_transformations() - Track individual changes
@@ -148,7 +142,7 @@ Each enum has detailed documentation covering:
 
 **Use this when:** Tracking anonymization changes or creating audit trails
 
-### 7. validation_helpers.md
+### 7. `pamola_core.common.validation.check_column` (no dedicated page)
 **Column and field validation**
 - check_columns_exist() - Validate DataFrame columns
 - Error handling and exceptions
@@ -166,6 +160,7 @@ Each enum has detailed documentation covering:
 from pamola_core.common.helpers.data_helper import DataHelper
 from pamola_core.common.logging.privacy_logging import log_privacy_transformations, save_privacy_logging
 from pamola_core.common.enum.mask_strategy_enum import MaskStrategyEnum
+from pamola_core.common.validation.check_column import check_columns_exist
 
 # Validate input
 check_columns_exist(df, ["age", "name"])
@@ -194,7 +189,7 @@ save_privacy_logging(change_log, "audit.json")
 
 ```python
 from pamola_core.common.enum.privacy_metrics_type import PrivacyMetricsType
-from pamola_core.common.enum.fidelity_metrics import FidelityMetrics
+from pamola_core.common.enum.fidelity_metrics_type import FidelityMetricsType
 from pamola_core.common.enum.distance_metric_type import DistanceMetricType
 
 # Assess privacy preservation
@@ -206,8 +201,8 @@ privacy_metrics = {
 
 # Assess data utility
 fidelity_metrics = {
-    FidelityMetrics.KS: compute_ks(original, anonymized),
-    FidelityMetrics.JS: compute_js(original, anonymized)
+    FidelityMetricsType.KS: compute_ks(original, anonymized),
+    FidelityMetricsType.KL: compute_kl(original, anonymized)
 }
 ```
 
@@ -242,13 +237,13 @@ restored_config = FileCryptoConfig.from_dict(config_dict)
 3. Check [constants.md](./constants.md) - See standard values
 
 ### Intermediate (Building Solutions)
-1. Study [helpers_overview.md](./helpers/helpers_overview.md) - Learn data utilities
-2. Review [validation_helpers.md](./validation/validation_helpers.md) - Ensure data quality
+1. Study `pamola_core.common.helpers.data_helper.DataHelper` - Learn data utilities
+2. Review `pamola_core.common.validation.check_column.check_columns_exist` - Ensure data quality
 3. Check specific enum docs for your use case
 
 ### Advanced (Complex Operations)
 1. Deep dive into specific enum documentation (e.g., [fidelity_metrics.md](./enum/fidelity_metrics.md))
-2. Study [logging_config.md](./logging/logging_config.md) - Build audit trails
+2. Study `pamola_core.common.logging.privacy_logging` - Build audit trails
 3. Review [type_aliases.md](./type_aliases.md) - Advanced type handling
 
 ## Key Concepts
@@ -331,7 +326,7 @@ When adding to this documentation:
 Documentation is maintained alongside source code. When:
 - **Adding new enum**: Create enum documentation file + update enums_reference.md
 - **Adding new constant**: Update constants.md
-- **Adding new helper**: Update helpers_overview.md
+- **Adding new helper**: Update common_overview.md
 - **Breaking changes**: Update all affected documentation files
 
 ## Support
@@ -342,11 +337,3 @@ For questions about the common module:
 3. Check related component documentation
 4. File an issue with specific questions
 
-## Changelog
-
-**v1.0 (2026-03-23)**
-- Initial comprehensive documentation
-- 12 documentation files covering all components
-- Complete enum references
-- Practical workflow examples
-- Best practices guide

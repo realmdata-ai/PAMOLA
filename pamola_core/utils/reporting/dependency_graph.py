@@ -1,7 +1,7 @@
 """
-Модуль для работы с зависимостями задач.
+Module for working with task dependencies.
 
-Функции для анализа, валидации и визуализации зависимостей между задачами.
+Functions for analyzing, validating and visualizing dependencies between tasks.
 """
 import logging
 from pathlib import Path
@@ -9,23 +9,23 @@ from typing import Dict, Any, List, Tuple, Optional
 
 from pamola_core.utils.reporting.config import get_task_dependencies
 
-# Настройка логирования
+# Logging setup
 logger = logging.getLogger(__name__)
 
 
 def get_all_tasks(task_reports: Dict[str, Dict[str, Any]]) -> List[str]:
     """
-    Получает список всех задач из отчетов.
+    Gets the list of all tasks from the reports.
 
     Parameters
     -----------
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
 
     Returns
     --------
     List[str]
-        Список идентификаторов задач
+        List of task identifiers
     """
     return list(task_reports.keys())
 
@@ -33,30 +33,30 @@ def get_all_tasks(task_reports: Dict[str, Dict[str, Any]]) -> List[str]:
 def resolve_dependencies(task_dependencies: Dict[str, List[str]],
                          task_reports: Dict[str, Dict[str, Any]]) -> Dict[str, List[str]]:
     """
-    Разрешает зависимости между задачами, учитывая задачи из отчетов.
+    Resolves task dependencies against the tasks present in the reports.
 
     Parameters
     -----------
     task_dependencies : Dict[str, List[str]]
-        Словарь {задача: [зависимости]}
+        Dictionary {task: [dependencies]}
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
 
     Returns
     --------
     Dict[str, List[str]]
-        Обновленный словарь зависимостей
+        Updated dependency dictionary
     """
     resolved_dependencies = {}
     all_tasks = set(task_reports.keys())
 
     for task_id, deps in task_dependencies.items():
         if task_id in all_tasks:
-            # Оставляем только существующие зависимости
+            # Keep only dependencies that exist
             valid_deps = [dep for dep in deps if dep in all_tasks]
             resolved_dependencies[task_id] = valid_deps
 
-    # Добавляем задачи, которые есть в отчетах, но не указаны в зависимостях
+    # Add tasks that are in the reports but not listed in the dependencies
     for task_id in all_tasks:
         if task_id not in resolved_dependencies:
             resolved_dependencies[task_id] = []
@@ -66,17 +66,17 @@ def resolve_dependencies(task_dependencies: Dict[str, List[str]],
 
 def check_circular_dependencies(dependencies: Dict[str, List[str]]) -> List[Tuple[str, str]]:
     """
-    Проверяет наличие циклических зависимостей.
+    Checks for circular dependencies.
 
     Parameters
     -----------
     dependencies : Dict[str, List[str]]
-        Словарь {задача: [зависимости]}
+        Dictionary {task: [dependencies]}
 
     Returns
     --------
     List[Tuple[str, str]]
-        Список пар задач, образующих циклические зависимости
+        List of task pairs that form circular dependencies
     """
     cycles = []
     visited = set()
@@ -84,7 +84,7 @@ def check_circular_dependencies(dependencies: Dict[str, List[str]]) -> List[Tupl
 
     def dfs(node):
         if node in path:
-            # Нашли цикл
+            # Found a cycle
             cycle_start = path.index(node)
             for i in range(cycle_start, len(path) - 1):
                 cycles.append((path[i], path[i + 1]))
@@ -111,65 +111,65 @@ def check_circular_dependencies(dependencies: Dict[str, List[str]]) -> List[Tupl
 
 def topological_sort(dependencies: Dict[str, List[str]]) -> List[str]:
     """
-    Выполняет топологическую сортировку задач.
+    Performs a topological sort of the tasks.
 
     Parameters
     -----------
     dependencies : Dict[str, List[str]]
-        Словарь {задача: [зависимости]}
+        Dictionary {task: [dependencies]}
 
     Returns
     --------
     List[str]
-        Список задач в порядке выполнения
+        List of tasks in execution order
     """
-    # Создаем список с результатом
+    # Create the result list
     result = []
 
-    # Создаем копию зависимостей для модификации
+    # Make a copy of the dependencies to modify
     deps_copy = {task: list(deps) for task, deps in dependencies.items()}
 
-    # Находим задачи без зависимостей
+    # Find tasks without dependencies
     no_deps = [task for task, deps in deps_copy.items() if not deps]
 
-    # Пока есть задачи без зависимостей
+    # While there are tasks without dependencies
     while no_deps:
-        # Берем следующую задачу без зависимостей
+        # Take the next task without dependencies
         current = no_deps.pop(0)
         result.append(current)
 
-        # Для всех задач, зависящих от текущей
+        # For every task that depends on the current one
         for task, deps in list(deps_copy.items()):
             if current in deps:
-                # Удаляем текущую из зависимостей
+                # Remove the current task from its dependencies
                 deps.remove(current)
 
-                # Если больше нет зависимостей, добавляем в список без зависимостей
+                # If no dependencies remain, add it to the no-dependency list
                 if not deps:
                     no_deps.append(task)
 
-    # Если остались неразрешенные зависимости, значит есть циклы
+    # Unresolved dependencies left over mean there are cycles
     if any(deps for deps in deps_copy.values()):
-        logger.warning("Обнаружены циклические зависимости. Возвращаем частичный порядок.")
+        logger.warning("Circular dependencies detected. Returning a partial order.")
 
     return result
 
 
 def get_dependent_tasks(task_id: str, dependencies: Dict[str, List[str]]) -> List[str]:
     """
-    Получает список задач, зависящих от указанной.
+    Gets the list of tasks that depend on the given task.
 
     Parameters
     -----------
     task_id : str
-        Идентификатор задачи
+        Task identifier
     dependencies : Dict[str, List[str]]
-        Словарь {задача: [зависимости]}
+        Dictionary {task: [dependencies]}
 
     Returns
     --------
     List[str]
-        Список идентификаторов зависимых задач
+        List of dependent task identifiers
     """
     dependent_tasks = []
 
@@ -182,30 +182,30 @@ def get_dependent_tasks(task_id: str, dependencies: Dict[str, List[str]]) -> Lis
 
 def enrich_tasks_with_dependencies(task_reports: Dict[str, Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
     """
-    Обогащает отчеты задач информацией о зависимостях.
+    Enriches task reports with dependency information.
 
     Parameters
     -----------
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
 
     Returns
     --------
     Dict[str, Dict[str, Any]]
-        Обновленный словарь отчетов
+        Updated report dictionary
     """
-    # Получаем зависимости из конфигурации
+    # Get dependencies from the configuration
     config_dependencies = get_task_dependencies()
 
-    # Разрешаем зависимости
+    # Resolve dependencies
     dependencies = resolve_dependencies(config_dependencies, task_reports)
 
-    # Обновляем отчеты
+    # Update the reports
     for task_id, report in task_reports.items():
-        # Добавляем зависимости
+        # Add dependencies
         report["dependencies"] = dependencies.get(task_id, [])
 
-        # Добавляем зависимые задачи
+        # Add dependent tasks
         report["dependents"] = get_dependent_tasks(task_id, dependencies)
 
     return task_reports
@@ -213,25 +213,25 @@ def enrich_tasks_with_dependencies(task_reports: Dict[str, Dict[str, Any]]) -> D
 
 def create_dependency_graph_data(task_reports: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Создает данные для визуализации графа зависимостей.
+    Creates data for visualizing the dependency graph.
 
     Parameters
     -----------
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
 
     Returns
     --------
     Dict[str, Any]
-        Данные для визуализации графа
+        Graph visualization data
     """
-    # Получаем зависимости из конфигурации
+    # Get dependencies from the configuration
     config_dependencies = get_task_dependencies()
 
-    # Разрешаем зависимости
+    # Resolve dependencies
     dependencies = resolve_dependencies(config_dependencies, task_reports)
 
-    # Создаем узлы
+    # Create nodes
     nodes = []
     for task_id, report in task_reports.items():
         nodes.append({
@@ -240,7 +240,7 @@ def create_dependency_graph_data(task_reports: Dict[str, Dict[str, Any]]) -> Dic
             "status": report.get("status", "unknown")
         })
 
-    # Создаем ребра
+    # Create edges
     edges = []
     for task_id, deps in dependencies.items():
         for dep in deps:
@@ -258,25 +258,25 @@ def create_dependency_graph_data(task_reports: Dict[str, Dict[str, Any]]) -> Dic
 
 def check_missing_dependencies(task_reports: Dict[str, Dict[str, Any]]) -> Dict[str, List[str]]:
     """
-    Проверяет наличие отсутствующих зависимостей.
+    Checks for missing dependencies.
 
     Parameters
     -----------
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
 
     Returns
     --------
     Dict[str, List[str]]
-        Словарь {задача: [отсутствующие_зависимости]}
+        Dictionary {task: [missing_dependencies]}
     """
-    # Получаем зависимости из конфигурации
+    # Get dependencies from the configuration
     config_dependencies = get_task_dependencies()
 
-    # Получаем список всех задач
+    # Get the list of all tasks
     all_tasks = set(task_reports.keys())
 
-    # Проверяем наличие отсутствующих зависимостей
+    # Check for missing dependencies
     missing_dependencies = {}
 
     for task_id, deps in config_dependencies.items():
@@ -290,41 +290,41 @@ def check_missing_dependencies(task_reports: Dict[str, Dict[str, Any]]) -> Dict[
 
 def suggest_dependencies(task_reports: Dict[str, Dict[str, Any]]) -> Dict[str, List[str]]:
     """
-    Предлагает возможные зависимости на основе времени выполнения задач.
+    Suggests possible dependencies based on task execution times.
 
     Parameters
     -----------
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
 
     Returns
     --------
     Dict[str, List[str]]
-        Словарь {задача: [предлагаемые_зависимости]}
+        Dictionary {task: [suggested_dependencies]}
     """
-    # Получаем существующие зависимости
+    # Get existing dependencies
     config_dependencies = get_task_dependencies()
 
-    # Сортируем задачи по времени начала
+    # Sort tasks by start time
     tasks_by_time = [(task_id, report.get("start_time", ""))
                      for task_id, report in task_reports.items()]
     tasks_by_time.sort(key=lambda x: x[1])
 
-    # Создаем список задач в порядке выполнения
+    # Build the list of tasks in execution order
     task_sequence = [task_id for task_id, _ in tasks_by_time]
 
-    # Предлагаем зависимости
+    # Suggest dependencies
     suggestions = {}
 
     for i in range(1, len(task_sequence)):
         current_task = task_sequence[i]
         prev_task = task_sequence[i - 1]
 
-        # Если текущая задача уже имеет зависимости, пропускаем
+        # Skip the current task if it already has dependencies
         if current_task in config_dependencies and config_dependencies[current_task]:
             continue
 
-        # Предлагаем предыдущую задачу как зависимость
+        # Suggest the previous task as a dependency
         suggestions[current_task] = [prev_task]
 
     return suggestions
@@ -333,67 +333,67 @@ def suggest_dependencies(task_reports: Dict[str, Dict[str, Any]]) -> Dict[str, L
 def create_dependency_graph_svg(task_reports: Dict[str, Dict[str, Any]],
                                 output_path: Optional[Path] = None) -> Optional[str]:
     """
-    Создает SVG-изображение графа зависимостей.
+    Creates an SVG image of the dependency graph.
 
     Parameters
     -----------
     task_reports : Dict[str, Dict[str, Any]]
-        Словарь {id_задачи: отчет}
+        Dictionary {task_id: report}
     output_path : Path, optional
-        Путь для сохранения SVG (если не указан, SVG не сохраняется)
+        Path to save the SVG to (if not specified, the SVG is not saved)
 
     Returns
     --------
     str or None
-        SVG-код или None в случае ошибки
+        SVG markup, or None on error
     """
     try:
-        # Пытаемся импортировать graphviz
+        # Try to import graphviz
         import graphviz
     except ImportError:
-        logger.warning("Модуль graphviz не установлен. Создание SVG невозможно.")
+        logger.warning("The graphviz module is not installed. Cannot create SVG.")
         return None
 
     try:
-        # Создаем граф
+        # Create the graph
         dot = graphviz.Digraph("dependency_graph", format="svg")
 
-        # Настраиваем стиль графа
+        # Configure the graph style
         dot.attr("graph", rankdir="LR", nodesep="0.5", ranksep="1")
         dot.attr("node", shape="box", style="filled", fontname="Arial", fontsize="12")
         dot.attr("edge", fontname="Arial", fontsize="10")
 
-        # Получаем данные для графа
+        # Get the graph data
         graph_data = create_dependency_graph_data(task_reports)
 
-        # Добавляем узлы
+        # Add nodes
         for node in graph_data["nodes"]:
-            # Выбираем цвет в зависимости от статуса
-            fillcolor = "#FFFFFF"  # По умолчанию белый
+            # Pick a color based on the status
+            fillcolor = "#FFFFFF"  # White by default
             if node["status"] == "completed":
-                fillcolor = "#D1E7DD"  # Зеленый
+                fillcolor = "#D1E7DD"  # Green
             elif node["status"] == "error" or node["status"] == "failed":
-                fillcolor = "#F8D7DA"  # Красный
+                fillcolor = "#F8D7DA"  # Red
             elif node["status"] == "running":
-                fillcolor = "#FFF3CD"  # Желтый
+                fillcolor = "#FFF3CD"  # Yellow
 
-            # Добавляем узел
+            # Add the node
             dot.node(node["id"], label=node["name"], fillcolor=fillcolor)
 
-        # Добавляем ребра
+        # Add edges
         for edge in graph_data["edges"]:
             dot.edge(edge["source"], edge["target"], label=edge["label"])
 
-        # Рендерим SVG
+        # Render SVG
         svg_data = dot.pipe().decode("utf-8")
 
-        # Сохраняем SVG, если указан путь
+        # Save the SVG if a path was given
         if output_path:
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write(svg_data)
-            logger.info(f"SVG-граф сохранен в {output_path}")
+            logger.info(f"SVG graph saved to {output_path}")
 
         return svg_data
     except Exception as e:
-        logger.error(f"Ошибка при создании SVG-графа: {e}")
+        logger.error(f"Error creating SVG graph: {e}")
         return None

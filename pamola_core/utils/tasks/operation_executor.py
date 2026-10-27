@@ -4,7 +4,7 @@ Module: Operation Executor
 Description: Task operation execution with retry capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for executing operations with retry capabilities,
 handling temporary failures gracefully with exponential backoff, and supporting

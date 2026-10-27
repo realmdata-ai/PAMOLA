@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-10-23
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     Utility to auto-generate JSON schemas for all operation configs (fake_data, profiling, ...).
@@ -382,6 +382,19 @@ def _build_all_op_configs() -> List[Tuple[Any, Any, Any, Any]]:
     )
     from pamola_core.metrics.schemas.fidelity_op_ui_schema import (
         FidelityUIConfig,
+    )
+    # CVPL linkage
+    from pamola_core.metrics.schemas.cvpl_op_core_schema import (
+        CVPLLinkageConfig,
+    )
+    from pamola_core.metrics.schemas.cvpl_op_schema_exclude import (
+        CVPL_EXCLUDE_FIELDS,
+    )
+    from pamola_core.metrics.schemas.cvpl_op_tooltip import (
+        CVPLLinkageOperationTooltip,
+    )
+    from pamola_core.metrics.schemas.cvpl_op_ui_schema import (
+        CVPLLinkageUIConfig,
     )
     # Privacy
     from pamola_core.metrics.schemas.privacy_op_core_schema import (
@@ -767,6 +780,12 @@ def _build_all_op_configs() -> List[Tuple[Any, Any, Any, Any]]:
             UtilityMetricUIConfig,
             UTILITY_EXCLUDE_FIELDS,
             UtilityMetricOperationTooltip.as_dict(),
+        ),
+        (
+            CVPLLinkageConfig,
+            CVPLLinkageUIConfig,
+            CVPL_EXCLUDE_FIELDS,
+            CVPLLinkageOperationTooltip.as_dict(),
         ),
     ]
     return configs

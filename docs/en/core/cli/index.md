@@ -376,9 +376,8 @@ For more troubleshooting, see individual command documentation.
 
 ## Version Information
 
-- **PAMOLA.CORE Version:** 0.0.1
 - **CLI Framework:** Typer
-- **Python Support:** 3.10–3.12
+- **Python Support:** 3.11–3.12
 - **Last Updated:** 2026-03-23
 
 ## Related Documentation

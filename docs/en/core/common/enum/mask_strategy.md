@@ -140,28 +140,30 @@ if strategy1 == MaskStrategyEnum.FIXED:
 ### Use in Masking Operation Configuration
 
 ```python
+from pamola_core import PartialMaskingOperation
 from pamola_core.common.enum.mask_strategy_enum import MaskStrategyEnum
-from pamola_core.anonymization import PartialMaskingConfig
 
-# Create partial masking with specific strategy
-config = PartialMaskingConfig(
-    masking_strategy=MaskStrategyEnum.FIXED,
-    start_index=0,
-    end_index=4,
-    mask_character="*"
+# Fixed strategy: keep the first 4 characters, mask the rest
+card_op = PartialMaskingOperation(
+    field_name="card_number",
+    mask_strategy=MaskStrategyEnum.FIXED.value,
+    unmasked_prefix=4,
+    mask_char="*",
 )
 
-# Mask email using pattern
-email_config = PartialMaskingConfig(
-    masking_strategy=MaskStrategyEnum.PATTERN,
-    pattern=r"(.+)@(.+)",  # Match email structure
-    mask_character="*"
+# Pattern strategy using a built-in pattern type
+email_op = PartialMaskingOperation(
+    field_name="email",
+    mask_strategy=MaskStrategyEnum.PATTERN.value,
+    pattern_type="email",
+    mask_char="*",
 )
 
 # Mask names word-by-word
-name_config = PartialMaskingConfig(
-    masking_strategy=MaskStrategyEnum.WORDS,
-    mask_character="*"
+name_op = PartialMaskingOperation(
+    field_name="full_name",
+    mask_strategy=MaskStrategyEnum.WORDS.value,
+    mask_char="*",
 )
 ```
 

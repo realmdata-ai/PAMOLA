@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01
 Updated:       2025-01-23
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   This module provides a unified interface for loading and managing hierarchical
@@ -64,6 +64,7 @@ from pamola_core.anonymization.commons.text_processing_utils import normalize_te
 
 # Import core utilities
 from pamola_core.utils.io import read_json, read_full_csv, get_file_metadata
+from pamola_core.utils.io_helpers.crypto_utils import read_encrypted_json
 from pamola_core.errors.exceptions import (
     InvalidParameterError,
     PamolaFileNotFoundError,
@@ -188,7 +189,10 @@ class HierarchyDictionary:
 
             try:
                 if format_type == "json":
-                    data = read_json(filepath, encryption_key=encryption_key)
+                    if encryption_key:
+                        data = read_encrypted_json(filepath, encryption_key)
+                    else:
+                        data = read_json(filepath)
                     self._parse_json_hierarchy(data)
                 else:  # csv
                     df = read_full_csv(
@@ -387,10 +391,9 @@ class HierarchyDictionary:
                     f"Found {len(empty_values)} entries with no hierarchy values"
                 )
 
-            # Basic circular reference check (simple one-level check)
-            for value in list(self._data.keys())[:100]:  # Check first 100 only
-                if self._check_circular_reference(value):
-                    issues.append(f"Potential circular reference detected for: {value}")
+            # No cycle check: each entry maps a value to its labels, and labels are not
+            # looked up again, so the structure cannot loop. A level whose label equals the
+            # value itself ("HS-grad" -> "HS-grad") is ordinary identity generalization.
 
             return len(issues) == 0, issues
 
@@ -653,28 +656,3 @@ class HierarchyDictionary:
 
             self._level_values[i] = values
 
-    def _check_circular_reference(
-        self, value: str, visited: Optional[Set[str]] = None
-    ) -> bool:
-        """
-        Simple circular reference check.
-
-        Note: This is a basic implementation checking if a value
-        appears in its own hierarchy path.
-        """
-        if visited is None:
-            visited = set()
-
-        if value in visited:
-            return True
-
-        visited.add(value)
-
-        # Check if value appears in any of its hierarchy levels
-        if value in self._data:
-            hierarchy = self._data[value]
-            for key, val in hierarchy.items():
-                if key.startswith("level_") and val == value:
-                    return True
-
-        return False

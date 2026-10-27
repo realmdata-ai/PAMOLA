@@ -6,7 +6,7 @@ Version:       1.1.1
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
 This module provides utilities for DataFrame operations in NLP tasks,
 particularly for handling processing markers, statistics, and column

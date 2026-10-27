@@ -4,7 +4,7 @@ Module: Histogram Visualization Implementation
 Description: Thread-safe histogram visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for histograms using both
 Plotly (primary) and Matplotlib (fallback) backends to create
@@ -378,7 +378,7 @@ class PlotlyHistogram(PlotlyFigure):
 
             except ImportError as e:
                 logger.error(
-                    f"Plotly is not available. Please install it with: pip install plotly. Error: {e}"
+                    f"Plotly is not available. It ships with the viz extra: pip install 'pamola-core[viz]'. Error: {e}"
                 )
                 # Try to fall back to MatplotlibHistogram
                 try:

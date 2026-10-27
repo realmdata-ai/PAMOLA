@@ -200,7 +200,7 @@ def load_ngram_dictionary(sources: Optional[Union[str, List[str]]] = None,
             if len(splitext_result) > 1:
                 file_ext = splitext_result[1].lower()
             else:
-                file_ext = ""  # Или другое значение по умолчанию, если расширение отсутствует
+                file_ext = ""  # Or another default value if there is no extension
 
             if file_ext == '.json':
                 with open(source, 'r', encoding='utf-8') as f:

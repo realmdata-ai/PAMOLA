@@ -6,7 +6,7 @@ Version:       1.3.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
  This module provides unified caching mechanisms for resources, models, and other
  expensive objects used throughout the NLP package. It implements multiple cache

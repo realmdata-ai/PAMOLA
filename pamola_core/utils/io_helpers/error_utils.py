@@ -4,7 +4,7 @@ Module: Error Handling Utilities
 Description: Centralized error information and structured exception management for I/O operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Standardized error information dictionaries with details and resolution hints

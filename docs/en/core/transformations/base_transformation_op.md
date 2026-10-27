@@ -77,7 +77,7 @@ def __init__(
   - `output_field_name`: Name for the new field (ENRICH mode).
   - `column_prefix`: Prefix for new columns (ENRICH mode).
   - `description`: Operation description.
-  - `batch_size`: Batch size for processing.
+  - `chunk_size`: Chunk size for processing.
   - `use_cache`: Enable/disable caching.
   - `use_dask`: Enable/disable Dask parallelism.
   - `use_encryption`: Enable/disable output encryption.
@@ -85,7 +85,7 @@ def __init__(
   - `output_format`: Output file format (csv, parquet, json).
 
 ### Key Attributes
-- `field_name`, `mode`, `output_field_name`, `column_prefix`, `batch_size`, `use_cache`, `use_dask`, `use_encryption`, `encryption_key`, `output_format`, `version`, `parallel_processes`
+- `field_name`, `mode`, `output_field_name`, `column_prefix`, `chunk_size`, `use_cache`, `use_dask`, `use_encryption`, `encryption_key`, `output_format`, `version`, `parallel_processes`
 
 ### Public Methods
 
@@ -168,7 +168,7 @@ class MyCustomTransform(TransformationOperation):
         batch[self.field_name] = batch[self.field_name] + 1
         return batch
 
-data_source = DataSource("/path/to/data.csv")
+data_source = DataSource.from_file_path("/path/to/data.csv")
 task_dir = Path("/tmp/task")
 reporter = None  # Replace with actual reporter
 
@@ -192,7 +192,7 @@ except ValueError as e:
 
 ### Using Caching and Parallel Processing
 ```python
-op = MyCustomTransform(field_name="salary", use_cache=True, use_dask=True, batch_size=5000)
+op = MyCustomTransform(field_name="salary", use_cache=True, use_dask=True, chunk_size=5000)
 result = op.execute(data_source, task_dir, reporter, parallel_processes=4)
 ```
 
@@ -236,7 +236,7 @@ except ValueError as e:
 
 - **Encryption**: If `use_encryption=True`, an `encryption_key` must be provided.
 - **Output Format**: Supported formats are `csv`, `parquet`, and `json`.
-- **Batch Size**: Adjust `batch_size` for large datasets to optimize memory and performance.
+- **Chunk Size**: Adjust `chunk_size` for large datasets to optimize memory and performance.
 
 ---
 

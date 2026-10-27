@@ -4,7 +4,7 @@ Module: Transformation Metric Utilities
 Description: Common metric utilities for transformation operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functions for collecting and calculating metrics
 related to transformation operations. Supports dataset comparison,

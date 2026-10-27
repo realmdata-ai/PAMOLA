@@ -1,13 +1,15 @@
 # PAMOLA.CORE Documentation Index
 
-**Last Updated:** 2026-03-27
-**Version:** 0.0.1
-**Python:** 3.10-3.12
-**Total Docs:** 221 files (Tier 1 + Tier 2)
+**Last Updated:** 2026-10-26
+**Python:** 3.11-3.12
 
 ---
 
 ## Tier 1 — Public API
+
+> **Start here for claims:** [Regulatory evidence map](./regulatory_evidence_map.md) - what each privacy measurement shows and does not show (no compliance or legal-anonymity claim).
+
+> **Loading files:** [Security policy for loading files](./security_loading_files.md) - pickle is never loaded implicitly; `allow_unsafe_pickle=True` is an explicit opt-in for trusted files only.
 
 ### [Anonymization](./anonymization/) (13 docs)
 Privacy-preserving transformations: masking, generalization, noise, suppression, pseudonymization.
@@ -28,7 +30,7 @@ Privacy-preserving transformations: masking, generalization, noise, suppression,
 | [Cell Suppression](./anonymization/suppression/cell_op.md) | 7 strategies: null, mean, median, mode, constant, group_mean, group_mode |
 | [Record Suppression](./anonymization/suppression/record_op.md) | row removal by condition |
 
-### [Profiling](./profiling/) (14 docs)
+### [Profiling](./profiling/) (13 docs)
 Data profiling analyzers for field-level analysis.
 
 | Doc | Source |
@@ -40,7 +42,6 @@ Data profiling analyzers for field-level analysis.
 | [Currency](./profiling/currency.md) | currency detection, parsing |
 | [Date](./profiling/date.md) | date parsing, distribution, anomaly |
 | [Email](./profiling/email.md) | email validation, domain analysis |
-| [Email Dask](./profiling/email_dask.md) | distributed email analysis |
 | [Group](./profiling/group.md) | group variation, cross-group |
 | [Identity](./profiling/identity.md) | identifier statistics |
 | [MVF](./profiling/mvf.md) | multi-valued field parsing |
@@ -63,7 +64,7 @@ Data transformation operations.
 | [Split by ID Values](./transformations/splitting/split_by_id_values_op.md) | partition by ID |
 | [Split Fields](./transformations/splitting/split_fields_op.md) | field-group splitting |
 
-### [Metrics](./metrics/) (22 docs)
+### [Metrics](./metrics/) (20 docs)
 Privacy, fidelity, utility, and quality metrics.
 
 | Doc | Source |
@@ -81,7 +82,6 @@ Privacy, fidelity, utility, and quality metrics.
 | [Disclosure Risk](./metrics/privacy/disclosure_risk.md) | prosecutor/journalist/marketer |
 | [Classification](./metrics/utility/classification.md) | F1, precision, recall |
 | [Regression](./metrics/utility/regression.md) | MSE, R2 |
-| [Quality metrics](./metrics/quality/) | KS, KL, Pearson, Wasserstein |
 
 ### [Fake Data](./fake_data/) (5 docs)
 Synthetic data generation operations.
@@ -94,7 +94,7 @@ Synthetic data generation operations.
 | [Organization Op](./fake_data/operations/organization_op.md) | `FakeOrganizationOperation` |
 | [Phone Op](./fake_data/operations/phone_op.md) | `FakePhoneOperation` |
 
-### [Analysis](./analysis/) (7 docs)
+### [Analysis](./analysis/) (8 docs)
 Dataset-level analysis functions.
 
 | Doc | Source |
@@ -122,14 +122,14 @@ Error handling framework.
 | [BasePamolaError](./errors/base_pamola_error.md) | Base exception class |
 | [auto_exception](./errors/auto_exception.md) | Exception decorator |
 | [ErrorHandler](./errors/error_handler.md) | Centralized handler |
-| [ErrorCode](./errors/error_codes.md) | 80+ error codes |
+| [ErrorCode](./errors/error_codes.md) | 118 error codes |
 | [TaskInitializationError](./errors/task_initialization_error.md) | Task-specific error |
 
 ---
 
 ## Tier 2 — Key Abstractions
 
-### [Privacy Models](./privacy_models/) (15 docs)
+### [Privacy Models](./privacy_models/) (14 docs)
 Privacy model processors.
 
 | Doc | Source |
@@ -138,19 +138,17 @@ Privacy model processors.
 | [k-Anonymity](./privacy_models/k_anonymity/) | 3 docs: processor, report, visualization |
 | [l-Diversity](./privacy_models/l_diversity/) | 8 docs: calculator, report, metrics, risk, strategies |
 | [t-Closeness](./privacy_models/t_closeness/t_closeness_processor.md) | Wasserstein distance |
-| [Differential Privacy](./privacy_models/differential_privacy/dp_processor.md) | Laplace/Gaussian noise |
 
-### [Attacks](./attacks/) (9 docs)
-Privacy attack simulation.
+### [Attacks](./attacks/) (6 docs)
+Anonymization-facing attack simulation (experimental, internal package): linkage and attribute inference.
+DCR and NNDR are privacy metrics, documented under [Metrics](#metrics-20-docs).
 
 | Doc | Source |
 |-----|--------|
 | [Overview](./attacks/attacks_overview.md) | Attack comparison |
 | [Linkage Attack](./attacks/linkage_attack.md) | exact, probabilistic, cluster-vector |
-| [Membership Inference](./attacks/membership_inference.md) | DCR, NNDR, model-based |
 | [Attribute Inference](./attacks/attribute_inference.md) | entropy-based |
-| [DCR](./attacks/distance_to_closest_record.md) | distance metric |
-| [NNDR](./attacks/nearest_neighbor_distance_ratio.md) | nearest neighbor |
+| [Base Attack](./attacks/base_attack.md) | `AttackInitialization` |
 | [Attack Metrics](./attacks/attack_metrics.md) | accuracy, ASR, RRS |
 
 ### [CLI](./cli/) (9 docs)
@@ -164,7 +162,7 @@ Command-line interface.
 | [schema](./cli/commands/schema.md) | Parameter inspection |
 | [validate](./cli/commands/validate.md) | Config validation |
 
-### [Utils/Ops](./utils/ops/) (10 docs)
+### [Utils/Ops](./utils/ops/) (11 docs)
 Operation framework.
 
 | Doc | Source |
@@ -177,7 +175,7 @@ Operation framework.
 | [OperationRegistry](./utils/ops/op_registry.md) | Op discovery |
 | [DataReader](./utils/ops/op_data_reader.md) | Unified reading |
 
-### [Utils/Tasks](./utils/tasks/) (18 docs)
+### [Utils/Tasks](./utils/tasks/) (17 docs)
 Task orchestration framework.
 
 | Doc | Source |
@@ -186,10 +184,10 @@ Task orchestration framework.
 | [TaskConfig](./utils/tasks/task_config.md) | Configuration loading |
 | [TaskRunner](./utils/tasks/task_runner.md) | Operation orchestration |
 | [TaskContext](./utils/tasks/task_context.md) | Reproducibility |
-| + 14 manager docs | dependency, encryption, progress, path security, etc. |
+| + 13 manager docs | dependency, encryption, progress, path security, etc. |
 
-### [Utils/NLP](./utils/nlp/) (29 docs)
-NLP subsystem: tokenization, entity extraction, LLM integration.
+### [Utils/NLP](./utils/nlp/) (23 docs)
+NLP subsystem: tokenization, entity extraction, category matching, stop words.
 
 | Doc | Source |
 |-----|--------|
@@ -197,18 +195,16 @@ NLP subsystem: tokenization, entity extraction, LLM integration.
 | [Cache](./utils/nlp/cache.md) | MemoryCache, FileCache, ModelCache |
 | [Tokenization](./utils/nlp/tokenization.md) | SpaCyTokenizer, TransformersTokenizer |
 | [Entity/](./utils/nlp/entity/) | 5 entity extractors |
-| [LLM/](./utils/nlp/LLM/) | 9 LLM integration docs |
-| + 13 utility docs | clustering, minhash, stopwords, etc. |
+| + 14 utility docs | clustering, minhash, stopwords, etc. |
 
-### [Common](./common/) (20 docs)
-Shared enumerations, constants, helpers.
+### [Common](./common/) (21 docs)
+Shared enumerations, constants, type aliases.
 
 | Doc | Source |
 |-----|--------|
 | [Constants](./common/constants.md) | 40+ date formats, operation names |
 | [Type Aliases](./common/type_aliases.md) | CryptoConfig, FileCryptoConfig |
-| [Enums](./common/enum/) | 12 enum docs (EncryptionMode, MaskStrategy, etc.) |
-| [Helpers](./common/helpers/) | DataHelper, math_helper, data_profiler |
+| [Enums](./common/enum/) | 17 enum docs (EncryptionMode, MaskStrategy, etc.) |
 
 ### [Configs](./configs/) (4 docs) | [Catalogs](./catalogs/) (2 docs)
 
@@ -225,10 +221,10 @@ from pamola_core import (
     FullMaskingOperation,
     UniformNumericNoiseOperation,
     # Profiling
-    NumericAnalysisOperation,
-    CategoricalAnalysisOperation,
+    NumericOperation,
+    CategoricalOperation,
     # Metrics
-    FidelityMetricOperation,
+    FidelityOperation,
     PrivacyMetricOperation,
     # Analysis
     analyze_dataset_summary,
@@ -238,13 +234,3 @@ from pamola_core import (
 )
 ```
 
----
-
-## Sync Prompts
-
-Run after code changes:
-
-```
-Please run the docs sync prompt at plans/prompts/prompt-update-docs-pamola-core.md
-Please run the tests sync prompt at plans/prompts/prompt-update-tests-pamola-core.md
-```

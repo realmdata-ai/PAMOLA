@@ -132,10 +132,6 @@ result = analyze_correlation(df, method='spearman', plot=True)
 
 ## Documentation Maintenance
 
-**Last Updated:** 2026-03-23
-
-**Covered Version:** `pamola_core` 0.0.1
-
 **Changes tracked in:** `pamola_core/analysis/__init__.py` (public API)
 
 When updating the module:
@@ -147,9 +143,7 @@ When updating the module:
 
 ## Related Documentation
 
-- [Project Overview](../../project-overview-pdr.md)
-- [Code Standards](../../code-standards.md)
-- [System Architecture](../../system-architecture.md)
+- [Documentation Index](../README.md)
 - [Profiling Module](../profiling/)
 - [Anonymization Module](../anonymization/)
 - [Metrics Module](../metrics/)

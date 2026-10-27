@@ -4,7 +4,7 @@ Module: Cryptographic Provider Interface
 Description: Abstract interface for pluggable cryptographic providers in the PAMOLA system
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Abstract base class defining required encryption/decryption methods

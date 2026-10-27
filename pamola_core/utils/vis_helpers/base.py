@@ -4,7 +4,7 @@ Module: Visualization Base System
 Description: Thread-safe foundation for visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides the foundation for the visualization system, including:
 - Abstract base classes for figure creation
@@ -198,7 +198,7 @@ class PlotlyFigure(BaseFigure):
             return fig
         except ImportError:
             logger.error(
-                "Plotly is not available. Please install it with: pip install plotly"
+                "Plotly is not available. It ships with the viz extra: pip install 'pamola-core[viz]'"
             )
             raise
         except Exception as e:
@@ -243,7 +243,7 @@ class MatplotlibFigure(BaseFigure):
             return fig
         except ImportError:
             logger.error(
-                "Matplotlib is not available. Please install it with: pip install matplotlib"
+                "Matplotlib is not available. It ships with the viz extra: pip install 'pamola-core[viz]'"
             )
             raise
         except Exception as e:

@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-20
 Updated:       2025-01-24
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    This module provides a minimal facade for categorical generalization operations,
@@ -50,6 +50,8 @@ import pandas as pd
 import dask.dataframe as dd
 
 # Base class
+from pamola_core.utils.artifact_policy import ArtifactClass
+from pamola_core.utils.io_helpers.crypto_utils import write_encrypted_json
 from pamola_core.anonymization.base_anonymization_op import AnonymizationOperation
 
 # Configuration and strategies from commons
@@ -201,11 +203,15 @@ class CategoricalGeneralizationOperation(AnonymizationOperation):
         hierarchy_level : int, default=1
             Target hierarchy level (1 to MAX_HIERARCHY_LEVELS)
         min_group_size : int, default=DEFAULT_MIN_GROUP_SIZE
-            Minimum group size for privacy
+            Minimum group size for privacy. ``merge_low_freq``: a category with fewer
+            records than this is rare.
         freq_threshold : float, default=DEFAULT_FREQ_THRESHOLD
-            Frequency threshold for category preservation (0-1)
+            Frequency threshold (0-1). ``merge_low_freq``: a category whose share of the
+            records is below this is rare. A category is rare when
+            ``count < min_group_size OR share < freq_threshold``; rare categories are merged.
         max_categories : int, default=MAX_CATEGORIES
-            Maximum number of categories to preserve
+            ``frequency_based``: number of most frequent categories that are kept (the rest
+            are grouped). Not used by ``merge_low_freq`` or ``hierarchy``.
         allow_unknown : bool, default=True
             Allow unknown values in output
         unknown_value : str, default="OTHER"
@@ -618,6 +624,8 @@ class CategoricalGeneralizationOperation(AnonymizationOperation):
                                 description=f"Category mapping for {self.field_name}",
                                 category=Constants.Artifact_Category_Mapping,
                                 tags=["mapping", "categories", self.field_name],
+                                artifact_class=ArtifactClass.PROTECTED_MAPPING,
+                                contains_source_values=True,
                             )
                     except Exception as e:
                         self.logger.warning(f"Failed to save category mapping: {e}")
@@ -914,6 +922,7 @@ class CategoricalGeneralizationOperation(AnonymizationOperation):
             processed_data=anonymized_data,
             operation_params=operation_params,
             timing_info=timing_info,
+            include_raw_samples=self.include_raw_samples_in_metrics,
         )
 
         # Add category distribution analysis
@@ -1271,6 +1280,8 @@ class CategoricalGeneralizationOperation(AnonymizationOperation):
             self.logger.warning(
                 f"Failed to generate visualizations: {e}", exc_info=True
             )
+            # a failed render is the operation's failure, not a log line
+            raise
 
         return visualization_paths
 
@@ -1359,10 +1370,18 @@ class CategoricalGeneralizationOperation(AnonymizationOperation):
 
     def _save_mapping_artifact(self, writer: DataWriter) -> Optional[Path]:
         """
-        Save category mapping as artifact.
+        Save the category mapping as a PROTECTED_MAPPING artifact.
 
+        The mapping lists original category values, so it is only written encrypted with
+        the task key. Without a key it is not written (no plain-text mapping file).
         """
         if not self._category_mapping:
+            return None
+        if not (self.use_encryption and self.encryption_key):
+            self.logger.info(
+                "Category mapping not written: it holds original values and is only "
+                "written encrypted (use_encryption=True with an encryption_key)"
+            )
             return None
 
         try:
@@ -1375,16 +1394,16 @@ class CategoricalGeneralizationOperation(AnonymizationOperation):
                 "mappings": self._category_mapping,
             }
 
-            result = writer.write_json(
-                data=mapping_data,
-                name=f"{self.field_name}_category_mapping",
+            # Plain text never touches the disk: encrypt in memory, write ciphertext only
+            path = writer._get_output_path(
+                f"{self.field_name}_category_mapping",
+                extension="json",
                 subdir="mappings",
                 timestamp_in_name=True,
             )
-
-            # If we reach here, the write was successful
-            self.logger.info(f"Saved category mapping to {result.path}")
-            return result.path
+            write_encrypted_json(mapping_data, path, self.encryption_key)
+            self.logger.info(f"Saved category mapping to {path}")
+            return path
 
         except Exception as e:
             self.logger.warning(f"Error saving category mapping: {e}")

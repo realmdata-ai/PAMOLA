@@ -23,9 +23,11 @@ The `dependency_manager.py` module provides functionality for managing dependenc
 
 ## Exception Classes
 
-- **DependencyError**: Base exception for dependency-related errors
-- **DependencyMissingError**: Exception raised when a required dependency is missing
-- **DependencyFailedError**: Exception raised when a dependency task has failed
+The module raises exceptions defined in `pamola_core.errors.exceptions` (all derive from `BasePamolaError`):
+
+- **DependencyMissingError**: Raised when a required dependency is missing
+- **DependencyFailedError**: Raised when a dependency task has failed
+- **PathSecurityError**: Raised when a dependency path fails security validation
 
 ## Main Class
 
@@ -239,7 +241,8 @@ print(f"External data path: {external_data}")
 ### Validating Dependencies
 
 ```python
-from pamola_core.utils.tasks.dependency_manager import TaskDependencyManager, DependencyError
+from pamola_core.utils.tasks.dependency_manager import TaskDependencyManager
+from pamola_core.errors.exceptions import DependencyMissingError, DependencyFailedError
 import logging
 
 # Set up logger
@@ -256,7 +259,7 @@ try:
         # Continue with task execution
     else:
         print("Dependencies check failed")
-except DependencyError as e:
+except (DependencyMissingError, DependencyFailedError) as e:
     print(f"Dependency error: {e}")
     # Handle dependency error
     exit(1)
@@ -398,9 +401,11 @@ metrics = self.dependency_manager.get_dependency_metrics(dependency_id)
 
 The module provides a hierarchy of exceptions to help with error handling:
 
-1. **DependencyError**: Base class for all dependency-related errors
-   - **DependencyMissingError**: Raised when a dependency is missing
-   - **DependencyFailedError**: Raised when a dependency task has failed
+1. **DependencyMissingError**: Raised when a dependency is missing
+2. **DependencyFailedError**: Raised when a dependency task has failed
+
+Both are defined in `pamola_core.errors.exceptions` and derive from `BasePamolaError`; there is
+no shared `DependencyError` base class.
 
 Additionally, **PathSecurityError** can be raised if a dependency path fails security validation.
 

@@ -241,7 +241,7 @@ from pamola_core.privacy_models.k_anonymity.ka_visualization import (
     visualize_k_distribution,
     visualize_risk_heatmap
 )
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 import json
 
 # Process data

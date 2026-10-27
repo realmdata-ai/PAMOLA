@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       Mar 2025
 Updated:       2025-07-17
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module implements the Nearest Neighbor Distance Ratio (NNDR) privacy metric,
@@ -24,14 +24,17 @@ Key Features:
     - Seamless integration into PAMOLA.CORE metric pipelines
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import numpy as np
 import pandas as pd
 
 from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import StandardScaler
 
-from pamola_core.metrics.commons.preprocessing import prepare_data_for_distance_metrics
+from pamola_core.metrics.privacy.distance import reject_unsupported_distance_metric
+from pamola_core.metrics.commons.preprocessing import (
+    prepare_pair_for_distance_metrics,
+    scale_pair_for_distance,
+)
 
 
 class NearestNeighborDistanceRatio:
@@ -64,25 +67,39 @@ class NearestNeighborDistanceRatio:
         threshold: float = 0.5,
         realistic_threshold: float = 0.8,
         at_risk_threshold: float = 0.5,
+        ordinal_columns: Optional[Any] = None,
     ):
         """
         Initialize NearestNeighborDistanceRatio metric parameters.
 
         Parameters
         ----------
-            distance_metric (str): Distance metric ('euclidean', 'manhattan', 'cosine').
+            distance_metric (str): Distance metric ('euclidean', 'manhattan', 'cosine'); 'mahalanobis' is not supported in 1.0.
             n_neighbors (int): Number of neighbors to consider (default: 2).
             normalize_features (bool): Whether to normalize features before calculation.
             threshold (float): NNDR threshold for high privacy risk.
             realistic_threshold (float): Threshold for realistic privacy classification.
             at_risk_threshold (float): Threshold for at-risk privacy classification.
+            ordinal_columns (sequence of str or dict): Categorical columns whose categories have an
+                order, encoded as ranks (see ``prepare_pair_for_distance_metrics``). Every other
+                categorical column is nominal: one-hot encoded, all mismatches equally far apart.
         """
+        if int(n_neighbors) < 2:
+            from pamola_core.errors.exceptions import InvalidParameterError
+
+            raise InvalidParameterError(
+                param_name="n_neighbors",
+                param_value=n_neighbors,
+                reason="NNDR compares the nearest neighbour with the n_neighbors-th one, so it needs at least 2",
+            )
+        reject_unsupported_distance_metric(distance_metric, "NNDR")
         self.distance_metric = distance_metric
-        self.n_neighbors = n_neighbors
+        self.n_neighbors = int(n_neighbors)
         self.normalize_features = normalize_features
         self.threshold = threshold
         self.realistic_threshold = realistic_threshold
         self.at_risk_threshold = at_risk_threshold
+        self.ordinal_columns = ordinal_columns
 
     def calculate_metric(
         self, original_df: pd.DataFrame, transformed_df: pd.DataFrame
@@ -99,31 +116,34 @@ class NearestNeighborDistanceRatio:
             Dict[str, Any]: NNDR statistics, risk assessment, privacy classification, and interpretation.
         """
 
-        # Preprocess: convert all features to numeric using OrdinalEncoder for object/category columns
-        orig_processed = prepare_data_for_distance_metrics(original_df)
-        trans_processed = prepare_data_for_distance_metrics(transformed_df)
+        # One shared schema for both datasets: numeric/datetime/ordinal columns optionally
+        # standardized with one fit, nominal categoricals one-hot encoded with a fixed weight
+        # (a mismatch = 1 in Euclidean distance).
+        orig_processed, trans_processed = prepare_pair_for_distance_metrics(
+            original_df, transformed_df, ordinal_columns=self.ordinal_columns
+        )
+        orig_data, trans_data = scale_pair_for_distance(
+            orig_processed, trans_processed, self.normalize_features
+        )
 
-        # Normalize features if requested, otherwise use raw numeric values
-        # StandardScaler ensures all features have mean=0 and std=1, improving distance calculations
-        if self.normalize_features:
-            scaler = StandardScaler().fit(orig_processed)
-            orig_data = scaler.transform(orig_processed)
-            trans_data = scaler.transform(trans_processed)
-        else:
-            orig_data = orig_processed.values
-            trans_data = trans_processed.values
+        if len(orig_data) < self.n_neighbors:
+            from pamola_core.errors.exceptions import ValidationError
 
+            raise ValidationError(
+                f"NNDR with n_neighbors={self.n_neighbors} needs at least that many original "
+                f"records, found {len(orig_data)}."
+            )
         # Fit nearest neighbors model
         nn_model = NearestNeighbors(
-            n_neighbors=2, metric=self.distance_metric, algorithm="auto"
+            n_neighbors=self.n_neighbors, metric=self.distance_metric, algorithm="auto"
         ).fit(orig_data)
 
         # Find nearest neighbors
         distances, indices = nn_model.kneighbors(trans_data)
 
-        # Calculate NNDR
+        # NNDR_i = d(nearest) / d(n_neighbors-th nearest); n_neighbors=2 is the classic ratio
         nndr_values = distances[:, 0] / (
-            distances[:, 1] + 1e-10
+            distances[:, self.n_neighbors - 1] + 1e-10
         )  # Avoid division by zero
 
         # Statistics
@@ -143,6 +163,7 @@ class NearestNeighborDistanceRatio:
             "high_risk_records": high_risk_count,
             "nndr_values": nndr_values.tolist(),
             "high_risk_proportion": high_risk_count / len(nndr_values),
+            "n_neighbors": self.n_neighbors,
             "privacy_classification": {
                 "realistic": np.sum(
                     nndr_values > self.realistic_threshold
@@ -156,19 +177,14 @@ class NearestNeighborDistanceRatio:
 
     def _interpret_nndr(self, nndr_stats: dict, high_risk_count: int) -> str:
         """
-        Provide interpretation and privacy assessment of NNDR results.
+        Describe the NNDR results in neutral terms (counts and statistics; no verdict).
 
-        Parameters
-        ----------
-            nndr_stats (dict): NNDR statistics (mean, std, min, max).
-            high_risk_count (int): Number of records classified as high privacy risk.
-        Returns
-        -------
-            str: Human-readable interpretation and privacy recommendation.
+        ``high_risk_count`` is the number of records whose ratio is below the ``threshold``
+        chosen by the caller.
         """
-        if high_risk_count == 0:
-            return "No records are at high privacy risk based on NNDR threshold."
-        elif nndr_stats["mean"] < self.threshold:
-            return "Many records are close to real data, privacy risk is high."
-        else:
-            return "Most records are sufficiently distant from real data, privacy risk is low."
+        return (
+            f"Ratio of the distance to the nearest original record to the distance to the "
+            f"{self.n_neighbors}-th nearest: mean {nndr_stats['mean']:.4g}, min {nndr_stats['min']:.4g}, "
+            f"max {nndr_stats['max']:.4g}. {high_risk_count} record(s) have a ratio below the "
+            f"supplied threshold {self.threshold}; the threshold is the caller's choice."
+        )

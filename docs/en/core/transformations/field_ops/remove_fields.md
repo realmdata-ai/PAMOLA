@@ -98,7 +98,7 @@ def __init__(
   - `column_prefix`: Not used for this operation.
   - `description`: Operation description.
   - `output_format`: Output file format (`csv`, `json`, `parquet`).
-  - `batch_size`: Batch size for processing.
+  - `chunk_size`: Chunk size for processing.
   - `use_cache`, `use_dask`, `use_encryption`, `encryption_key`: Performance and security options.
 
 #### Key Attributes

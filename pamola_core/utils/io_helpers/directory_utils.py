@@ -4,7 +4,7 @@ Module: Directory and Path Utilities
 Description: Tools for secure directory, file, and temporary resource management
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Secure creation and cleanup of temporary files and directories

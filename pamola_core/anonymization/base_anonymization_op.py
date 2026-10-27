@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       Mar 2025
 Updated:       2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 Description:
   This module provides the base class for all anonymization operations,
   defining common functionality, interface, and behavior with enhanced
@@ -55,11 +55,16 @@ import time
 import dask.dataframe as dd
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
 # Import anonymization-specific utilities
+from pamola_core.utils.vis_helpers.render_guard import (
+    VisualizationTimeoutError,
+    prepare_render_context,
+    wait_for_render,
+)
 from pamola_core.anonymization.commons.data_utils import (
     handle_vulnerable_records,
     process_nulls,
@@ -91,6 +96,7 @@ from pamola_core.utils.io import (
     load_settings_operation,
 )
 from pamola_core.utils.io_helpers.crypto_utils import get_encryption_mode
+from pamola_core.utils.artifact_policy import raw_samples_artifact_class
 from pamola_core.utils.ops.op_base import FieldOperation
 
 # Import framework utilities
@@ -126,6 +132,36 @@ class AnonymizationOperation(FieldOperation):
     automatic switching to Dask for large dataset processing.
     """
 
+    #: Whether this operation can be driven through :meth:`process_batch`,
+    #: i.e. as a pure in-memory DataFrame -> DataFrame transform, without the
+    #: full :meth:`execute` lifecycle and its file I/O.
+    #:
+    #: Subclasses that implement ``process_batch`` inherit ``True`` and need do
+    #: nothing. Subclasses that do not MUST set this to ``False`` explicitly, so
+    #: that the limitation is a declared, machine-readable property rather than
+    #: an exception discovered at runtime.
+    #:
+    #: Callers should branch on this flag:
+    #:
+    #: .. code-block:: python
+    #:
+    #:     if op.supports_batch:
+    #:         out = op.process_batch(df)
+    #:     else:
+    #:         op.execute(data_source, task_dir, reporter, tracker)
+    #:
+    #: Rationale: three suppression operations and two splitting operations
+    #: inherited an abstract ``process_batch`` that raised
+    #: ``FeatureNotImplementedError``. The limitation was real but undeclared -
+    #: the only way to discover it was to call the method and catch the error,
+    #: which is not something an embedding caller can reasonably be asked to do.
+    #: Batch semantics for record suppression are genuinely debatable (a batch
+    #: is not self-contained when the operation removes rows), so the contract
+    #: is narrowed to match reality rather than widened with an invented
+    #: meaning. Implementing ``process_batch`` for an operation later flips this
+    #: flag to ``True`` and is backwards compatible; the reverse would not be.
+    supports_batch: ClassVar[bool] = True
+
     def __init__(
         self,
         field_name: str,
@@ -139,6 +175,8 @@ class AnonymizationOperation(FieldOperation):
         ka_risk_field: Optional[str] = None,
         risk_threshold: float = 5.0,
         vulnerable_record_strategy: str = "suppress",
+        # Diagnostics
+        include_raw_samples_in_metrics: bool = False,
         **kwargs,
     ):
         """
@@ -164,6 +202,13 @@ class AnonymizationOperation(FieldOperation):
             Threshold under which records are considered vulnerable.
         vulnerable_record_strategy : str, optional
             Strategy for vulnerable records (e.g., "suppress", "mask").
+        include_raw_samples_in_metrics : bool, optional
+            Diagnostic option, default False. If True, ``metrics/*.json`` also
+            carries the most frequent raw (pre-transformation) values of
+            low-cardinality fields. WARNING: this writes source values,
+            possibly PII; the metrics file is then registered as a
+            ``diagnostic`` artifact with ``contains_source_values=True``
+            (``not_for_release``).
         **kwargs : dict
             Additional parameters passed to :class:`FieldOperation`.
         """
@@ -187,6 +232,9 @@ class AnonymizationOperation(FieldOperation):
         self.ka_risk_field = ka_risk_field
         self.risk_threshold = risk_threshold
         self.vulnerable_record_strategy = vulnerable_record_strategy
+
+        # Diagnostics (SEC-05): raw samples in metrics are opt-in
+        self.include_raw_samples_in_metrics = bool(include_raw_samples_in_metrics)
 
         # Set up common variables & placeholder for filtering
         self.filter_mask = pd.Series(True, index=pd.Index([]))
@@ -644,6 +692,10 @@ class AnonymizationOperation(FieldOperation):
             self.logger.error(error_message)
             raise ValidationError(error_message)
 
+        # Work on our own copy: DataSource returns the caller's object itself.
+        df = self._own_dataframe(df)
+        self._check_enrich_target(df)
+
         if self.field_name:
             if self.field_name not in df.columns:
                 error_msg = f"Field '{self.field_name}' not found in DataFrame columns"
@@ -667,6 +719,8 @@ class AnonymizationOperation(FieldOperation):
 
         # Optimize memory usage if enabled
         df = self._optimize_data(df)
+
+        self._remember_input_for_cache(df)
 
         return df
 
@@ -761,8 +815,11 @@ class AnonymizationOperation(FieldOperation):
 
             # Check if output field already exists in DataFrame
             if output_field in df.columns:
-                self.logger.warning(
-                    f"Output field '{output_field}' already exists and will be overwritten"
+                # Reaching here means overwriting was requested explicitly
+                # (see _check_enrich_target).
+                self.logger.debug(
+                    f"Output field '{output_field}' already exists and is overwritten "
+                    "(overwrite_existing_output=True)"
                 )
         return output_field
 
@@ -1269,14 +1326,14 @@ class AnonymizationOperation(FieldOperation):
 
             # Copy context for the thread
             self.logger.info("[DIAG] Preparing to launch visualization thread...")
-            ctx = contextvars.copy_context()
+            ctx, render_run = prepare_render_context()
 
             # Create thread with context
             viz_thread = threading.Thread(
                 target=ctx.run,
                 args=(generate_viz_with_diagnostics,),
                 name=f"VizThread-{self.field_name}",
-                daemon=False,  # Changed from True to ensure proper cleanup
+                daemon=True,  # an abandoned renderer must not keep the process alive
             )
 
             self.logger.info(
@@ -1285,26 +1342,16 @@ class AnonymizationOperation(FieldOperation):
             thread_start_time = time.time()
             viz_thread.start()
 
-            # Log periodic status while waiting
-            check_interval = 5  # seconds
-            elapsed = 0
-            while viz_thread.is_alive() and elapsed < vis_timeout:
-                viz_thread.join(timeout=check_interval)
-                elapsed = time.time() - thread_start_time
-                if viz_thread.is_alive():
-                    self.logger.info(
-                        f"[DIAG] Visualization thread still running after {elapsed:.1f}s..."
-                    )
+            # Bounded wait: on timeout the run is cancelled and cleaned up
+            if not wait_for_render(viz_thread, render_run, vis_timeout, self.logger):
+                visualization_error = VisualizationTimeoutError(
+                    f"visualization did not finish within {render_run.limit:g}s"
+                )
 
-            if viz_thread.is_alive():
-                self.logger.error(
-                    f"[DIAG] Visualization thread still alive after {vis_timeout}s timeout"
-                )
-                self.logger.error(
-                    f"[DIAG] Thread state: alive={viz_thread.is_alive()}, daemon={viz_thread.daemon}"
-                )
-                visualization_paths = {}
-            elif visualization_error:
+            if visualization_error:
+                # Rendering is part of execute(): a failure is recorded in the result,
+                # never swallowed (and no worker is left running after the join).
+                self._record_visualization_failure(result, visualization_error)
                 self.logger.error(
                     f"[DIAG] Visualization failed with error: {visualization_error}"
                 )
@@ -1482,6 +1529,8 @@ class AnonymizationOperation(FieldOperation):
 
         except Exception as e:
             self.logger.warning(f"Error generating visualizations: {e}")
+            # a failed render is the operation's failure, not a log line
+            raise
 
         return visualization_paths
 
@@ -1644,9 +1693,18 @@ class AnonymizationOperation(FieldOperation):
         --------
         pd.DataFrame
             Processed DataFrame batch
+
+        Raises
+        -------
+        FeatureNotImplementedError
+            If ``supports_batch`` is False for this operation. Check the flag
+            instead of catching the exception - see the class attribute below.
         """
         raise FeatureNotImplementedError(
-            "Subclasses must implement process_batch method"
+            f"{type(self).__name__} does not support in-memory batch "
+            f"processing (supports_batch = {self.supports_batch}). Use "
+            f"execute() instead, or check the supports_batch class attribute "
+            f"before calling process_batch()."
         )
 
     def process_batch_dask(self, ddf: dd.DataFrame) -> dd.DataFrame:
@@ -1985,12 +2043,15 @@ class AnonymizationOperation(FieldOperation):
                 if isinstance(value, (int, float, str, bool)):
                     result.add_metric(key, value)
 
-            # Register metrics artifact
+            # Register metrics artifact. With raw samples the file holds source values,
+            # so it is a diagnostic (not for release), not an aggregate metric.
+            source_values = raw_samples_artifact_class(self.include_raw_samples_in_metrics)
             result.add_artifact(
                 artifact_type="json",
                 path=metrics_result.path,
                 description=f"{self.operation_name.lower()} {self.field_name} anonymization metrics",
                 category=Constants.Artifact_Category_Metrics,
+                **source_values,
             )
 
             # Report artifact
@@ -1999,6 +2060,7 @@ class AnonymizationOperation(FieldOperation):
                     artifact_type="json",
                     path=str(metrics_result.path),
                     description=f"{self.operation_name.lower()} {self.field_name} anonymization metrics",
+                    **source_values,
                 )
 
             return True

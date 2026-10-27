@@ -61,11 +61,12 @@ class TestDateOperation(unittest.TestCase):
             # Assertions
             self.assertEqual(result.status, OperationStatus.SUCCESS)
             mock_write_json.assert_called_once()
-            self.mock_reporter.add_artifact.assert_called_once_with(
-                "json",
-                unittest.mock.ANY,
-                "birth_date statistical analysis"
-            )
+            # the operation's own artifact; its config.json is registered as well
+            own = [c for c in self.mock_reporter.add_artifact.call_args_list
+                   if not str(c.args[2]).endswith("file written by the operation")]
+            self.assertEqual(len(own), 1)
+            self.assertEqual(own[0].args[0], "json")
+            self.assertEqual(own[0].args[2], "birth_date statistical analysis")
 
     @patch("pamola_core.profiling.commons.helpers.load_data_operation")
     def test_field_not_found(self, mock_load_data_operation):
@@ -347,7 +348,7 @@ class TestDateOperation(unittest.TestCase):
         self.assertEqual(operation.field_name, 'created_at')
         self.assertEqual(operation.min_year, 1940)
         self.assertEqual(operation.max_year, 2005)
-        self.assertTrue(operation.generate_visualization)
+        self.assertFalse(operation.generate_visualization)  # opt-in since 1.0
         self.assertEqual(operation.profile_type, 'date')
         self.assertFalse(operation.is_birth_date)
 

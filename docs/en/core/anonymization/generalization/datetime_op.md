@@ -315,23 +315,22 @@ k_anon_op = DateTimeGeneralizationOperation(
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `output_format` | str | None | Custom strftime format for output |
+| `strftime_output_format` | str | None | Custom strftime format for output |
 | `timezone_handling` | str | "preserve" | "preserve", "utc", "remove" |
 | `default_timezone` | str | "UTC" | Default timezone for naive datetimes |
 | `input_formats` | list | Common formats | List of formats to try when parsing |
 | `min_privacy_threshold` | float | 0.3 | Minimum reduction in unique values (0-1) |
-| `batch_size` | int | 10000 | Records per batch |
-| `use_cache` | bool | True | Enable result caching |
+| `chunk_size` | int | 10000 | Records per chunk |
+| `use_cache` | bool | False | Enable result caching |
 
 ## Error Handling
 
-The operation defines custom exceptions for specific error cases:
+The operation raises exceptions from `pamola_core.errors.exceptions`:
 
 ```python
-from pamola_core.anonymization.generalization.datetime_op import (
+from pamola_core.errors.exceptions import (
     DateTimeParsingError,
     DateTimeGeneralizationError,
-    InsufficientPrivacyError
 )
 
 try:
@@ -343,23 +342,21 @@ try:
     )
 except DateTimeParsingError as e:
     print(f"Failed to parse dates: {e}")
-
-try:
-    result = operation.process(df)
-except InsufficientPrivacyError as e:
-    print(f"Privacy requirements not met: {e}")
 ```
+
+If the generalization reduces the number of unique values by less than
+`min_privacy_threshold`, the operation logs a warning; it does not raise.
 
 ## Metrics and Reporting
 
 The operation collects comprehensive metrics about the generalization:
 
 ```python
-# Process data
-result = operation.process(df)
+# Execute the operation
+result = operation.execute(data_source, task_dir, reporter)
 
 # Access metrics
-metrics = result.get_metrics()
+metrics = result.metrics
 print(f"Unique values before: {metrics['unique_patterns_before']}")
 print(f"Unique values after: {metrics['unique_patterns_after']}")
 print(f"Privacy reduction: {metrics['privacy_reduction_ratio']:.2%}")
@@ -420,42 +417,38 @@ large_data_op = DateTimeGeneralizationOperation(
     strategy="binning",
     bin_type="hour_range",
     interval_size=6,
-    batch_size=50000,  # Larger batches for better performance
+    chunk_size=50000,  # Larger chunks for better performance
     use_cache=True     # Cache results for repeated values
 )
 ```
 
 ## Integration with PAMOLA Framework
 
-### Pipeline Integration
+### Task Integration
+
+`pamola_core` has no pipeline class; operations are composed in a `BaseTask` subclass:
 
 ```python
-from pamola_core.pipeline import AnonymizationPipeline
+from pamola_core import BaseTask, DateTimeGeneralizationOperation
 
-pipeline = AnonymizationPipeline()
 
-# Add datetime generalization
-pipeline.add_operation(
-    DateTimeGeneralizationOperation(
-        field_name="birth_date",
-        strategy="rounding",
-        rounding_unit="year"
-    )
-)
-
-# Add other operations
-pipeline.add_operation(...)
-
-# Process data
-result = pipeline.process(df)
+class DateAnonymizationTask(BaseTask):
+    def configure_operations(self) -> None:
+        # Operations run in the order they are added
+        self.add_operation(
+            DateTimeGeneralizationOperation,
+            field_name="birth_date",
+            strategy="rounding",
+            rounding_unit="year",
+        )
 ```
 
 ### Risk Assessment Integration
 
 ```python
-from pamola_core.risk import RiskAssessment
+from pamola_core import KAnonymityProfilerOperation
 
-# Configure with risk assessment
+# Configure with risk-based processing
 operation = DateTimeGeneralizationOperation(
     field_name="admission_date",
     strategy="rounding",
@@ -464,9 +457,8 @@ operation = DateTimeGeneralizationOperation(
     ka_risk_field="k_risk"
 )
 
-# Assess risk after anonymization
-risk_assessment = RiskAssessment(quasi_identifiers=operation.quasi_identifiers)
-risk_metrics = risk_assessment.assess(result.data)
+# Re-assess k-anonymity on the anonymized output with the k-anonymity profiler
+# (see the profiling documentation for KAnonymityProfilerOperation parameters)
 ```
 
 ## Troubleshooting
@@ -478,7 +470,7 @@ risk_metrics = risk_assessment.assess(result.data)
    - Verify data types
    - Handle mixed format columns
 
-2. **InsufficientPrivacyError**
+2. **Insufficient privacy warning** (unique values reduced by less than `min_privacy_threshold`)
    - Use coarser generalization
    - Combine with other anonymization techniques
    - Adjust privacy threshold
@@ -520,11 +512,11 @@ operation = DateTimeGeneralizationOperation(
 
 ## License
 
-BSD 3-Clause License
+MIT License — see [LICENSE](https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE).
 
 ## Support
 
 For issues and questions:
-- GitHub: [PAMOLA.CORE Issues](https://github.com/pamola/pamola-pamola_core/issues)
+- GitHub: [PAMOLA.CORE Issues](https://github.com/realmdata-ai/PAMOLA/issues)
 - Documentation: [PAMOLA Documentation](https://docs.pamola.ai)
 - Email: support@pamola.ai

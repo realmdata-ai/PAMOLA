@@ -23,6 +23,7 @@ Process:
 """
 
 import pytest
+from pamola_core.errors.exceptions import InvalidParameterError
 import numpy as np
 import pandas as pd
 from pamola_core.metrics.privacy.distance import DistanceToClosestRecord
@@ -40,7 +41,7 @@ class TestDistanceToClosestRecord:
         dcr = DistanceToClosestRecord(distance_metric=metric)
         result = dcr.calculate_metric(orig, synth)
         assert "dcr_statistics" in result
-        assert "privacy_score" in result
+        assert "privacy_score" not in result
         assert result["dcr_statistics"]["min"] >= 0
 
     def test_no_normalization(self):
@@ -83,9 +84,8 @@ class TestDistanceToClosestRecord:
 
     def test_mahalanobis_metric(self):
         orig, synth = self.get_dfs(n=20, m=5, d=2)
-        dcr = DistanceToClosestRecord(distance_metric="mahalanobis")
-        with pytest.raises(ValueError):
-            dcr.calculate_metric(orig, synth)
+        with pytest.raises(InvalidParameterError):
+            DistanceToClosestRecord(distance_metric="mahalanobis")
 
     def test_sample_size(self):
         orig, synth = self.get_dfs(n=100, m=100, d=3)
@@ -107,15 +107,14 @@ class TestDistanceToClosestRecord:
         result = dcr.calculate_metric(orig, synth)
         assert "dcr_statistics" in result
 
-    def test_risk_assessment_thresholds(self):
+    def test_thresholds_are_the_callers(self):
         # All synthetic points are identical to original, so DCR = 0
         orig = pd.DataFrame(np.zeros((10, 3)), columns=[f"f{i}" for i in range(3)])
         synth = pd.DataFrame(np.zeros((10, 3)), columns=[f"f{i}" for i in range(3)])
-        dcr = DistanceToClosestRecord()
-        result = dcr.calculate_metric(orig, synth)
-        # All DCR values are 0, so none are less than the 5th percentile (which is also 0)
-        assert result["risk_assessment"]["high_risk"] == 0
-        assert result["proportion_at_risk"] == 0.0
+        result = DistanceToClosestRecord().calculate_metric(orig, synth)
+        assert "risk_assessment" not in result and "proportion_at_risk" not in result
+        result = DistanceToClosestRecord(distance_thresholds=[0.1]).calculate_metric(orig, synth)
+        assert result["threshold_assessment"]["records_below"] == {"0.1": 10}
 
     def test_faiss_flag(self):
         orig, synth = self.get_dfs(n=10, m=10, d=3)
@@ -204,12 +203,11 @@ class TestDistanceToClosestRecord:
     @pytest.mark.parametrize("metric", ["euclidean", "manhattan", "cosine", "mahalanobis"])
     def test_all_distance_metrics(self, metric):
         orig, synth = self.get_dfs()
-        dcr = DistanceToClosestRecord(distance_metric=metric)
         if metric == "mahalanobis":
-            with pytest.raises(ValueError):
-                dcr.calculate_metric(orig, synth)
+            with pytest.raises(InvalidParameterError):
+                DistanceToClosestRecord(distance_metric=metric)
         else:
-            result = dcr.calculate_metric(orig, synth)
+            result = DistanceToClosestRecord(distance_metric=metric).calculate_metric(orig, synth)
             assert "dcr_statistics" in result
 
     @pytest.mark.parametrize("agg", ["min", "mean_k", "percentile"])
@@ -226,34 +224,25 @@ class TestDistanceToClosestRecord:
         with pytest.raises(Exception):
             dcr.calculate_metric(orig, synth)
 
-    def test_sample_size(self):
-        orig, synth = self.get_dfs(n=100, m=100, d=3)
-        # DistanceToClosestRecord does not support sample_size param; use full dataset
-        dcr = DistanceToClosestRecord()
-        result = dcr.calculate_metric(orig, synth)
-        assert "dcr_statistics" in result
-
     def test__interpret_dcr_paths(self):
+        """ASB-OPS-3: the text states the numbers and applies no verdict or hard-coded threshold."""
         dcr = DistanceToClosestRecord()
-        # mean > 1.0
-        stats = {"mean": 1.1, "min": 0.5, "p5": 0.5}
-        assert "Good privacy" in dcr._interpret_dcr(stats)
-        # mean > 0.5, min < 0.3
-        stats = {"mean": 0.6, "min": 0.2, "p5": 0.5}
-        assert "Moderate privacy" in dcr._interpret_dcr(stats)
-        # mean < 0.5, min < 0.1, p5 < 0.2
-        stats = {"mean": 0.4, "min": 0.05, "p5": 0.1}
-        interp = dcr._interpret_dcr(stats)
-        assert "Poor privacy" in interp and "WARNING" in interp and "High risk" in interp
-
-    def test__calculate_privacy_score(self):
-        dcr = DistanceToClosestRecord()
-        # Empty dcr_values
-        assert dcr._calculate_privacy_score(np.array([]), 3) == 0.0
-        # Normal case
-        vals = np.array([0.1, 0.2, 0.3])
-        score = dcr._calculate_privacy_score(vals, 3)
-        assert 0.0 < score < 1.0
+        verdicts = ("good privacy", "moderate privacy", "poor privacy", "warning", "high risk",
+                    "caution", "recommendation")
+        for stats in ({"mean": 1.1, "min": 0.5, "p5": 0.5, "max": 2.0},
+                      {"mean": 0.6, "min": 0.2, "p5": 0.5, "max": 1.0},
+                      {"mean": 0.4, "min": 0.05, "p5": 0.1, "max": 0.9}):
+            text = dcr._interpret_dcr(stats)
+            assert f"mean {stats['mean']:.4g}" in text and f"min {stats['min']:.4g}" in text
+            assert f"5th percentile {stats['p5']:.4g}" in text
+            assert not any(word in text.lower() for word in verdicts)
+            assert "No distance threshold was supplied" in text
+        # thresholds supplied by the caller are reported as counts, still without a verdict
+        text = dcr._interpret_dcr(
+            {"mean": 0.4, "min": 0.05, "max": 0.9},
+            {"records_below": {"0.1": 3}},
+        )
+        assert "3 below 0.1" in text and "No distance threshold" not in text
 
     def test_mismatched_feature_dim(self):
         orig = np.random.rand(10, 3)
@@ -392,9 +381,8 @@ class TestDistanceToClosestRecord:
             normalize_L2 = staticmethod(lambda x: None)
         sys.modules['faiss'] = DummyFaiss()
         orig, synth = self.get_dfs()
-        dcr = DistanceToClosestRecord(use_faiss=True, distance_metric="mahalanobis")
-        with pytest.raises(ValueError):
-            dcr.calculate_metric(orig, synth)
+        with pytest.raises(InvalidParameterError):
+            DistanceToClosestRecord(use_faiss=True, distance_metric="mahalanobis")
 
     def test_faiss_try_exception(self, monkeypatch):
         # Simulate FAISS present, error in try block triggers fallback

@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 Provides detailed tooltips for phone number generation configuration fields in PAMOLA.CORE.
@@ -102,7 +102,7 @@ class FakePhoneOperationTooltip:
 
     save_mapping = (
         "• What it does: Writes the complete list of original numbers and their corresponding fake numbers to a file after the operation finishes.\n"
-        "• Impact: Enables perfect consistency across future runs and allows for auditing, but the saved file will contain sensitive original data and must be secured."
+        "• Impact: Enables perfect consistency across future runs and allows for auditing, but the saved file contains the original values, so it is written encrypted with the task encryption key only; saving without that key is refused."
     )
 
     validate_source = (

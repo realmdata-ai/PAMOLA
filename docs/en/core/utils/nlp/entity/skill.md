@@ -152,16 +152,13 @@ except Exception as e:
     print(f"Extraction error: {e}")
 ```
 
-### Integration with BaseTask
+### Batch Extraction
 ```python
 from pamola_core.utils.nlp.entity.skill import SkillExtractor
-from pamola_core.pipeline.base_task import BaseTask
 
-class SkillExtractionTask(BaseTask):
-    def run(self, text):
-        extractor = SkillExtractor()
-        result = extractor._extract_with_ner(text, text.lower(), 'en')
-        # Use result in pipeline
+# extract_entities() is inherited from BaseEntityExtractor and processes a list of texts
+extractor = SkillExtractor()
+result = extractor.extract_entities(["Python, SQL and team leadership", "Java developer"])
 ```
 
 ---

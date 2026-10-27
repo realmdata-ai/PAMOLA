@@ -6,7 +6,7 @@ Version:       1.2.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
 Helper functions for file operations, metadata extraction, path handling,
 and conflict resolution. Provides utilities for safe file operations,

@@ -18,7 +18,7 @@
 
 `KAnonymityReport` generates comprehensive reports for k-Anonymity anonymization, extending `PrivacyReport` with k-Anonymity-specific metrics, visualizations, and compliance documentation.
 
-**Purpose:** Document k-Anonymity transformations for compliance, audit, and analysis.
+**Purpose:** Document k-Anonymity transformations for audit and analysis.
 
 **Location:** `pamola_core/privacy_models/k_anonymity/ka_reporting.py`
 
@@ -117,7 +117,7 @@ report_output = report.generate(include_visualizations=True)
 {
     'report_type': 'k-anonymity',
     'timestamp': '2026-03-23T10:30:00Z',
-    'pamola_version': '0.0.1',
+    'pamola_version': '1.0.0',
     'report_id': 'ka_20260323_103000'
 }
 ```
@@ -169,7 +169,7 @@ report_output = report.generate(include_visualizations=True)
     'transformation_type': 'suppression',
     'status': 'SUCCESS',
     'execution_time_seconds': 2.34,
-    'compliance_status': 'COMPLIANT',
+    'threshold_status': 'MET',
     'notes': 'All records meet k-anonymity requirement'
 }
 ```
@@ -206,7 +206,7 @@ report_output = report.generate(include_visualizations=True)
 
 ```python
 from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 
 # Process data
 processor = KAnonymityProcessor(k=5)
@@ -232,14 +232,14 @@ report = KAnonymityReport(report_data)
 report_output = report.generate()
 
 print(f"Report ID: {report_output['report_metadata']['report_id']}")
-print(f"Compliance: {report_output['anonymization_result']['compliance_status']}")
+print(f"Threshold: {report_output['anonymization_result']['threshold_status']}")
 ```
 
 ### Example 2: Full Workflow with Reporting
 
 ```python
 from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 import json
 
 # Step 1: Evaluate
@@ -267,7 +267,7 @@ report_data = {
     },
     'anonymization_result': {
         'status': 'SUCCESS',
-        'compliance_status': 'COMPLIANT'
+        'threshold_status': 'MET'
     },
     'information_loss': metrics
 }
@@ -281,53 +281,25 @@ with open('k_anonymity_report.json', 'w') as f:
     json.dump(final_report, f, indent=2)
 ```
 
-### Example 3: Compliance Documentation
+### Example 3: Threshold Evidence
+
+The threshold is chosen by the data owner; the library maps no law to a value
+and a met threshold is not a statement of legal compliance.
 
 ```python
-from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+processor = KAnonymityProcessor(k=10)   # threshold chosen by the data owner
+evaluation = processor.evaluate_privacy(df, quasi_identifiers)
 
-# Process with required k=10 for compliance
-processor = KAnonymityProcessor(k=10)  # HIPAA requirement
-eval_result = processor.evaluate_privacy(df, ['age', 'zip_code'])
-
-# Prepare compliance-focused report
-report_data = {
-    'k_anonymity_configuration': {
-        'k': 10,
-        'compliance_framework': 'HIPAA',
-        'suppression': True
-    },
-    'privacy_evaluation': eval_result,
-    'dataset_information': {
-        'original_records': len(df),
-        'anonymized_records': len(anonymized),
-        'quasi_identifiers': ['age', 'zip_code'],
-        'regulatory_framework': 'HIPAA'
-    },
-    'anonymization_result': {
-        'status': 'SUCCESS',
-        'compliance_status': 'COMPLIANT' if eval_result['is_k_anonymous'] else 'NON_COMPLIANT',
-        'notes': f"All records meet HIPAA k-anonymity requirement (k>=10)"
-    }
-}
-
-# Generate compliance report
-report = KAnonymityReport(report_data)
-compliance_report = report.generate()
-
-# Verify compliance
-if compliance_report['anonymization_result']['compliance_status'] == 'COMPLIANT':
-    print("✓ Dataset meets HIPAA requirements")
-    with open('hipaa_compliance_report.json', 'w') as f:
-        json.dump(compliance_report, f)
+report = processor.generate_report(threshold_report=True)
+print(report['k_threshold'], report['actual_min_k'], report['threshold_met'])
+print(report['at_risk_records'], report['at_risk_percentage'])
 ```
 
 ### Example 4: Report with Custom Visualization Paths
 
 ```python
 from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 
 processor = KAnonymityProcessor(k=5)
 anonymized = processor.apply_model(df, quasi_ids)
@@ -383,7 +355,7 @@ final_report = report.generate(include_visualizations=True)
    )
    ```
 
-4. **Save for Compliance:**
+4. **Save for Audit:**
    ```python
    import json
    from datetime import datetime
@@ -400,8 +372,8 @@ final_report = report.generate(include_visualizations=True)
    report_data = {
        'metadata': {
            'report_version': '1.0',
-           'pamola_version': '0.0.1',
-           'framework': 'GDPR'
+           'pamola_version': '1.0.0',
+           'framework': 'internal policy'
        },
        ...
    }
@@ -417,7 +389,7 @@ final_report = report.generate(include_visualizations=True)
 
 `KAnonymityReport` transforms k-Anonymity evaluation results into professional, audit-ready documentation. Use it to:
 - Document anonymization parameters and results
-- Generate compliance reports
+- Generate threshold reports
 - Track before/after metrics
 - Provide stakeholder communication
 - Maintain audit trails

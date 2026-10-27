@@ -6,7 +6,7 @@ Version:       1.2.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2024
-License:       BSD 3-Clause
+License:       MIT
 Description:
 This module provides fundamental utilities, constants, and base classes
 for all NLP package components. It includes error hierarchies, dependency

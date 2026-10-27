@@ -6,7 +6,7 @@ Version:       2.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   This module provides operations for analyzing variability within grouped data for anonymization.
@@ -31,9 +31,13 @@ from pathlib import Path
 import time
 from typing import Dict, List, Any, Optional, Tuple, Set
 from datetime import datetime
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from pamola_core.utils.vis_helpers.render_guard import (
+    VisualizationTimeoutError,
+    prepare_render_context,
+    wait_for_render,
+)
 from pamola_core.profiling.commons.group_utils import (
     analyze_group,
     calculate_field_metrics,
@@ -41,6 +45,7 @@ from pamola_core.profiling.commons.group_utils import (
 from pamola_core.errors.codes import ErrorCode
 from pamola_core.errors.error_handler import ErrorHandler
 from pamola_core.errors.exceptions import ValidationError
+from pamola_core.utils.optional_deps import require_optional
 from pamola_core.profiling.schemas.group_core_schema import GroupAnalyzerOperationConfig
 from pamola_core.utils.helpers import (
     build_base_cache,
@@ -249,6 +254,10 @@ class GroupAnalyzerOperation(FieldOperation):
     identifier in a specific data subset, calculating metrics for use in
     anonymization decision-making.
     """
+
+    #: Profiling shows source values (value dictionaries, examples, top values, chart labels):
+    #: its artifacts are DIAGNOSTIC and not for release.
+    ARTIFACTS_CONTAIN_SOURCE_VALUES = True
 
     def __init__(
         self,
@@ -946,7 +955,11 @@ class GroupAnalyzerOperation(FieldOperation):
                     **kwargs,
                 )
             except (ValidationError, TypeError, ValueError):
-                # Fallback to matplotlib for proper histogram
+                # Fallback to matplotlib for proper histogram. Imported here,
+                # not at module scope: matplotlib ships with the `viz` extra
+                # and this module is reachable from `import pamola_core`.
+                plt = require_optional("matplotlib.pyplot")
+
                 plt.figure(figsize=(10, 6))
                 plt.bar(list(data.keys()), list(data.values()), color="skyblue")
                 plt.title(f"Variability Distribution ({self.field_name})")
@@ -967,6 +980,8 @@ class GroupAnalyzerOperation(FieldOperation):
 
             # Fallback to basic matplotlib in case of error
             try:
+                plt = require_optional("matplotlib.pyplot")
+
                 plt.figure(figsize=(10, 6))
                 plt.bar(list(data.keys()), list(data.values()), color="skyblue")
                 plt.title(f"Variability Distribution ({self.field_name})")
@@ -1036,6 +1051,8 @@ class GroupAnalyzerOperation(FieldOperation):
                 )
             except (ValidationError, TypeError, ValueError):
                 # Fallback to matplotlib for the heatmap
+                plt = require_optional("matplotlib.pyplot")
+
                 plt.figure(figsize=(12, len(field_names) * 0.8))
                 im = plt.imshow(df_data.values, cmap="viridis")
 
@@ -1062,6 +1079,8 @@ class GroupAnalyzerOperation(FieldOperation):
 
             # Fallback to basic matplotlib in case of error
             try:
+                plt = require_optional("matplotlib.pyplot")
+
                 # Create a simple bar chart instead of a heatmap
                 field_avg_variances = {
                     field: metrics["avg_variance"]
@@ -1353,14 +1372,14 @@ class GroupAnalyzerOperation(FieldOperation):
 
             # Copy context for the thread
             self.logger.info("[DIAG] Preparing to launch visualization thread...")
-            ctx = contextvars.copy_context()
+            ctx, render_run = prepare_render_context()
 
             # Create thread with context
             viz_thread = threading.Thread(
                 target=ctx.run,
                 args=(generate_viz_with_diagnostics,),
                 name="VizThread-",
-                daemon=False,  # Changed from True to ensure proper cleanup
+                daemon=True,  # an abandoned renderer must not keep the process alive
             )
 
             self.logger.info(
@@ -1369,26 +1388,16 @@ class GroupAnalyzerOperation(FieldOperation):
             thread_start_time = time.time()
             viz_thread.start()
 
-            # Log periodic status while waiting
-            check_interval = 5  # seconds
-            elapsed = 0
-            while viz_thread.is_alive() and elapsed < vis_timeout:
-                viz_thread.join(timeout=check_interval)
-                elapsed = time.time() - thread_start_time
-                if viz_thread.is_alive():
-                    self.logger.info(
-                        f"[DIAG] Visualization thread still running after {elapsed:.1f}s..."
-                    )
+            # Bounded wait: on timeout the run is cancelled and cleaned up
+            if not wait_for_render(viz_thread, render_run, vis_timeout, self.logger):
+                visualization_error = VisualizationTimeoutError(
+                    f"visualization did not finish within {render_run.limit:g}s"
+                )
 
-            if viz_thread.is_alive():
-                self.logger.error(
-                    f"[DIAG] Visualization thread still alive after {vis_timeout}s timeout"
-                )
-                self.logger.error(
-                    f"[DIAG] Thread state: alive={viz_thread.is_alive()}, daemon={viz_thread.daemon}"
-                )
-                visualization_paths = {}
-            elif visualization_error:
+            if visualization_error:
+                # Rendering is part of execute(): a failure is recorded in the result,
+                # never swallowed (and no worker is left running after the join).
+                self._record_visualization_failure(result, visualization_error)
                 self.logger.error(
                     f"[DIAG] Visualization failed with error: {visualization_error}"
                 )

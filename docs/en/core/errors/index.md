@@ -74,7 +74,7 @@ This directory contains comprehensive documentation for PAMOLA's error handling 
 
 **Option 1: Manual (Direct Instantiation)**
 ```python
-from pamola_core.errors import BasePamolaError
+from pamola_core.errors.base import BasePamolaError
 from pamola_core.errors.codes.registry import ErrorCode
 
 raise BasePamolaError(

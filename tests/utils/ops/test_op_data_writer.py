@@ -5,7 +5,7 @@ Module: Tests for DataWriter
 Description: Unit tests for the DataWriter class
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Run with
      python -m unittest -v tests.utils.ops.test_op_data_writer

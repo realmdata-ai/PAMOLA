@@ -98,7 +98,7 @@ def __init__(
 - `field_groups`: Dictionary of field groupings.
 - `include_id_field`: Boolean flag for ID field inclusion.
 - `output_format`: Output format for files.
-- `use_cache`, `force_recalculation`, `generate_visualization`, `include_timestamp`, `save_output`, `parallel_processes`, `batch_size`, `use_dask`, `use_encryption`, `encryption_key`: Various execution and output controls.
+- `use_cache`, `force_recalculation`, `generate_visualization`, `save_output`, `parallel_processes`, `chunk_size`, `use_dask`, `use_encryption`, `encryption_key`: Various execution and output controls.
 
 #### Public Methods
 
@@ -249,7 +249,7 @@ split_op = SplitFieldsOperation(
     output_format="csv"
 )
 
-data_source = DataSource("/path/to/input.csv")
+data_source = DataSource.from_file_path("/path/to/input.csv")
 task_dir = Path("/tmp/task1")
 reporter = None  # Replace with your reporter if needed
 

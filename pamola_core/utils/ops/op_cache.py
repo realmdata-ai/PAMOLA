@@ -4,7 +4,7 @@ Module: Operation Caching
 Description: Caching system for operation results
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides caching functionalities for operation results,
 allowing computationally intensive operations to store and reuse results
@@ -229,6 +229,13 @@ class OperationCache:
             self._check_cache_size()
 
             try:
+                # Last line of defence: whatever the caller built, secrets in the
+                # stored parameters are redacted (the cache writer is unencrypted).
+                if isinstance(data, dict) and "parameters" in data:
+                    from pamola_core.utils.redaction import redact_sensitive_parameters
+
+                    data = {**data, "parameters": redact_sensitive_parameters(data["parameters"])}
+
                 # Prepare cache data with metadata
                 cache_data = {
                     'key': cache_key,

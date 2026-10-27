@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       Mar 2025
 Updated:       2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module provides the base class for all fidelity metric operations,
@@ -231,7 +231,8 @@ class FidelityOperation(MetricsOperation):
         )
 
         for metric_type in fidelity_metrics:
-            params = metric_params.get(metric_type, {})
+            # a copy: the defaults added below must not appear in the caller's dict
+            params = dict(metric_params.get(metric_type, {}))
             try:
                 if progress_tracker:
                     progress_tracker.update(
@@ -402,6 +403,8 @@ class FidelityOperation(MetricsOperation):
 
         except Exception as e:
             self.logger.error(f"Failed to generate fidelity metric visualizations: {e}")
+            # a failed render is the operation's failure, not a log line
+            raise
 
         return visualization_paths
 

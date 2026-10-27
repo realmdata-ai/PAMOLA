@@ -1,61 +1,88 @@
 [project]
 name = "pamola-core"
-version = "1.0.0.dev3"
-requires-python = ">=3.10,<3.13"
+version = "1.0.0"
+requires-python = ">=3.11,<3.13"
 
+# NOTE: an entry WITH an email lands in the `Author-email` core-metadata field;
+# an entry WITHOUT one lands in the bare `Author` field. Mixing the two styles
+# splits the credit across both fields and reads as if the email-less party were
+# the sole author. Keep every entry here in the name+email form.
 authors = [
-  { name = "Author", email = "author@example.com" },
+  { name = "REALM Inveo Inc.", email = "info@realmdata.ai" },
 ]
 maintainers = [
-  { name = "Maintainer", email = "maintainer@example.com" }
+  { name = "REALM Inveo Inc.", email = "info@realmdata.ai" }
 ]
 
 description = "Pamola Core library for data anonymization, privacy models, metrics, and utilities"
 readme = "README.md"
-license = { text = "BSD-3-Clause" }
+license = "MIT"
+license-files = ["LICENSE"]
 
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: BSD License",
-    "Operating System :: OS Independent",
+keywords = [
+    "privacy",
+    "anonymization",
+    "data-privacy",
+    "k-anonymity",
+    "l-diversity",
+    "pseudonymization",
+    "pii",
+    "gdpr",
+    "data-protection",
+    "re-identification-risk",
 ]
 
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Legal Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+urls.Homepage = "https://realmdata.ai"
+urls.Repository = "https://github.com/realmdata-ai/PAMOLA"
+urls.Changelog = "https://github.com/realmdata-ai/PAMOLA/blob/main/CHANGELOG.md"
+urls."Bug Tracker" = "https://github.com/realmdata-ai/PAMOLA/issues"
+
+# NOTE: eight dependencies were removed in 1.0.0.dev4 because nothing in
+# pamola_core or tests imports them: torch, sdv, uvicorn[standard], rstr,
+# deepdiff, diff-match-patch, multidict, bcrypt. `torch` appeared only as a
+# keyword string in resources/entities/skills_en.json and as an *optional*
+# capability probe (`DependencyManager.check_dependency('torch')`, which is
+# written to work when torch is absent) — it was never imported, while costing
+# every installation ~2.5 GB. `tensorflow` and `transformers` are probed the
+# same way and were already, correctly, absent from this list.
+# `pydantic[email]` was removed afterwards for the same reason (DEP-01): zero
+# imports of pydantic or email_validator in pamola_core or tests. pydantic
+# itself still arrives transitively through spaCy.
 dependencies = [
     "python-decouple==3.8",
-    "pydantic[email]==2.12.4",
-    "matplotlib==3.8.2",
-    "seaborn==0.13.2",
     "pandas==2.2.2",
-    "torch==2.8.0",
     "scikit-learn==1.7.2",
-    "deepdiff==8.6.1",
-    "diff-match-patch==20241021",
-    "sdv==1.18.0",
     "faker==33.3.1",
     "scipy==1.15.3",
-    "uvicorn[standard]==0.38.0",
     "openpyxl==3.1.5",
     "xlrd==2.0.1",
-    "rstr==3.2.2",
     "recordlinkage==0.16",
-    "plotly==6.4.0",
-    "kaleido==1.2.0",
-    "pillow==11.3.0",
-    "multidict==6.7.0",
-    "bcrypt==4.3.0",
-    "wordcloud==1.9.4",
     "langdetect==1.0.9",
     "fasttext-wheel==0.9.2",
     "datasketch==1.7.0",
-    "nltk==3.9.2",
-    "dask[complete]==2025.11.0",
-    "pyarrow==14.0.2",
+    "nltk==3.10.3",     # SEC-DEPS: lowest release fixing every fixable advisory (see .github/pip-audit-ignore.md)
+    "dask[complete]==2026.1.1",  # SEC-DEPS: pulls distributed 2026.1.1 (GHSA-c336-7962-wfj2 fixed in 2026.1.0; 2026.1.0 itself requires dask 2025.12.x)
+    # >=23.0.1 clears CVE-2024-52338 (deserialization of untrusted IPC/Parquet
+    # input, fixed in 17.0.0) and CVE-2026-25087 (use-after-free reading IPC
+    # files, affects 15.0.0 up to 23.0.0). Wheels exist for cp311-cp312 on
+    # Linux, macOS and Windows; validated against pandas 2.2.2 / numpy 1.26.4.
+    "pyarrow==23.0.1",
     "numpy==1.26.4",
-    "matplotlib-venn==1.1.2",
     "psutil==5.9.8",
     "ijson==3.4.0.post0",
     "chardet==5.2.0",
@@ -65,10 +92,25 @@ dependencies = [
     "spacy==3.8.9",
     "phonenumbers==9.0.10",
     "base58==2.1.1",
-    "cryptography==46.0.3",
+    "cryptography==50.0.0",  # SEC-DEPS: clears 13 advisories (fixed in 46.0.5..50.0.0)
     "PyYAML==6.0.2",
     "typer[all]==0.24.1",
     "jsonschema==4.25.1",
+    # Declared explicitly in 1.0.0.dev4. Every one of these is imported at
+    # MODULE scope by pamola_core, but none was listed — they arrived only as
+    # transitive dependencies of other packages, so the build was one upstream
+    # dependency-drop away from failing to import at all. Two of them
+    # (python-dotenv via uvicorn[standard], filelock via torch) were supplied
+    # exclusively by packages removed in this release; without these lines
+    # `import pamola_core` raises ModuleNotFoundError.
+    "python-dotenv==1.2.3",   # pamola_core/utils/env.py:7
+    "filelock==4.2.1",        # pamola_core/utils/tasks/context_manager.py:37; SEC-DEPS: 4.2.1 clears 3 advisories (needs Python>=3.11, hence no 3.10 support)
+    "joblib==1.5.3",          # anonymization/commons/processing_utils.py:23 (+18 more)
+    "rich==15.0.0",           # cli/commands/list_ops.py:12
+    "tqdm==4.70.0",           # utils/progress.py:67
+    "packaging==26.3",        # utils/ops/op_registry.py:37
+    "jinja2==3.1.6",          # utils/reporting/template_engine.py:14
+    "regex==2026.7.19",       # utils/nlp/minhash.py:30
 ]
 
 [project.optional-dependencies]
@@ -77,8 +119,73 @@ test = [
     "pytest-cov>=7.0",
 ]
 
+# Plotting and figure-export stack. Optional because most of what this library
+# does — profiling, anonymization, metrics — writes JSON and CSV and never draws
+# anything, while these packages and their transitive trees are among the
+# heaviest in the install.
+#
+# Nothing here may be imported at module scope on the path reachable from
+# `import pamola_core`; that boundary is enforced by
+# tests/test_viz_import_boundary.py and reached through
+# pamola_core.utils.optional_deps. Without `[viz]`, visualization paths raise
+# DependencyMissingError naming this extra rather than ModuleNotFoundError.
+viz = [
+    "matplotlib==3.8.2",
+    "seaborn==0.13.2",          # imports matplotlib
+    "plotly==6.4.0",
+    "kaleido==1.2.0",           # plotly's static image export; no direct import
+    "pillow==11.3.0",           # PIL.Image, used only by save_visualization
+    "wordcloud==1.9.4",
+    "matplotlib-venn==1.1.2",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["docs", "examples", "site"]
+
+[tool.ruff.lint]
+# Two tiers, deliberately.
+#
+# `select` is the BLOCKING set in CI. It contains rule families that indicate
+# defects, not style: syntax errors, undefined names, repeated dictionary keys
+# (the later value silently wins), and redefinitions that leave the first
+# definition dead. Before this configuration existed the CI gate was
+# `--select E9,F63,F7,F82` with the full run pinned to `|| true`, so the whole
+# `F` family was advisory — and it was hiding twelve genuine defects
+# (9 x F601, 3 x F811).
+#
+# Everything else — annotation modernisation (UP006/UP045, ~6100 findings),
+# bugbear, bandit, datetime hygiene — is deliberately NOT selected yet. Turning
+# it on wholesale would mean an 11k-finding diff that nobody can review, which
+# is how a lint gate ends up back at `|| true`. Raise the set one family at a
+# time, each with its own PR. Current known counts, for the ratchet:
+#   E722 bare-except  73     B  bugbear      ~324     S  bandit + DTZ + RUF013  ~508
+#   E722 bare-except  73     E402 import-not-at-top  ~25
+select = [
+    "E9",  # pycodestyle: syntax / IO errors
+    "F",   # pyflakes: undefined names, repeated dict keys, redefinitions
+]
+
+ignore = [
+    # Availability probes: `try: import pyarrow / except ImportError`. The
+    # import is intentionally unused — its success IS the test. All 15
+    # occurrences are this pattern (io_helpers/format_utils.py, dask_utils.py,
+    # op_base.py, fake_data/generators/name.py).
+    "F401",
+    # 59 occurrences, mostly loop/unpacking leftovers. Real but cosmetic;
+    # scheduled as its own cleanup so it does not drown the defect signal.
+    "F841",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["F841"]
+
+# The F811 quarantine (duplicate `sample_large_dataset`, shadowed L-Diversity
+# report methods) was removed together with the duplicates it covered.
+
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]  # >=77: PEP 639 SPDX `license` / `license-files`
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -89,6 +196,11 @@ include = ["pamola_core*"]
 "pamola_core.errors.context" = ["*.yaml"]
 "pamola_core" = ["resources/**/*"]
 "pamola_core.catalogs" = ["*.yaml"]
+# Template docs shipped alongside operation_skeleton.py / task templates.
+# Without these the installed package has the skeletons but not the README
+# explaining how to use them.
+"pamola_core.utils.ops.templates" = ["*.md", "*.jsonc"]
+"pamola_core.utils.tasks.templates" = ["*.md"]
 
 # ── CLI entry point ────────────────────────────────────────────────────────
 # After `pip install pamola-core`, the `pamola-core` command becomes available

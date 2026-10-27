@@ -4,7 +4,7 @@ Module: Operation Base Classes
 Description: Base operation classes for defining modular privacy-enhancing tasks
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides base classes for defining operations that can be used
 across different domains like profiling, anonymization, security, etc.
@@ -18,17 +18,24 @@ Key features:
 - Support for encryption of outputs
 """
 
+import functools
 import json
 import os
+import threading
 import time
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, ClassVar, Dict, List, Union, Optional
 import pandas as pd
 import dask.dataframe as dd
 
 from pamola_core.common.type_aliases import DataFrameType
 from pamola_core.utils.helpers import generate_data_hash
+from pamola_core.utils.redaction import (
+    is_sensitive_parameter,
+    redact_sensitive_parameters,
+    secret_identity,
+)
 from pamola_core.utils.ops.op_config import OperationConfig
 from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.utils.ops.op_registry import register_operation
@@ -42,10 +49,84 @@ from pamola_core.utils.io import ensure_directory
 from pamola_core.errors.codes import ErrorCode
 from pamola_core.errors.base import BasePamolaError
 from pamola_core.errors.error_handler import ErrorHandler
-from pamola_core.errors.exceptions import ConfigSaveError
+from pamola_core.errors.exceptions import (
+    ConfigSaveError,
+    DependencyMissingError,
+    OutputFieldExistsError,
+)
+from pamola_core.utils.optional_deps import require_optional
 
 # Configure module logger
 logger = pamola_logging.getLogger(__name__)
+
+# Modules an explicitly requested visualization needs, per rendering backend.
+# plotly writes PNGs through kaleido; both ship with the ``viz`` extra.
+_VISUALIZATION_BACKEND_MODULES: Dict[str, tuple] = {
+    "plotly": ("plotly", "kaleido"),
+    "matplotlib": ("matplotlib",),
+}
+
+
+_PLOTLY_PNG_PROBE: Dict[str, Optional[str]] = {}
+
+
+def _probe_plotly_png_export() -> None:
+    """Fail once, at request time, if plotly cannot write a PNG here.
+
+    Importing ``plotly`` and ``kaleido`` is not enough: kaleido renders through a Chromium
+    browser that is not part of the wheel. Without one every chart fails later, one error per
+    chart. The probe renders an empty 1 x 1 figure once per process and remembers the answer.
+    """
+    if "reason" not in _PLOTLY_PNG_PROBE:
+        try:
+            import plotly.graph_objects as go
+
+            go.Figure().to_image(format="png", width=10, height=10)
+            _PLOTLY_PNG_PROBE["reason"] = None
+        except Exception as exc:  # noqa: BLE001 - any failure means "cannot render"
+            _PLOTLY_PNG_PROBE["reason"] = f"{type(exc).__name__}: {str(exc).strip().splitlines()[0][:200] if str(exc).strip() else ''}"
+    reason = _PLOTLY_PNG_PROBE["reason"]
+    if reason:
+        raise DependencyMissingError(
+            dependency_name="plotly PNG export (kaleido + Chrome/Chromium)",
+            reason=(
+                f"a test render failed ({reason}). plotly writes PNG files through kaleido, which "
+                "needs a Chrome or Chromium browser: install one (or run `plotly_get_chrome`), or "
+                "pass visualization_backend='matplotlib'."
+            ),
+        )
+
+
+def _guard_visualization_dependencies(execute):
+    """Wrap ``execute`` so a missing ``viz`` extra fails once, up front.
+
+    Without the check, an operation with ``generate_visualization=True`` on a
+    base install does all its work, then every layer of the plotting stack logs
+    its own copy of the failure (about twelve WARNING/ERROR lines with
+    tracebacks per call) and the result still says SUCCESS. The caller asked for
+    charts and cannot get them, so the operation returns one ERROR result that
+    names the extra to install, before any data is touched.
+    """
+
+    if getattr(execute, "_viz_dependency_guarded", False):
+        return execute
+
+    @functools.wraps(execute)
+    def guarded(self, *args, **kwargs):
+        try:
+            self.check_visualization_dependencies()
+        except DependencyMissingError as exc:
+            message = str(exc)
+            self.logger.error(message)
+            return OperationResult(
+                status=OperationStatus.ERROR,
+                error_message=message,
+                exception=exc,
+            )
+        return execute(self, *args, **kwargs)
+
+    guarded._viz_dependency_guarded = True
+    return guarded
 
 
 class OperationScope:
@@ -126,6 +207,142 @@ class OperationScope:
         )
 
 
+_nlp_scope = threading.local()
+
+
+def _scope_nlp_degradation(execute):
+    """Wrap ``execute``: fresh degraded-resource registry per run, reported in the result."""
+    import functools
+
+    @functools.wraps(execute)
+    def scoped(self, *args, **kwargs):
+        from pamola_core.utils.nlp import remote_resources as rr
+
+        depth = getattr(_nlp_scope, "depth", 0)
+        if depth == 0:
+            rr.reset_degraded_resources()
+        _nlp_scope.depth = depth + 1
+        try:
+            result = execute(self, *args, **kwargs)
+        finally:
+            _nlp_scope.depth = depth
+        if depth == 0:
+            degraded = rr.get_degraded_resources()
+            metrics = getattr(result, "metrics", None)
+            if degraded and metrics is not None and "nlp_resources_degraded" not in metrics:
+                try:
+                    result.add_metric("nlp_resources_degraded", degraded)
+                except Exception:  # a result type without add_metric: nothing to report into
+                    pass
+        return result
+
+    scoped._nlp_scoped = True
+    return scoped
+
+
+def _register_written_files(result, task_dir, reporter):
+    """Register files an operation wrote outside the data path, with a declared class.
+
+    One registration path for what the operation code writes directly: reversible mapping
+    files and their ``.bak.*`` copies are ``protected_mapping``; ``config.json`` and the
+    generated Markdown metric reports are ``diagnostic`` (conservative until audited).
+    Files already registered (by normalized path) are left as they are.
+    """
+    import os
+
+    from pamola_core.utils.artifact_policy import ArtifactClass
+
+    artifacts = getattr(result, "artifacts", None)
+    if task_dir is None or not isinstance(artifacts, list) or not hasattr(result, "add_artifact"):
+        return
+    root = Path(task_dir)
+    if not root.is_dir():
+        return
+    known = {os.path.normcase(os.path.abspath(str(a.path))) for a in artifacts}
+    found = []
+    for sub in ("maps",):
+        for f in sorted((root / sub).glob("*")) if (root / sub).is_dir() else []:
+            if f.is_file():
+                found.append((f, ArtifactClass.PROTECTED_MAPPING, "mapping", True))
+    cfg = root / "config.json"
+    if cfg.is_file():
+        found.append((cfg, ArtifactClass.DIAGNOSTIC, "config", False))
+    for sub in ("reports", "metrics"):
+        for f in sorted((root / sub).glob("*.md")) if (root / sub).is_dir() else []:
+            found.append((f, ArtifactClass.DIAGNOSTIC, "report", False))
+    for f, cls, category, has_values in found:
+        if os.path.normcase(os.path.abspath(str(f))) in known:
+            continue
+        suffix = f.suffix.lstrip(".") or "bin"
+        result.add_artifact(
+            suffix,
+            f,
+            f"{category} file written by the operation",
+            category=category,
+            artifact_class=cls,
+            contains_source_values=has_values,
+        )
+        if reporter is not None and hasattr(reporter, "add_artifact"):
+            try:
+                reporter.add_artifact(
+                    suffix, str(f), f"{category} file written by the operation",
+                    category=category, artifact_class=cls,
+                    contains_source_values=has_values,
+                )
+            except TypeError as exc:
+                logger.warning(
+                    "could not register %s with the task reporter: %s", f.name, exc
+                )
+
+
+def _classify_source_value_artifacts(execute):
+    """Wrap ``execute``: classify what the operation wrote.
+
+    * Files the operation wrote directly (mapping files and backups, ``config.json``,
+      Markdown reports) are registered with a declared class (``_register_written_files``).
+    * When ``ARTIFACTS_CONTAIN_SOURCE_VALUES`` is true (profiling analyzers: value
+      dictionaries, examples, ``top_values``, charts labelled with data values), every
+      artifact without an explicit class becomes ``DIAGNOSTIC`` with
+      ``contains_source_values=True`` (so ``not_for_release``), and the reporter entries for
+      the same paths follow. Nothing is redacted.
+    """
+    import functools
+
+    @functools.wraps(execute)
+    def classified(self, *args, **kwargs):
+        result = execute(self, *args, **kwargs)
+        reporter = kwargs.get("reporter", args[2] if len(args) > 2 else None)
+        task_dir = kwargs.get("task_dir", args[1] if len(args) > 1 else None)
+        try:
+            _register_written_files(result, task_dir, reporter)
+        except Exception as exc:  # never fail the operation, but never hide it either
+            logger.warning("artifact registration of written files failed: %s", exc)
+        if not getattr(self, "ARTIFACTS_CONTAIN_SOURCE_VALUES", False):
+            return result
+        from pamola_core.utils.artifact_policy import ArtifactClass
+
+        artifacts = getattr(result, "artifacts", None)
+        if not isinstance(artifacts, (list, tuple)):
+            return result
+        paths = set()
+        for artifact in artifacts:
+            if getattr(artifact, "class_is_explicit", False):
+                continue
+            artifact.artifact_class = ArtifactClass.DIAGNOSTIC
+            artifact.contains_source_values = True
+            paths.add(str(artifact.path))
+        entries = getattr(reporter, "artifacts", None)
+        for entry in entries if isinstance(entries, (list, tuple)) else []:
+            if isinstance(entry, dict) and entry.get("path") in paths:
+                entry["artifact_class"] = ArtifactClass.DIAGNOSTIC.value
+                entry["contains_source_values"] = True
+                entry["not_for_release"] = True
+        return result
+
+    classified._source_values_classified = True
+    return classified
+
+
 class BaseOperation(ABC):
     """
     Base class for all operations.
@@ -134,6 +351,71 @@ class BaseOperation(ABC):
     common functionality such as configuration management, logging,
     performance tracking, and output control.
     """
+
+    #: True for operations whose artifacts show source values by design (profiling
+    #: analyzers). Their artifacts are classified ``DIAGNOSTIC`` / ``not_for_release``.
+    ARTIFACTS_CONTAIN_SOURCE_VALUES: ClassVar[bool] = False
+
+    #: Whether this operation can be driven as a pure in-memory
+    #: ``DataFrame -> DataFrame`` transform via ``process_batch()``, rather than
+    #: only through the full :meth:`execute` lifecycle with its file I/O.
+    #:
+    #: Declared here, on the root base class, so that **every** operation
+    #: answers the question. A caller embedding this library should be able to
+    #: write ``if op.supports_batch:`` without a ``getattr`` default and without
+    #: knowing which intermediate base a given operation happens to derive from.
+    #:
+    #: The default is ``False`` — conservative on purpose. Profiling and metrics
+    #: operations summarise data rather than rewrite rows and have no batch form
+    #: at all; for them ``False`` is simply true. The transform bases
+    #: (``AnonymizationOperation``, ``TransformationOperation``,
+    #: ``BaseGeneratorOperation``) override it to ``True``, and the handful of
+    #: their subclasses that genuinely cannot be batched set it back to
+    #: ``False`` individually.
+    supports_batch: ClassVar[bool] = False
+
+    def __init_subclass__(cls, **kwargs):
+        """Wrap every subclass's ``execute`` once, with two framework-level layers.
+
+        1. NLP scope (ASB-7): every ``execute`` starts with an empty degraded-resource registry and,
+           when a model or corpus it needed could not be obtained (offline by default, or a failed
+           download), reports it in ``result.metrics["nlp_resources_degraded"]``; nested
+           ``super().execute()`` calls are recognised and report only once.
+        2. Visualization dependency guard: a missing ``viz`` extra fails once, up front.
+
+        The NLP scope is applied first (innermost), the guard second, so a run refused for a
+        missing plotting library never touches the registry.
+        """
+        super().__init_subclass__(**kwargs)
+        execute = cls.__dict__.get("execute")
+        if callable(execute):
+            if not getattr(execute, "_nlp_scoped", False):
+                execute = _scope_nlp_degradation(execute)
+            if not getattr(execute, "_source_values_classified", False):
+                execute = _classify_source_value_artifacts(execute)
+            cls.execute = _guard_visualization_dependencies(execute)
+
+    def check_visualization_dependencies(self) -> None:
+        """Raise ``DependencyMissingError`` if requested visualization cannot run.
+
+        A no-op unless ``generate_visualization`` is true and a backend is set,
+        so a default-constructed operation never imports a plotting library.
+
+        Raises
+        ------
+        DependencyMissingError
+            Naming the ``viz`` extra, when the selected backend (or kaleido for
+            plotly PNG export) is not installed.
+        """
+        if not getattr(self, "generate_visualization", False):
+            return
+        backend = getattr(self, "visualization_backend", None)
+        if backend is None:
+            return
+        for module in _VISUALIZATION_BACKEND_MODULES.get(str(backend).lower(), ()):
+            require_optional(module, extra="viz")
+        if str(backend).lower() == "plotly":
+            _probe_plotly_png_export()
 
     def __init__(
         self,
@@ -149,6 +431,7 @@ class BaseOperation(ABC):
         mode: str = "REPLACE",
         column_prefix: str = "_",
         output_field_name: Optional[str] = None,
+        overwrite_existing_output: bool = False,
         null_strategy: str = "PRESERVE",
         engine: str = "auto",
         use_dask: bool = False,
@@ -170,7 +453,7 @@ class BaseOperation(ABC):
         encryption_key: Optional[Union[str, Path]] = None,
         # Runtime control flags
         force_recalculation: bool = False,
-        generate_visualization: bool = True,
+        generate_visualization: bool = False,
         save_output: bool = True,
         # Reproducibility
         seed: Optional[int] = None,
@@ -199,7 +482,11 @@ class BaseOperation(ABC):
         column_prefix : str, optional
             Prefix for newly generated columns (default="_").
         output_field_name : str, optional
-            Configuration schema instance (default is None).
+            Name of the ENRICH output column (default: ``column_prefix`` + field).
+        overwrite_existing_output : bool, optional
+            ENRICH only. When the output column already exists the operation
+            fails with ``OutputFieldExistsError``; set True to replace it
+            (default=False).
 
         null_strategy : {"PRESERVE", "EXCLUDE", "ANONYMIZE", "ERROR"}, optional
             Strategy for handling null values (default="PRESERVE").
@@ -241,7 +528,11 @@ class BaseOperation(ABC):
         force_recalculation : bool, optional
             Force recomputation even if cached results exist (default=False).
         generate_visualization : bool, optional
-            Automatically generate visualization after processing (default=True).
+            Generate visualization artifacts during ``execute()`` (default=False).
+            Opt-in: it needs the ``viz`` extra and adds rendering time to every
+            run. When True the artifacts are produced and registered before
+            ``execute()`` returns; if the ``viz`` extra is missing the operation
+            returns one actionable dependency error.
         save_output : bool, optional
             Save processed output to disk (default=True)
         """
@@ -261,6 +552,7 @@ class BaseOperation(ABC):
         self.mode = mode.upper()
         self.column_prefix = column_prefix
         self.output_field_name = output_field_name
+        self.overwrite_existing_output = overwrite_existing_output
         self.null_strategy = null_strategy.upper()
         self.engine = engine.lower()
         self.use_dask = use_dask
@@ -439,6 +731,88 @@ class BaseOperation(ABC):
             engine = data_source.suggest_engine(name=dataset_name)
             return engine == "dask"
 
+    def _record_visualization_failure(self, result: Any, error: BaseException) -> None:
+        """Make a failed visualization visible in the result.
+
+        An explicitly requested visualization is part of ``execute()``: it is
+        waited for (bounded by the visualization timeout; an abandoned worker cannot write) and, when it fails, the
+        failure is reported in ``result.metrics["visualization_error"]`` and the
+        log instead of vanishing. The operation's own data outputs are unaffected,
+        so its status stays as the data processing left it.
+        """
+        message = f"{type(error).__name__}: {error}"
+        self.logger.error(f"Visualization failed: {message}")
+        metrics = getattr(result, "metrics", None)
+        if isinstance(metrics, dict):
+            metrics["visualization_error"] = message
+
+    def get_enrich_targets(self, df: DataFrameType) -> List[str]:
+        """Names of the columns this operation writes in ENRICH mode.
+
+        The default covers single-field operations (``field_name`` with
+        ``output_field_name`` or ``column_prefix``). An operation that selects its
+        fields some other way (a per-field strategy table, a list of fields)
+        overrides this and returns every column it will write, so that
+        ``_check_enrich_target`` can validate all of them before any work is done.
+        """
+        field_name = getattr(self, "field_name", None)
+        if not field_name:
+            return []
+        return [self.output_field_name or f"{self.column_prefix}{field_name}"]
+
+    def _prefixed_targets(self, field_names: Any, df: DataFrameType, must_exist: bool = True) -> List[str]:
+        """ENRICH targets of an operation that writes ``column_prefix`` + each field.
+
+        An empty prefix is not an exemption: the target is then the source column itself
+        (the operation edits it in place), which exists, so the guard reports it.
+        """
+        prefix = self.column_prefix or ""
+        return [
+            f"{prefix}{name}"
+            for name in (field_names or {})
+            if name and (not must_exist or name in df.columns)
+        ]
+
+    def _enrich_requested(self) -> bool:
+        """Whether this run writes ENRICH columns (operations with their own mode switch
+        override this)."""
+        return self.mode == "ENRICH"
+
+    def _check_enrich_target(self, df: DataFrameType) -> None:
+        """Refuse to silently overwrite an existing ENRICH output column.
+
+        Called where the transform bases load their input, so every operation
+        built on them gets the same behaviour: ``OutputFieldExistsError`` unless
+        ``overwrite_existing_output`` is set. Every target the operation declares
+        through ``get_enrich_targets`` is checked. Only column *names* are reported.
+        """
+        if not self._enrich_requested() or self.overwrite_existing_output:
+            return
+        for target in self.get_enrich_targets(df):
+            if target in df.columns:
+                raise OutputFieldExistsError(target, self.operation_name)
+
+    @staticmethod
+    def _own_dataframe(df: DataFrameType) -> DataFrameType:
+        """Return a frame this operation may freely modify.
+
+        ``DataSource`` hands out the very object the caller registered, so an
+        operation that assigns a column (dtype normalisation, a new field, a
+        noisy value) rewrites the caller's data. Operations that transform data
+        load it through ``_validate_and_get_dataframe``, which calls this right
+        after loading: the operation then works on its own deep copy and the
+        caller's frame is never touched.
+
+        The price is one transient copy of the frame per ``execute()``. A shallow
+        copy would be cheaper but only shields column rebinding; in-place value
+        writes (``.loc``/``.iloc``) still reach the caller's buffers, and
+        which one an operation uses is an implementation detail it should not
+        have to get right. Dask frames are immutable graphs and pass through.
+        """
+        if isinstance(df, dd.DataFrame):
+            return df
+        return df.copy(deep=True)
+
     def _prepare_directories(self, task_dir: Path) -> Dict[str, Path]:
         """
         Prepare directories for artifacts following PAMOLA.CORE conventions.
@@ -482,12 +856,11 @@ class BaseOperation(ABC):
         """
         self.logger.info(f"Starting operation: {self.name}")
 
-        # List of sensitive parameters that should not be logged
-        sensitive_params = ["encryption_key", "password", "token", "secret", "api_key"]
-
-        # Log parameters, skipping sensitive ones
+        # Log parameters, skipping sensitive ones (the config's declared
+        # SENSITIVE_KEYS as well as secret-looking names)
+        declared = getattr(self.config, "SENSITIVE_KEYS", frozenset())
         for key, value in kwargs.items():
-            if key in sensitive_params:
+            if key in declared or is_sensitive_parameter(key):
                 self.logger.debug(f"Parameter {key}: [REDACTED]")
             else:
                 # Truncate long values for readability
@@ -620,11 +993,14 @@ class BaseOperation(ABC):
                     "scope": (
                         self.scope.to_dict() if hasattr(self.scope, "to_dict") else None
                     ),
-                    "parameters": {
-                        k: v
-                        for k, v in kwargs.items()
-                        if isinstance(v, (str, int, float, bool))
-                    },
+                    "parameters": redact_sensitive_parameters(
+                        {
+                            k: v
+                            for k, v in kwargs.items()
+                            if isinstance(v, (str, int, float, bool))
+                        },
+                        getattr(self.config, "SENSITIVE_KEYS", ()),
+                    ),
                     "use_dask": self.use_dask,
                     "use_vectorization": self.use_vectorization,
                     "use_encryption": self.use_encryption,
@@ -818,6 +1194,7 @@ class BaseOperation(ABC):
             "mode": self.mode,
             "column_prefix": self.column_prefix,
             "output_field_name": self.output_field_name,
+            "overwrite_existing_output": self.overwrite_existing_output,
             "null_strategy": self.null_strategy,
             "engine": self.engine,
             "use_dask": self.use_dask,
@@ -836,7 +1213,8 @@ class BaseOperation(ABC):
             # Security & encryption
             "use_encryption": self.use_encryption,
             "encryption_mode": self.encryption_mode,
-            "encryption_key": self.encryption_key,
+            # Identity only: the key itself must never reach the cache metadata.
+            "encryption_key_id": secret_identity(self.encryption_key),
             # Runtime control
             "force_recalculation": self.force_recalculation,
             "generate_visualization": self.generate_visualization,
@@ -863,6 +1241,34 @@ class BaseOperation(ABC):
         # Base implementation returns minimal parameters
         return {}
 
+    def _remember_input_for_cache(self, df: Union[pd.DataFrame, dd.DataFrame]) -> None:
+        """Fingerprint the WHOLE input frame once, at load time, for the cache key.
+
+        An operation that returns a frame (or an artifact built from one) depends on every
+        column it returns, not only on the field it transforms; keying on the field alone
+        served a stale CSV after an untouched column changed. Computed before processing
+        mutates the working copy, so the key at lookup and at save time is the same. A frame
+        that cannot be fingerprinted faithfully marks the call as uncacheable.
+        """
+        self._input_digest = None
+        if not self.use_cache:
+            return
+        try:
+            self._input_digest = generate_data_hash(df)
+        except Exception as exc:  # noqa: BLE001 - any failure means "do not cache"
+            self._input_digest = exc
+            self.logger.warning(f"Caching disabled for this run: {exc}")
+
+    def _cache_data_hash(self, df: Union[pd.Series, pd.DataFrame, dd.DataFrame]) -> str:
+        """Fingerprint of the input for the cache key. Raises when none can be made
+        faithfully; callers treat that as "do not cache"."""
+        digest = getattr(self, "_input_digest", None)
+        if isinstance(digest, BaseException):
+            raise digest
+        if digest is not None:
+            return digest
+        return generate_data_hash(df)
+
     def _generate_cache_key(
         self, df: Union[pd.Series, pd.DataFrame, dd.DataFrame]
     ) -> str:
@@ -884,8 +1290,8 @@ class BaseOperation(ABC):
         # Get operation parameters
         parameters = self._get_base_parameters()
 
-        # Generate data hash based on key characteristics
-        data_hash = generate_data_hash(df)
+        # Fingerprint of everything that decides the result (see _cache_data_hash)
+        data_hash = self._cache_data_hash(df)
 
         # Use the operation_cache utility to generate a consistent cache key
         return operation_cache.generate_cache_key(

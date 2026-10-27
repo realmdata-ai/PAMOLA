@@ -6,7 +6,7 @@ anonymization model within the PAMOLA ecosystem.
 Settings are dynamically loaded and can be overridden via environment
 variables or user-defined configuration files.
 
-(C) 2024 Realm Inveo Inc. & DGT Network Inc.
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 """
 
 import os
@@ -37,10 +37,9 @@ L_DIVERSITY_DEFAULTS: Dict[str, Any] = {
         "hist_bins": int(os.getenv("PAMOLA_L_DIVERSITY_HIST_BINS", 20)),
         "save_format": os.getenv("PAMOLA_L_DIVERSITY_SAVE_FORMAT", "png"),
     },
-    # Compliance settings
-    "compliance": {
+    # Threshold settings (technical thresholds only; no law is mapped to them)
+    "thresholds": {
         "risk_threshold": float(os.getenv("PAMOLA_L_DIVERSITY_RISK_THRESHOLD", 0.5)),
-        "supported_regulations": ["GDPR", "HIPAA", "CCPA"],
     },
 }
 

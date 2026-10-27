@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        development
 Author:        PAMOLA Core Team
 Created:       2025-01-20
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    Utility functions and classes for noise addition operations in PAMOLA.CORE.

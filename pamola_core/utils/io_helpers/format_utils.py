@@ -4,7 +4,7 @@ Module: Format Utilities
 Description: Tools for detecting, validating, and handling different file formats and conversions
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Enhanced format detection based on file content and signatures
@@ -331,7 +331,7 @@ def check_dependencies(format: str) -> Tuple[bool, str]:
         except ImportError:
             return (
                 False,
-                "matplotlib is required for image operations. Please install it with 'pip install matplotlib'.",
+                "matplotlib is required for image operations. It ships with the viz extra: pip install 'pamola-core[viz]'.",
             )
 
     elif format.lower() == "encrypted":

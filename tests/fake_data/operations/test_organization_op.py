@@ -5,6 +5,8 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
+
+from pamola_core.errors.exceptions.resources import FakeDataError
 from pamola_core.fake_data import FakeOrganizationOperation
 from pamola_core.fake_data.generators.organization import OrganizationGenerator
 from pamola_core.utils.ops.op_registry import unregister_operation, get_operation_class
@@ -43,7 +45,8 @@ class TestFakeOrganizationOperationInit(unittest.TestCase):
         self.assertIsNone(op.mapping_store_path)
         self.assertEqual(op.max_retries, 3)
         self.assertIsNone(op.id_field)
-        self.assertIsNone(op.key)
+        self.assertFalse(op.keyed)  # no key given: a random per-run key is used (ASB-1)
+        self.assertEqual(len(op.key), 64)
         self.assertIsNone(op.context_salt)
         self.assertEqual(op.column_prefix, "_")
         self.assertEqual(op.organization_type, "general")
@@ -74,7 +77,7 @@ class TestFakeOrganizationOperationInit(unittest.TestCase):
         self.assertEqual(config["region"], "en")
         self.assertTrue(config["preserve_type"])
         self.assertIsNone(config["industry"])
-        self.assertIsNone(config["key"])
+        self.assertEqual(len(config["key"]), 64)  # random per-run key (ASB-1)
         self.assertIsNone(config["context_salt"])
 
         # When detailed_metrics = False, detailed stats should not exist
@@ -105,6 +108,8 @@ class TestFakeOrganizationOperationInit(unittest.TestCase):
             "key": None,
             "context_salt": "context-123",
             "save_mapping": True,
+            "use_encryption": True,
+            "encryption_key": "unit-test-task-key",
             "column_prefix": "_",
             "collect_type_distribution": True,
             "type_field": "type",
@@ -124,7 +129,8 @@ class TestFakeOrganizationOperationInit(unittest.TestCase):
         self.assertEqual(op.consistency_mechanism, "prgn")
         self.assertEqual(op.mapping_store_path, "C:/fake_data/operation/mappings.json")
         self.assertEqual(op.id_field, "id")
-        self.assertIsNone(op.key)
+        self.assertFalse(op.keyed)  # no key given: a random per-run key is used (ASB-1)
+        self.assertEqual(len(op.key), 64)
         self.assertEqual(op.context_salt, "context-123")
         self.assertTrue(op.save_mapping)
         self.assertEqual(op.column_prefix, "_")
@@ -162,7 +168,7 @@ class TestFakeOrganizationOperationInit(unittest.TestCase):
         self.assertEqual(config["region"], "en")
         self.assertTrue(config["preserve_type"])
         self.assertEqual(config["industry"], "technology")
-        self.assertIsNone(config["key"])
+        self.assertEqual(len(config["key"]), 64)  # random per-run key (ASB-1)
         self.assertEqual(config["context_salt"], "context-123")
 
 
@@ -342,9 +348,8 @@ class TestProcessBatch(unittest.TestCase):
             "id": [101, 102, 103]
         })
 
-        result = self.op.process_batch(df)
-        expected = ["gen_Alpha", "Beta", "gen_Gamma"]
-        self.assertEqual(result["organization_enriched"].tolist(), expected)
+        with self.assertRaises(FakeDataError):  # fail closed: "Beta" is never written back
+            self.op.process_batch(df)
 
 
 class PrepareData:
@@ -379,6 +384,8 @@ class PrepareData:
             "key": None,
             "context_salt": "context-123",
             "save_mapping": True,
+            "use_encryption": True,
+            "encryption_key": "unit-test-task-key",
             "column_prefix": "_",
             "collect_type_distribution": True,
             "type_field": "type",
@@ -441,11 +448,11 @@ class TestFakeOrganzationOperationExecute(unittest.TestCase):
                     msg=f"Artifact file does not exist: {artifact.path}"
                 )
                 self.assertTrue(
-                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png")),
+                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png", ".md")),
                     msg=f"Unexpected artifact file type: {artifact.path}"
                 )
                 self.assertIsInstance(artifact.description, str)
-                self.assertIn(artifact.category, ["output", "metrics", "visualization"])
+                self.assertIn(artifact.category, ["output", "metrics", "visualization", "mapping", "config", "report"])
                 self.assertIsInstance(artifact.tags, list)
                 self.assertIsInstance(artifact.creation_time, str)
                 self.assertIsInstance(artifact.size, int)
@@ -502,11 +509,11 @@ class TestFakeOrganzationOperationExecute(unittest.TestCase):
                     msg=f"Artifact file does not exist: {artifact.path}"
                 )
                 self.assertTrue(
-                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png")),
+                    str(artifact.path).endswith((".json", ".csv", ".txt", ".png", ".md")),
                     msg=f"Unexpected artifact file type: {artifact.path}"
                 )
                 self.assertIsInstance(artifact.description, str)
-                self.assertIn(artifact.category, ["output", "metrics", "visualization"])
+                self.assertIn(artifact.category, ["output", "metrics", "visualization", "mapping", "config", "report"])
                 self.assertIsInstance(artifact.tags, list)
                 self.assertIsInstance(artifact.creation_time, str)
                 self.assertIsInstance(artifact.size, int)

@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-03
 Updated:       2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    Base classes and utilities for fake / synthetic data generation operations.
@@ -45,9 +45,14 @@ Dependencies:
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, ClassVar, Dict, Optional, Union
 import pandas as pd
 
+from pamola_core.utils.vis_helpers.render_guard import (
+    VisualizationTimeoutError,
+    prepare_render_context,
+    wait_for_render,
+)
 from pamola_core.errors.codes import ErrorCode
 from pamola_core.errors.error_handler import ErrorHandler
 from pamola_core.errors.exceptions import (
@@ -72,6 +77,13 @@ from pamola_core.utils.io import (
     load_settings_operation,
 )
 from pamola_core.utils.io_helpers.crypto_utils import get_encryption_mode
+from pamola_core.utils.artifact_policy import (
+    ArtifactClass,
+    ArtifactPolicyError,
+    raw_samples_artifact_class,
+    require_encryption_key,
+)
+import pamola_core.utils.io as pamola_io
 from pamola_core.utils.ops.op_base import FieldOperation
 
 # Import framework utilities
@@ -97,6 +109,10 @@ class GeneratorOperation(FieldOperation):
     handling consistency, mapping stores, and metadata propagation.
     """
 
+    #: Generator operations rewrite field values, so they are batch-capable.
+    #: See :attr:`pamola_core.utils.ops.op_base.BaseOperation.supports_batch`.
+    supports_batch: ClassVar[bool] = True
+
     def __init__(
         self,
         field_name: str,
@@ -106,6 +122,7 @@ class GeneratorOperation(FieldOperation):
         id_field: Optional[str] = None,
         mapping_store_path: Optional[str] = None,
         save_mapping: bool = False,
+        include_raw_samples_in_metrics: bool = False,
         **kwargs,
     ):
         """
@@ -129,6 +146,11 @@ class GeneratorOperation(FieldOperation):
             Pre-loaded mapping store instance (used if provided).
         save_mapping : bool, optional
             Whether to persist mapping results after processing.
+        include_raw_samples_in_metrics : bool, optional
+            Diagnostic option, default False. If True, ``metrics/*.json`` also
+            carries the most frequent original values (``value_distribution``).
+            WARNING: this writes source values, possibly PII, into a generic
+            metrics artifact.
         **kwargs : dict
             Additional arguments forwarded to FieldOperation/BaseOperation.
         """
@@ -163,7 +185,19 @@ class GeneratorOperation(FieldOperation):
         )
 
         # Create a metrics collector
-        self._metrics_collector = create_metrics_collector()
+        self.include_raw_samples_in_metrics = bool(include_raw_samples_in_metrics)
+        self._metrics_collector = create_metrics_collector(
+            include_raw_samples=self.include_raw_samples_in_metrics
+        )
+
+        # === Protected mapping ===
+        # The mapping holds original values (PROTECTED_MAPPING): it is only written
+        # encrypted with the task key, so saving without that key is refused up front.
+        if self.save_mapping:
+            require_encryption_key(
+                self.encryption_key if self.use_encryption else None,
+                "the fake_data mapping (save_mapping=True)",
+            )
 
         # === Optional Mapping Store Setup ===
         if mapping_store_path:
@@ -584,6 +618,48 @@ class GeneratorOperation(FieldOperation):
                 },
             )
 
+    def _save_protected_mapping(
+        self, task_dir: Union[str, Path], result: OperationResult, reporter: Any = None
+    ) -> Optional[Path]:
+        """Write the mapping store as an encrypted PROTECTED_MAPPING artifact.
+
+        Never writes plain text: the task encryption key is required (checked at
+        construction and again here).
+        """
+        if not self.save_mapping:
+            return None
+        if getattr(self, "mapping_store", None) is None:
+            raise ArtifactPolicyError(
+                "save_mapping=True but the operation has no mapping store to save"
+            )
+        key = require_encryption_key(
+            self.encryption_key if self.use_encryption else None,
+            "the fake_data mapping (save_mapping=True)",
+        )
+        mapping_dir = Path(task_dir) / "maps"
+        pamola_io.ensure_directory(mapping_dir)
+        mapping_path = mapping_dir / f"{self.name}_{self.field_name}_mapping.json"
+        self.mapping_store.save_json(mapping_path, encryption_key=key)
+        description = f"Encrypted fake_data mapping for {self.field_name}"
+        result.add_artifact(
+            "json",
+            mapping_path,
+            description,
+            category=Constants.Artifact_Category_Mapping,
+            artifact_class=ArtifactClass.PROTECTED_MAPPING,
+            contains_source_values=True,
+        )
+        if reporter:
+            reporter.add_artifact(
+                "json",
+                str(mapping_path),
+                description,
+                category=Constants.Artifact_Category_Mapping,
+                artifact_class=ArtifactClass.PROTECTED_MAPPING,
+            )
+        self.logger.info(f"Saved encrypted mapping to {mapping_path.name}")
+        return mapping_path
+
     def _initialize_mapping_store(self, path: Union[str, Path]) -> None:
         """
         Initialize the mapping store if needed.
@@ -592,19 +668,26 @@ class GeneratorOperation(FieldOperation):
         ----------
             path: Path to mapping store file
         """
-        try:
-            from pamola_core.fake_data.commons.mapping_store import MappingStore
+        from pamola_core.fake_data.commons.mapping_store import MappingStore
+        from pamola_core.utils.io_helpers import crypto_utils
 
-            self.mapping_store = MappingStore()
+        self.mapping_store = MappingStore()
 
-            # Load existing mappings if the file exists
-            path_obj = Path(path)
-            if path_obj.exists():
-                self.mapping_store.load(path_obj)
-                self.logger.info(f"Loaded mapping store from {path_obj.name}")
-        except Exception as e:
-            self.logger.warning(f"Failed to initialize mapping store: {str(e)}")
-            self.mapping_store = None
+        # Load existing mappings if the file exists. The INPUT file is judged by what it
+        # is, not by the output encryption setting: an encrypted envelope is decrypted with
+        # the task key, plain JSON still loads. Failures (wrong key, a refused pickle, a
+        # corrupt file) propagate - a store that silently stays empty would hide them.
+        path_obj = Path(path)
+        if path_obj.exists():
+            key = None
+            if self.use_encryption and self.encryption_key:
+                try:
+                    if crypto_utils.is_encrypted(path_obj):
+                        key = self.encryption_key
+                except Exception:
+                    key = None
+            self.mapping_store.load(path_obj, encryption_key=key)
+            self.logger.info(f"Loaded mapping store from {path_obj.name}")
 
     def _validate_and_get_dataframe(
         self, data_source: DataSource, dataset_name: str, **kwargs: Any
@@ -638,6 +721,10 @@ class GeneratorOperation(FieldOperation):
             self.logger.error(error_message)
             raise ValidationError(error_message)
 
+        # Work on our own copy: DataSource returns the caller's object itself.
+        df = self._own_dataframe(df)
+        self._check_enrich_target(df)
+
         if self.field_name not in df.columns:
             error_message = f"Field {self.field_name} not found in DataFrame"
             self.logger.error(error_message)
@@ -657,6 +744,8 @@ class GeneratorOperation(FieldOperation):
             error_msg = f"Invalid dataframe type for dataset '{dataset_name}': {str(e)}"
             self.logger.error(error_msg)
             raise TypeValidationError(error_msg) from e
+
+        self._remember_input_for_cache(df)
 
         return df
 
@@ -685,8 +774,11 @@ class GeneratorOperation(FieldOperation):
 
             # Check if output field already exists in DataFrame
             if output_field in df.columns:
-                self.logger.warning(
-                    f"Output field '{output_field}' already exists and will be overwritten"
+                # Reaching here means overwriting was requested explicitly
+                # (see _check_enrich_target).
+                self.logger.debug(
+                    f"Output field '{output_field}' already exists and is overwritten "
+                    "(overwrite_existing_output=True)"
                 )
         return output_field
 
@@ -989,6 +1081,9 @@ class GeneratorOperation(FieldOperation):
             except Exception as e:
                 self.logger.warning(f"Error collecting specific metrics: {str(e)}")
 
+        # whether the replacement is keyed (reproducible) - never the key itself
+        metrics["keyed"] = bool(getattr(self, "keyed", True))
+
         return metrics
 
     def _collect_specific_metrics(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -1139,14 +1234,14 @@ class GeneratorOperation(FieldOperation):
 
             # Copy context for the thread
             self.logger.info("[DIAG] Preparing to launch visualization thread...")
-            ctx = contextvars.copy_context()
+            ctx, render_run = prepare_render_context()
 
             # Create thread with context
             viz_thread = threading.Thread(
                 target=ctx.run,
                 args=(generate_viz_with_diagnostics,),
                 name=f"VizThread-{self.field_name}",
-                daemon=False,  # Changed from True to ensure proper cleanup
+                daemon=True,  # an abandoned renderer must not keep the process alive
             )
 
             self.logger.info(
@@ -1155,26 +1250,16 @@ class GeneratorOperation(FieldOperation):
             thread_start_time = time.time()
             viz_thread.start()
 
-            # Log periodic status while waiting
-            check_interval = 5  # seconds
-            elapsed = 0
-            while viz_thread.is_alive() and elapsed < vis_timeout:
-                viz_thread.join(timeout=check_interval)
-                elapsed = time.time() - thread_start_time
-                if viz_thread.is_alive():
-                    self.logger.info(
-                        f"[DIAG] Visualization thread still running after {elapsed:.1f}s..."
-                    )
+            # Bounded wait: on timeout the run is cancelled and cleaned up
+            if not wait_for_render(viz_thread, render_run, vis_timeout, self.logger):
+                visualization_error = VisualizationTimeoutError(
+                    f"visualization did not finish within {render_run.limit:g}s"
+                )
 
-            if viz_thread.is_alive():
-                self.logger.error(
-                    f"[DIAG] Visualization thread still alive after {vis_timeout}s timeout"
-                )
-                self.logger.error(
-                    f"[DIAG] Thread state: alive={viz_thread.is_alive()}, daemon={viz_thread.daemon}"
-                )
-                visualization_paths = {}
-            elif visualization_error:
+            if visualization_error:
+                # Rendering is part of execute(): a failure is recorded in the result,
+                # never swallowed (and no worker is left running after the join).
+                self._record_visualization_failure(result, visualization_error)
                 self.logger.error(
                     f"[DIAG] Visualization failed with error: {visualization_error}"
                 )
@@ -1319,6 +1404,8 @@ class GeneratorOperation(FieldOperation):
 
         except Exception as e:
             self.logger.warning(f"Error generating visualizations: {e}")
+            # a failed render is the operation's failure, not a log line
+            raise
 
         return visualization_paths
 
@@ -1602,6 +1689,13 @@ class GeneratorOperation(FieldOperation):
                 "null_strategy": self.null_strategy,
             }
         )
+        # the effective key decides every replacement: its digest (not the key) is part of the
+        # cache identity, so another key - or another random per-run key - never hits the cache
+        key = getattr(self, "key", None)
+        if key is not None:
+            import hashlib
+
+            parameters["key_digest"] = hashlib.sha256(str(key).encode("utf-8")).hexdigest()[:16]
 
         return parameters
 
@@ -1719,12 +1813,15 @@ class GeneratorOperation(FieldOperation):
                 if isinstance(value, (int, float, str, bool)):
                     result.add_metric(key, value)
 
-            # Register metrics artifact
+            # Register metrics artifact. With raw samples the file holds source values,
+            # so it is a diagnostic (not for release), not an aggregate metric.
+            source_values = raw_samples_artifact_class(self.include_raw_samples_in_metrics)
             result.add_artifact(
                 artifact_type="json",
                 path=metrics_result.path,
                 description=f"{self.operation_name.lower()} {self.field_name} generator metrics",
                 category=Constants.Artifact_Category_Metrics,
+                **source_values,
             )
 
             # Report artifact
@@ -1733,6 +1830,7 @@ class GeneratorOperation(FieldOperation):
                     artifact_type="json",
                     path=str(metrics_result.path),
                     description=f"{self.operation_name.lower()} {self.field_name} generator metrics",
+                    **source_values,
                 )
         except Exception as e:
             self.logger.warning(f"Failed to save metrics: {str(e)}")

@@ -243,7 +243,7 @@ This sample helps in understanding the raw format of the currency data being ana
 
 ```python
 from pamola_core.utils.ops.op_data_source import DataSource
-from pamola_core.utils.task_reporting import TaskReporter
+from pamola_core.utils.tasks.task_reporting import TaskReporter
 from pamola_core.profiling.analyzers.currency import CurrencyOperation
 from pathlib import Path
 
@@ -254,7 +254,12 @@ def profile_financial_data(csv_path, output_dir):
     # Initialize directories and reporter
     task_dir = Path(output_dir)
     task_dir.mkdir(parents=True, exist_ok=True)
-    reporter = TaskReporter(task_name="financial_profiling", output_dir=task_dir)
+    reporter = TaskReporter(
+        task_id="financial_profiling",
+        task_type="profiling",
+        description="Profile financial data",
+        report_path=task_dir / "financial_profiling_report.json",
+    )
     
     # Create data source from CSV
     data_source = DataSource.from_file_path(csv_path, name="financial_data")
@@ -385,7 +390,7 @@ if 'semantic_notes' in stats:
 ```python
 import pandas as pd
 from pamola_core.utils.ops.op_data_source import DataSource
-from pamola_core.utils.task_reporting import TaskReporter
+from pamola_core.utils.tasks.task_reporting import TaskReporter
 from pamola_core.profiling.analyzers.currency import CurrencyOperation
 from pamola_core.utils.progress import HierarchicalProgressTracker
 from pathlib import Path
@@ -407,7 +412,12 @@ def profile_large_financial_dataset(csv_path, output_dir):
     # Initialize directories and reporter
     task_dir = Path(output_dir)
     task_dir.mkdir(parents=True, exist_ok=True)
-    reporter = TaskReporter(task_name="large_financial_profiling", output_dir=task_dir)
+    reporter = TaskReporter(
+        task_id="large_financial_profiling",
+        task_type="profiling",
+        description="Profile a large financial dataset",
+        report_path=task_dir / "large_financial_profiling_report.json",
+    )
     
     # Create data source from CSV without loading (will be processed in chunks)
     data_source = DataSource.from_file_path(csv_path, name="financial_data", load=False)

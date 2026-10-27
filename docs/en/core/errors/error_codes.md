@@ -68,7 +68,7 @@ PAMOLA error codes are organized into logical categories:
 
 | Category | Count | Purpose |
 |----------|-------|---------|
-| **Data Operations** | 7 | Loading, validation, writing data |
+| **Data Operations** | 6 | Loading, validation, writing data |
 | **Field Validation** | 4 | Field existence, type, value checks |
 | **Parameter Validation** | 6 | Parameter validity and type checks |
 | **Conditional & Range** | 4 | Format and range validation |
@@ -79,14 +79,21 @@ PAMOLA error codes are organized into logical categories:
 | **Caching** | 5 | Cache read/write operations |
 | **Artifacts** | 4 | Artifact validation and storage |
 | **Visualization** | 3 | Chart/graph generation |
-| **Cryptography** | 14+ | Encryption, keys, hashing |
-| **Tasks** | 17+ | Task execution lifecycle |
-| **NLP & LLM** | 9+ | Language model operations |
-| **Filesystem** | 3+ | Path validation and security |
+| **Configuration** | 4 | Config loading, parsing, saving |
+| **Cryptography & Security** | 20 | Encryption, keys, hashing, redaction |
+| **Task Execution & Operations** | 17 | Task execution lifecycle |
+| **Dependencies** | 1 | Missing optional dependencies |
+| **File System & Paths** | 4 | Path validation and security |
+| **NLP & Machine Learning** | 9 | NLP, model and language-support errors |
+| **Data Processing & Privacy** | 3 | Datetime parsing/generalization, insufficient privacy |
+| **Data Mapping & Generation** | 3 | Pseudonym mappings, fake data generation |
+| **Reporting** | 1 | Report generation |
+| **Network** | 4 | Connection, timeout, DNS, SSL |
+| **Authentication & Authorization** | 4 | Credentials, tokens, permissions |
 
 ## Complete Code Listing
 
-### Data Operations (7 codes)
+### Data Operations (6 codes)
 
 ```python
 DATA_LOAD_FAILED            # "DATA_LOAD_FAILED"
@@ -197,80 +204,152 @@ ARTIFACT_WRITE_FAILED       # "ARTIFACT_WRITE_FAILED"
 ARTIFACT_CORRUPTED          # "ARTIFACT_CORRUPTED"
 ```
 
-### Visualization (3 codes)
+### Visualization Errors (3 codes)
 
 ```python
-VISUALIZATION_ERROR          # "VISUALIZATION_ERROR"
-VISUALIZATION_RENDERING_FAILED
-VISUALIZATION_INVALID_CONFIG
+VISUALIZATION_FAILED            # "VISUALIZATION_FAILED"
+VISUALIZATION_BACKEND_ERROR     # "VISUALIZATION_BACKEND_ERROR"
+VISUALIZATION_TIMEOUT           # "VISUALIZATION_TIMEOUT"
 ```
 
-### Cryptography (14+ codes)
+### Configuration Errors (4 codes)
 
 ```python
-ENCRYPTION_ERROR                # "ENCRYPTION_ERROR"
-DECRYPTION_ERROR                # "DECRYPTION_ERROR"
-ENCRYPTION_INITIALIZATION_ERROR  # "ENCRYPTION_INITIALIZATION_ERROR"
-KEY_GENERATION_ERROR            # "KEY_GENERATION_ERROR"
-KEY_LOADING_ERROR               # "KEY_LOADING_ERROR"
-MASTER_KEY_ERROR                # "MASTER_KEY_ERROR"
-TASK_KEY_ERROR                  # "TASK_KEY_ERROR"
-CRYPTO_KEY_ERROR                # "CRYPTO_KEY_ERROR"
+CONFIG_INVALID                  # "CONFIG_INVALID"
+CONFIG_MISSING                  # "CONFIG_MISSING"
+CONFIG_PARSE_ERROR              # "CONFIG_PARSE_ERROR"
+CONFIG_SAVE_FAILED              # "CONFIG_SAVE_FAILED"
+```
+
+### Cryptography & Security Errors (20 codes)
+
+```python
+# Encryption/Decryption
+ENCRYPTION_FAILED               # "ENCRYPTION_FAILED"
+ENCRYPTION_INIT_FAILED          # "ENCRYPTION_INIT_FAILED"
+DECRYPTION_FAILED               # "DECRYPTION_FAILED"
+# Key Management
+KEY_GENERATION_FAILED           # "KEY_GENERATION_FAILED"
+KEY_LOADING_FAILED              # "KEY_LOADING_FAILED"
+KEY_INVALID                     # "KEY_INVALID"
+KEY_EXPIRED                     # "KEY_EXPIRED"
+KEY_MASTER_ERROR                # "KEY_MASTER_ERROR"
+KEY_TASK_ERROR                  # "KEY_TASK_ERROR"
 KEY_STORE_ERROR                 # "KEY_STORE_ERROR"
+# Crypto Operations
 CRYPTO_ERROR                    # "CRYPTO_ERROR"
-PSEUDONYMIZATION_ERROR          # "PSEUDONYMIZATION_ERROR"
-HASH_COLLISION_ERROR            # "HASH_COLLISION_ERROR"
-DATA_REDACTION_ERROR            # "DATA_REDACTION_ERROR"
-FORMAT_ERROR                    # "FORMAT_ERROR"
-PROVIDER_ERROR                  # "PROVIDER_ERROR"
-MODE_ERROR                      # "MODE_ERROR"
-LEGACY_MIGRATION_ERROR          # "LEGACY_MIGRATION_ERROR"
-AGE_TOOL_ERROR                  # "AGE_TOOL_ERROR"
+CRYPTO_PROVIDER_ERROR           # "CRYPTO_PROVIDER_ERROR"
+CRYPTO_MODE_ERROR               # "CRYPTO_MODE_ERROR"
+CRYPTO_FORMAT_ERROR             # "CRYPTO_FORMAT_ERROR"
+CRYPTO_ALGORITHM_UNSUPPORTED    # "CRYPTO_ALGORITHM_UNSUPPORTED"
+# Specialized Crypto
+PSEUDONYMIZATION_FAILED         # "PSEUDONYMIZATION_FAILED"
+HASH_COLLISION_DETECTED         # "HASH_COLLISION_DETECTED"
+DATA_REDACTION_FAILED           # "DATA_REDACTION_FAILED"
+CRYPTO_MIGRATION_FAILED         # "CRYPTO_MIGRATION_FAILED"
+CRYPTO_TOOL_ERROR               # "CRYPTO_TOOL_ERROR"
 ```
 
-### Task Execution (17+ codes)
+### Task Execution & Operations (17 codes)
 
 ```python
+# Task Lifecycle
 TASK_ERROR                      # "TASK_ERROR"
 TASK_INIT_FAILED                # "TASK_INIT_FAILED"
 TASK_EXECUTION_FAILED           # "TASK_EXECUTION_FAILED"
 TASK_FINALIZATION_FAILED        # "TASK_FINALIZATION_FAILED"
+# Task Dependencies
 TASK_DEPENDENCY_ERROR           # "TASK_DEPENDENCY_ERROR"
-DEPENDENCY_MISSING              # "DEPENDENCY_MISSING"
+TASK_DEPENDENCY_MISSING         # "TASK_DEPENDENCY_MISSING"
 TASK_DEPENDENCY_FAILED          # "TASK_DEPENDENCY_FAILED"
+# Task Management
 TASK_REGISTRY_ERROR             # "TASK_REGISTRY_ERROR"
+TASK_CONTEXT_ERROR              # "TASK_CONTEXT_ERROR"
+# Execution Management
 EXECUTION_ERROR                 # "EXECUTION_ERROR"
 EXECUTION_LOG_ERROR             # "EXECUTION_LOG_ERROR"
+# State Management
 CHECKPOINT_ERROR                # "CHECKPOINT_ERROR"
 STATE_SERIALIZATION_FAILED      # "STATE_SERIALIZATION_FAILED"
 STATE_RESTORATION_FAILED        # "STATE_RESTORATION_FAILED"
-TASK_CONTEXT_ERROR              # "TASK_CONTEXT_ERROR"
+# Retry Management
 MAX_RETRIES_EXCEEDED            # "MAX_RETRIES_EXCEEDED"
 NON_RETRIABLE_ERROR             # "NON_RETRIABLE_ERROR"
+# Operations
 OPERATION_ERROR                 # "OPERATION_ERROR"
 ```
 
-### NLP & LLM (9+ codes)
+### Dependency Errors (1 code)
 
 ```python
-NLP_ERROR                  # "NLP_ERROR"
-PROMPT_VALIDATION_ERROR    # "PROMPT_VALIDATION_ERROR"
-LLM_ERROR                  # "LLM_ERROR"
-LLM_CONNECTION_ERROR       # "LLM_CONNECTION_ERROR"
-LLM_GENERATION_ERROR       # "LLM_GENERATION_ERROR"
-LLM_RESPONSE_ERROR         # "LLM_RESPONSE_ERROR"
-MODEL_NOT_AVAILABLE        # "MODEL_NOT_AVAILABLE"
-MODEL_LOAD_ERROR           # "MODEL_LOAD_ERROR"
-UNSUPPORTED_LANGUAGE       # "UNSUPPORTED_LANGUAGE"
+DEPENDENCY_MISSING              # "DEPENDENCY_MISSING"
 ```
 
-### Filesystem (3+ codes)
+### File System & Path Errors (4 codes)
 
 ```python
-PATH_VALIDATION_ERROR       # "PATH_VALIDATION_ERROR"
-PATH_SECURITY_ERROR         # "PATH_SECURITY_ERROR"
-DIRECTORY_MANAGER_ERROR     # "DIRECTORY_MANAGER_ERROR"
-DIRECTORY_CREATION_ERROR    # "DIRECTORY_CREATION_ERROR"
+PATH_INVALID                    # "PATH_INVALID"
+PATH_SECURITY_VIOLATION         # "PATH_SECURITY_VIOLATION"
+DIRECTORY_CREATE_FAILED         # "DIRECTORY_CREATE_FAILED"
+DIRECTORY_MANAGER_ERROR         # "DIRECTORY_MANAGER_ERROR"
+```
+
+### NLP & Machine Learning Errors (9 codes)
+
+```python
+# NLP Operations
+NLP_ERROR                       # "NLP_ERROR"
+NLP_PROMPT_INVALID              # "NLP_PROMPT_INVALID"
+# LLM Operations
+LLM_ERROR                       # "LLM_ERROR"
+LLM_CONNECTION_FAILED           # "LLM_CONNECTION_FAILED"
+LLM_GENERATION_FAILED           # "LLM_GENERATION_FAILED"
+LLM_RESPONSE_INVALID            # "LLM_RESPONSE_INVALID"
+# Model Management
+MODEL_NOT_AVAILABLE             # "MODEL_NOT_AVAILABLE"
+MODEL_LOAD_FAILED               # "MODEL_LOAD_FAILED"
+# Language Support
+LANGUAGE_UNSUPPORTED            # "LANGUAGE_UNSUPPORTED"
+```
+
+### Data Processing & Privacy (3 codes)
+
+```python
+DATETIME_PARSE_FAILED           # "DATETIME_PARSE_FAILED"
+DATETIME_GENERALIZATION_FAILED  # "DATETIME_GENERALIZATION_FAILED"
+PRIVACY_INSUFFICIENT            # "PRIVACY_INSUFFICIENT"
+```
+
+### Data Mapping & Generation (3 codes)
+
+```python
+MAPPING_ERROR                   # "MAPPING_ERROR"
+MAPPING_STORAGE_ERROR           # "MAPPING_STORAGE_ERROR"
+FAKE_DATA_GENERATION_FAILED     # "FAKE_DATA_GENERATION_FAILED"
+```
+
+### Reporting (1 code)
+
+```python
+REPORTING_ERROR                 # "REPORTING_ERROR"
+```
+
+### Network Errors (4 codes)
+
+```python
+NETWORK_CONNECTION_FAILED       # "NETWORK_CONNECTION_FAILED"
+NETWORK_TIMEOUT                 # "NETWORK_TIMEOUT"
+NETWORK_DNS_FAILED              # "NETWORK_DNS_FAILED"
+NETWORK_SSL_ERROR               # "NETWORK_SSL_ERROR"
+```
+
+### Authentication & Authorization Errors (4 codes)
+
+```python
+AUTH_REQUIRED                   # "AUTH_REQUIRED"
+AUTH_INVALID_CREDENTIALS        # "AUTH_INVALID_CREDENTIALS"
+AUTH_TOKEN_EXPIRED              # "AUTH_TOKEN_EXPIRED"
+AUTH_PERMISSION_DENIED          # "AUTH_PERMISSION_DENIED"
 ```
 
 ## Code Usage Guidelines

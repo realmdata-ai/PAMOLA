@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-15
 Updated:       2025-07-25
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 This module implements the FullMaskingOperation class that provides complete field value masking
@@ -1077,7 +1077,6 @@ class FullMaskingOperation(AnonymizationOperation):
             "format_patterns": self.format_patterns,
             "numeric_output": self.numeric_output,
             "date_format": self.date_format,
-            "format_patterns": self.format_patterns,
         }
 
         return masking_summary
@@ -1136,6 +1135,7 @@ class FullMaskingOperation(AnonymizationOperation):
             original_data=original_data,
             processed_data=anonymized_data,
             operation_params=operation_params,
+            include_raw_samples=self.include_raw_samples_in_metrics,
         )
 
         # Custom or strategy-specific metrics
@@ -1379,5 +1379,7 @@ class FullMaskingOperation(AnonymizationOperation):
             self.logger.warning(
                 f"Failed to generate visualizations: {e}", exc_info=True
             )
+            # a failed render is the operation's failure, not a log line
+            raise
 
         return visualization_paths
