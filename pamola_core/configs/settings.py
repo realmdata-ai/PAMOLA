@@ -58,7 +58,7 @@ def get_config_file_paths() -> List[Path]:
     List[Path]
         List of potential config file paths
     """
-    paths = []  # Инициализация списка
+    paths = []  # Initialize the list
 
     # 1. From environment variable
     if 'PAMOLA_CONFIG_PATH' in os.environ:
@@ -211,8 +211,8 @@ def get_config() -> Dict[str, Any]:
     global _config
     if _config is None:
         _config = load_config()
-        if _config is None:  # Если по какой-то причине load_config вернул None
-            _config = DEFAULT_CONFIG.copy()  # Используем значения по умолчанию
+        if _config is None:  # In case load_config returned None for some reason
+            _config = DEFAULT_CONFIG.copy()  # Use the default values
     return _config
 
 

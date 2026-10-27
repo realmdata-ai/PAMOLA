@@ -1,7 +1,7 @@
 """
-Модуль конфигурации для системы отчетности.
+Configuration module for the reporting system.
 
-Функции для работы с конфигурацией проекта и настройками отчетов.
+Functions for working with the project configuration and report settings.
 """
 import json
 import logging
@@ -10,14 +10,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List
 
-# Настройка логирования
+# Logging setup
 logger = logging.getLogger(__name__)
 
-# Значения по умолчанию
+# Default values
 DEFAULT_CONFIG = {
     "project": {
         "name": "PAMOLA.CORE (Privacy-Preserving AI Data Processors) Anonymization",
-        "description": "Анализ и анонимизация данных резюме для обезличивания",
+        "description": "Analysis and anonymization of resume data for de-identification",
         "version": "1.0.0",
         "created": datetime.now().strftime("%Y-%m-%d"),
         "updated": datetime.now().strftime("%Y-%m-%d")
@@ -35,18 +35,18 @@ DEFAULT_CONFIG = {
 
 def get_config_path() -> Path:
     """
-    Получает путь к файлу конфигурации проекта.
+    Gets the path to the project configuration file.
 
     Returns
     --------
     Path
-        Путь к файлу конфигурации
+        Path to the configuration file
     """
-    # Сначала ищем в переменной окружения
+    # Check the environment variable first
     if os.environ.get("PAMOLA_CONFIG_PATH"):
         return Path(os.environ["PAMOLA_CONFIG_PATH"])
 
-    # Ищем в стандартных местах
+    # Search the standard locations
     config_search_paths = [
         Path("prj_config.json"),
         Path("configs/prj_config.json"),
@@ -54,43 +54,43 @@ def get_config_path() -> Path:
         Path(os.path.expanduser("~")) / ".pamola_core" / "config.json"
     ]
 
-    # Проверяем текущую директорию проекта
+    # Check the current project directory
     try:
         from pamola_core.utils.io import get_data_repository
         repo_dir = get_data_repository()
         config_search_paths.insert(0, repo_dir / "configs" / "prj_config.json")
     except (ImportError, Exception):
-        logger.warning("Не удалось получить директорию репозитория данных")
+        logger.warning("Failed to get the data repository directory")
 
-    # Ищем конфигурацию в указанных местах
+    # Look for the configuration in the listed locations
     for path in config_search_paths:
         if path.exists():
             return path
 
-    # Возвращаем путь по умолчанию, если ничего не найдено
+    # Return the default path if nothing was found
     return Path("prj_config.json")
 
 
 def load_config() -> Dict[str, Any]:
     """
-    Загружает конфигурацию проекта.
+    Loads the project configuration.
 
     Returns
     --------
     Dict[str, Any]
-        Словарь с конфигурацией проекта
+        Dictionary with the project configuration
     """
     config_path = get_config_path()
 
     if not config_path.exists():
-        logger.warning(f"Файл конфигурации не найден: {config_path}. Используются настройки по умолчанию.")
+        logger.warning(f"Configuration file not found: {config_path}. Using default settings.")
         return DEFAULT_CONFIG
 
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
 
-        # Добавляем недостающие разделы из конфигурации по умолчанию
+        # Add missing sections from the default configuration
         for section, defaults in DEFAULT_CONFIG.items():
             if section not in config:
                 config[section] = defaults
@@ -101,41 +101,41 @@ def load_config() -> Dict[str, Any]:
 
         return config
     except Exception as e:
-        logger.error(f"Ошибка при загрузке конфигурации: {e}")
+        logger.error(f"Error loading configuration: {e}")
         return DEFAULT_CONFIG
 
 
 def save_config(config: Dict[str, Any]) -> bool:
     """
-    Сохраняет конфигурацию проекта.
+    Saves the project configuration.
 
     Parameters
     -----------
     config : Dict[str, Any]
-        Конфигурация для сохранения
+        Configuration to save
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     config_path = get_config_path()
 
     try:
-        # Обновляем дату изменения
+        # Update the modification date
         if "project" in config:
             config["project"]["updated"] = datetime.now().strftime("%Y-%m-%d")
 
-        # Создаем директорию, если она не существует
+        # Create the directory if it does not exist
         config_path.parent.mkdir(parents=True, exist_ok=True)
 
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=2) # type: ignore
 
-        logger.info(f"Конфигурация сохранена в {config_path}")
+        logger.info(f"Configuration saved to {config_path}")
         return True
     except Exception as e:
-        logger.error(f"Ошибка при сохранении конфигурации: {e}")
+        logger.error(f"Error saving configuration: {e}")
         return False
 
 
@@ -143,21 +143,21 @@ def update_project_metadata(name: Optional[str] = None,
                             description: Optional[str] = None,
                             version: Optional[str] = None) -> bool:
     """
-    Обновляет метаданные проекта в конфигурации.
+    Updates the project metadata in the configuration.
 
     Parameters
     -----------
     name : str, optional
-        Название проекта
+        Project name
     description : str, optional
-        Описание проекта
+        Project description
     version : str, optional
-        Версия проекта
+        Project version
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     config = load_config()
 
@@ -173,7 +173,7 @@ def update_project_metadata(name: Optional[str] = None,
     if version is not None:
         config["project"]["version"] = version
 
-    # Обновляем дату изменения
+    # Update the modification date
     config["project"]["updated"] = datetime.now().strftime("%Y-%m-%d")
 
     return save_config(config)
@@ -181,19 +181,19 @@ def update_project_metadata(name: Optional[str] = None,
 
 def get_reporting_settings() -> Dict[str, Any]:
     """
-    Получает настройки системы отчетности.
+    Gets the reporting system settings.
 
     Returns
     --------
     Dict[str, Any]
-        Словарь с настройками отчетности
+        Dictionary with the reporting settings
     """
     config = load_config()
 
     if "reporting" not in config:
         return DEFAULT_CONFIG["reporting"]
 
-    # Проверяем наличие всех необходимых настроек
+    # Ensure all required settings are present
     for key, value in DEFAULT_CONFIG["reporting"].items():
         if key not in config["reporting"]:
             config["reporting"][key] = value
@@ -205,21 +205,21 @@ def update_reporting_settings(template: Optional[str] = None,
                               auto_open: Optional[bool] = None,
                               include_resources: Optional[bool] = None) -> bool:
     """
-    Обновляет настройки системы отчетности.
+    Updates the reporting system settings.
 
     Parameters
     -----------
     template : str, optional
-        Имя шаблона отчета по умолчанию
+        Name of the default report template
     auto_open : bool, optional
-        Открывать ли отчет автоматически после создания
+        Whether to open the report automatically after it is created
     include_resources : bool, optional
-        Включать ли ресурсы в отчет
+        Whether to include resources in the report
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     config = load_config()
 
@@ -240,12 +240,12 @@ def update_reporting_settings(template: Optional[str] = None,
 
 def get_task_dependencies() -> Dict[str, List[str]]:
     """
-    Получает зависимости между задачами из конфигурации.
+    Gets task dependencies from the configuration.
 
     Returns
     --------
     Dict[str, List[str]]
-        Словарь {задача: [зависимости]}
+        Dictionary {task: [dependencies]}
     """
     config = load_config()
 
@@ -257,17 +257,17 @@ def get_task_dependencies() -> Dict[str, List[str]]:
 
 def update_task_dependencies(dependencies: Dict[str, List[str]]) -> bool:
     """
-    Обновляет зависимости между задачами в конфигурации.
+    Updates task dependencies in the configuration.
 
     Parameters
     -----------
     dependencies : Dict[str, List[str]]
-        Словарь {задача: [зависимости]}
+        Dictionary {task: [dependencies]}
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     config = load_config()
 
@@ -281,19 +281,19 @@ def update_task_dependencies(dependencies: Dict[str, List[str]]) -> bool:
 
 def add_task_dependency(task_id: str, dependency_id: str) -> bool:
     """
-    Добавляет зависимость между задачами.
+    Adds a dependency between tasks.
 
     Parameters
     -----------
     task_id : str
-        Идентификатор зависимой задачи
+        Identifier of the dependent task
     dependency_id : str
-        Идентификатор задачи, от которой зависит
+        Identifier of the task it depends on
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     dependencies = get_task_dependencies()
 
@@ -308,19 +308,19 @@ def add_task_dependency(task_id: str, dependency_id: str) -> bool:
 
 def remove_task_dependency(task_id: str, dependency_id: str) -> bool:
     """
-    Удаляет зависимость между задачами.
+    Removes a dependency between tasks.
 
     Parameters
     -----------
     task_id : str
-        Идентификатор зависимой задачи
+        Identifier of the dependent task
     dependency_id : str
-        Идентификатор задачи, от которой зависит
+        Identifier of the task it depends on
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     dependencies = get_task_dependencies()
 
@@ -335,19 +335,19 @@ def remove_task_dependency(task_id: str, dependency_id: str) -> bool:
 
 def get_templates_dir() -> Path:
     """
-    Получает директорию с шаблонами отчетов.
+    Gets the report templates directory.
 
     Returns
     --------
     Path
-        Путь к директории с шаблонами
+        Path to the templates directory
     """
     try:
         from pamola_core.utils.io import get_data_repository
         repo_dir = get_data_repository()
         templates_dir = repo_dir / "templates"
     except (ImportError, Exception):
-        logger.warning("Не удалось получить директорию репозитория данных. Используем текущую директорию.")
+        logger.warning("Failed to get the data repository directory. Using the current directory.")
         templates_dir = Path("data/templates")
 
     if not templates_dir.exists():
@@ -358,17 +358,17 @@ def get_templates_dir() -> Path:
 
 def get_template_path(template_name: Optional[str] = None) -> Path:
     """
-    Получает путь к шаблону отчета.
+    Gets the path to a report template.
 
     Parameters
     -----------
     template_name : str, optional
-        Имя шаблона (если не указано, используется шаблон по умолчанию)
+        Template name (the default template is used if not specified)
 
     Returns
     --------
     Path
-        Путь к директории с шаблоном
+        Path to the template directory
     """
     if template_name is None:
         settings = get_reporting_settings()
@@ -384,19 +384,19 @@ def get_template_path(template_name: Optional[str] = None) -> Path:
 
 def get_reports_dir() -> Path:
     """
-    Получает директорию для хранения отчетов.
+    Gets the directory for storing reports.
 
     Returns
     --------
     Path
-        Путь к директории с отчетами
+        Path to the reports directory
     """
     try:
         from pamola_core.utils.io import get_data_repository
         repo_dir = get_data_repository()
         reports_dir = repo_dir / "reports" / "html"
     except (ImportError, Exception):
-        logger.warning("Не удалось получить директорию репозитория данных. Используем текущую директорию.")
+        logger.warning("Failed to get the data repository directory. Using the current directory.")
         reports_dir = Path("data/reports/html")
 
     if not reports_dir.exists():
@@ -407,58 +407,58 @@ def get_reports_dir() -> Path:
 
 def detect_task_type(task_id: str) -> str:
     """
-    Определяет тип задачи на основе ее идентификатора.
+    Determines the task type from its identifier.
 
     Parameters
     -----------
     task_id : str
-        Идентификатор задачи
+        Task identifier
 
     Returns
     --------
     str
-        Тип задачи (профилирование, очистка, анонимизация и т. д.)
+        Task type (profiling, cleaning, anonymization, etc.)
     """
     task_types = {
-        "profile": "Профилирование",
-        "clean": "Очистка",
-        "anonymize": "Анонимизация",
-        "evaluate": "Оценка",
-        "transform": "Трансформация",
-        "export": "Экспорт",
-        "import": "Импорт",
-        "test": "Тестирование"
+        "profile": "Profiling",
+        "clean": "Cleaning",
+        "anonymize": "Anonymization",
+        "evaluate": "Evaluation",
+        "transform": "Transformation",
+        "export": "Export",
+        "import": "Import",
+        "test": "Testing"
     }
 
     for prefix, task_type in task_types.items():
         if task_id.startswith(prefix) or f"_{prefix}" in task_id:
             return task_type
 
-    # Специальные случаи
+    # Special cases
     if "ident" in task_id or "identification" in task_id:
-        return "Профилирование"
+        return "Profiling"
     elif "details" in task_id:
-        return "Профилирование"
+        return "Profiling"
     elif "contacts" in task_id:
-        return "Профилирование"
+        return "Profiling"
 
-    # По умолчанию
-    return "Другое"
+    # Default
+    return "Other"
 
 
 def categorize_tasks(task_ids: List[str]) -> Dict[str, List[str]]:
     """
-    Категоризирует задачи по типам.
+    Categorizes tasks by type.
 
     Parameters
     -----------
     task_ids : List[str]
-        Список идентификаторов задач
+        List of task identifiers
 
     Returns
     --------
     Dict[str, List[str]]
-        Словарь {категория: [задачи]}
+        Dictionary {category: [tasks]}
     """
     categories = {}
 

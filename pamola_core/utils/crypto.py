@@ -306,7 +306,7 @@ def encrypt_file(
 
         logger.info(f"Encrypted {input_path} to {output_path}")
 
-        # Возвращаем путь к зашифрованному файлу
+        # Return the path to the encrypted file
         return output_path
 
     except Exception as e:

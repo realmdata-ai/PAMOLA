@@ -159,7 +159,7 @@ class DataReader:
         # Initialize result and error info
         df = None
         error_info = None
-        memory_info = {}  # Инициализируем переменную memory_info
+        memory_info = {}  # Initialize the memory_info variable
         file_memory_infos = []
         system_memory = {}
 
