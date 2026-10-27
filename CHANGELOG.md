@@ -7,10 +7,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **A metrics file with raw samples is no longer classified as an aggregate metric.** With
+  `include_raw_samples_in_metrics=True` the anonymization and fake-data metrics JSON carries
+  original values, yet it was registered as `aggregate_metric` with
+  `contains_source_values=False`, so `not_for_release` was `False`. It is now registered as
+  `diagnostic` with `contains_source_values=True` (`not_for_release`), in the operation result
+  and in the task report. Without the option nothing changes.
+- **A visualization write that outlasts the cancellation grace period no longer leaves its
+  file behind.** After the visualization timeout the run waits up to 30 s for a write already in
+  flight; a write still running after that finished later and kept its file. Such a write now
+  removes its own file when it ends and raises `VisualizationCancelledError` in the abandoned
+  worker. The operation still returns after the timeout plus the grace period; the file can
+  exist only while that write is still running.
+
+### Documentation
+
+- `docs/en` categorical generalization: the defaults of `min_group_size` and
+  `max_categories` are `10` and `1,000,000` (the page said `5` and `100`).
+- The `1.0.0rc2` entry below said it was published to PyPI; it was published to TestPyPI.
+
 ## [1.0.0rc2] - 2026-10-27
 
-The first `1.0.0` candidate on PyPI: `1.0.0rc1` was tagged but never published, and the
-maintainer review (#118) and the documentation and licence work (#119) landed after its tag.
+The first published `1.0.0` candidate, on TestPyPI (pre-release tags publish there only):
+`1.0.0rc1` was tagged but never published, and the maintainer review (#118) and the documentation and licence work (#119) landed after its tag.
 Everything below is new since `1.0.0rc1`.
 
 ### Fixed

@@ -17,7 +17,9 @@ from pamola_core.profiling.analyzers.numeric import NumericOperation
 from pamola_core.transformations.field_ops.remove_fields import RemoveFieldsOperation
 from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.utils.ops.op_result import OperationStatus
+from pamola_core.utils.vis_helpers import render_guard
 from pamola_core.utils.vis_helpers.render_guard import (
+    VisualizationCancelledError,
     guarded_write,
     prepare_render_context,
     wait_for_render,
@@ -107,6 +109,33 @@ def test_guard_removes_files_written_before_the_cancellation(tmp_path):
     gate.set()
     assert not target.exists()
     assert run.cancelled
+
+
+def test_a_write_that_outlasts_the_grace_period_removes_its_own_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(render_guard, "_CANCEL_GRACE_SECONDS", 0.2)
+    ctx, run = prepare_render_context()
+    target = tmp_path / "late.png"
+    entered, release = threading.Event(), threading.Event()
+    outcome = []
+
+    def worker():
+        try:
+            with guarded_write(target):
+                entered.set()
+                release.wait(30)
+                target.write_bytes(b"x")
+        except VisualizationCancelledError:
+            outcome.append("cancelled")
+
+    thread = threading.Thread(target=ctx.run, args=(worker,), daemon=True)
+    thread.start()
+    assert entered.wait(5)
+    assert wait_for_render(thread, run, 0.1, interval=0.05) is False
+    assert run.cancelled
+    release.set()
+    thread.join(5)
+    assert outcome == ["cancelled"]
+    assert not target.exists()
 
 
 def test_a_nonpositive_timeout_is_still_finite(tmp_path):
