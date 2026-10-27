@@ -117,7 +117,7 @@ report_output = report.generate(include_visualizations=True)
 {
     'report_type': 'k-anonymity',
     'timestamp': '2026-03-23T10:30:00Z',
-    'pamola_version': '1.0.0rc2',
+    'pamola_version': '1.0.0',
     'report_id': 'ka_20260323_103000'
 }
 ```
@@ -372,7 +372,7 @@ final_report = report.generate(include_visualizations=True)
    report_data = {
        'metadata': {
            'report_version': '1.0',
-           'pamola_version': '1.0.0rc2',
+           'pamola_version': '1.0.0',
            'framework': 'internal policy'
        },
        ...

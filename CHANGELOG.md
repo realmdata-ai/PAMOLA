@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-27
+
+The first stable release, and the first `1.0` version on PyPI. The code is `1.0.0rc2` plus the
+fixes below; `pip install pamola-core` no longer needs `--pre`.
+
 ### Fixed
 
 - **A metrics file with raw samples is no longer classified as an aggregate metric.** With
