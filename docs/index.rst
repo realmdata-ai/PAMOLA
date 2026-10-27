@@ -27,6 +27,14 @@ API Reference
    :toctree: generated
 
    pamola_core
+   pamola_core.anonymization
+   pamola_core.fake_data
+   pamola_core.profiling
+   pamola_core.transformations
+   pamola_core.metrics
+   pamola_core.analysis
+   pamola_core.io
+   pamola_core.utils
 
 ----
 
