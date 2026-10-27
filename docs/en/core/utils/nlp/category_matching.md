@@ -26,7 +26,8 @@ The Category Matching module provides sophisticated functionality for matching t
 ```
 pamola_core.utils.nlp.category_matching
 ├── Depends On:
-│   ├── pamola_core.utils.nlp.base (ConfigurationError, batch_process)
+│   ├── pamola_core.utils.nlp.base (batch_process)
+│   ├── pamola_core.errors.exceptions (ConfigurationError)
 │   └── pamola_core.utils.nlp.cache (caching functionality)
 └── Used By:
     ├── Data profiling operations
@@ -462,7 +463,7 @@ Typical performance on standard hardware:
 ```python
 import logging
 from pamola_core.utils.nlp.category_matching import CategoryDictionary
-from pamola_core.utils.nlp.base import ConfigurationError
+from pamola_core.errors.exceptions import ConfigurationError
 
 logger = logging.getLogger(__name__)
 

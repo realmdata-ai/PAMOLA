@@ -93,41 +93,11 @@ def __init__(
 | `save_suppressed_schema` | bool | True | Whether to save metadata about suppressed columns |
 | `**kwargs` | dict | - | Additional keyword arguments passed to `AnonymizationOperation` |
 
-### 3.3 Constructor Details
-
-```python
-def __init__(
-    self,
-    field_name: str,
-    additional_fields: Optional[List[str]] = None,
-    mode: str = "REMOVE",
-    save_suppressed_schema: bool = True,
-    # Standard parameters from base class
-    output_field_name: Optional[str] = None,
-    null_strategy: str = "PRESERVE",
-    batch_size: int = 10000,
-    use_cache: bool = False,
-    use_encryption: bool = False,
-    encryption_key: Optional[Path] = None,
-    engine: str = "auto",
-    max_rows_in_memory: int = 1000000,
-    **kwargs
-)
-```
-
-### 3.2 Parameters
-
-#### Primary Parameters
-- **field_name** (str): Primary field to suppress (required)
-- **additional_fields** (List[str]): Additional fields to suppress in the same operation
-- **mode** (str): Must be "REMOVE" (only valid mode for attribute suppression)
-- **save_suppressed_schema** (bool): Whether to save metadata about removed columns
-
-#### Processing Parameters
-- **batch_size** (int): Not used for attribute suppression (processes entire DataFrame)
-- **use_cache** (bool): Whether to cache results (limited utility for column removal)
-- **use_encryption** (bool): Whether to encrypt output files
-- **engine** (str): "pandas" or "dask" (Dask provides limited benefits for this operation)
+#### Common Base-Class Parameters (via `**kwargs`)
+- **use_cache** (bool, default False): Whether to cache results (limited utility for column removal)
+- **use_encryption** (bool, default False) / **encryption_key**: Encrypt output files
+- **engine** (str, default "auto"): "auto", "pandas" or "dask" (Dask provides limited benefits for this operation)
+- **chunk_size** (int, default 10000): Not relevant for attribute suppression (columns are dropped from the whole DataFrame)
 
 ### 3.3 Methods
 
@@ -193,7 +163,7 @@ from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.anonymization.suppression.attribute_op import AttributeSuppressionOperation
 
 # Create data source
-data_source = DataSource("path/to/data.csv")
+data_source = DataSource.from_file_path("path/to/data.csv")
 
 # Remove SSN column
 op = AttributeSuppressionOperation(
@@ -257,14 +227,11 @@ suppress_op = AttributeSuppressionOperation(
     additional_fields=columns_to_remove[1:]
 )
 
-# Then proceed with analysis
-from pamola_core.analysis import DataProfiler
-
-pipeline = [
-    suppress_op,              # Remove internal columns
-    DataProfiler(),          # Profile cleaned data
-    GeneralizationOperation() # Apply generalizations
-]
+# Then proceed with analysis: in a BaseTask, add the operations in order
+# (see the BaseTask documentation), e.g.
+#   self.add_operation(AttributeSuppressionOperation, field_name=..., additional_fields=...)
+#   self.add_operation(KAnonymityProfilerOperation, ...)      # profile cleaned data
+#   self.add_operation(CategoricalGeneralizationOperation, ...)  # apply generalizations
 ```
 
 ### 5.5 Conditional Column Removal
@@ -391,21 +358,18 @@ op_temp = AttributeSuppressionOperation(
 
 ### 8.3 Integration Patterns
 ```python
+# Operations run in the order they are added to a BaseTask (configure_operations)
+
 # Pattern 1: Remove identifiers first
-pipeline = [
-    AttributeSuppressionOperation(field_name="id", additional_fields=["uuid"]),
-    KAnonymityProfiler(),
-    GeneralizationOperation()
-]
+#   AttributeSuppressionOperation(field_name="id", additional_fields=["uuid"])
+#   -> KAnonymityProfilerOperation(...)
+#   -> CategoricalGeneralizationOperation(...)
 
 # Pattern 2: Remove after analysis
-pipeline = [
-    DataProfiler(),  # Analyze all columns
-    AttributeSuppressionOperation(  # Then remove unnecessary ones
-        field_name="internal_field",
-        additional_fields=identified_removals
-    )
-]
+#   DataAttributeProfilerOperation(...)          # analyze all columns
+#   -> AttributeSuppressionOperation(            # then remove unnecessary ones
+#          field_name="internal_field",
+#          additional_fields=identified_removals)
 ```
 
 ## 9. Error Handling
@@ -426,19 +390,21 @@ except FieldNotFoundError as e:
 **ValueError for Invalid Mode**
 ```python
 # Error: Wrong mode
+from pamola_core.errors.exceptions import ValidationError
+
 try:
     op = AttributeSuppressionOperation(
         field_name="ssn",
-        mode="MASK"  # Invalid - only "REMOVE" allowed
+        suppression_mode="MASK"  # Invalid - only "REMOVE" allowed
     )
-except ValueError as e:
+except ValidationError as e:
     print(f"Invalid mode: {e}")
 ```
 
 ### 9.2 Validation Helpers
 ```python
 # Pre-validate columns exist
-from pamola_core.anonymization.commons.validation import check_multiple_fields_exist
+from pamola_core.anonymization.commons.validation.base import check_multiple_fields_exist
 
 df = data_source.get_dataframe()[0]
 columns_to_remove = ["ssn", "phone", "email"]
@@ -588,7 +554,7 @@ for i in range(0, len(columns), chunk_size):
         field_name=chunk[0],
         additional_fields=chunk[1:] if len(chunk) > 1 else None
     )
-    data_source = DataSource(result.artifacts[0].path)  # Chain operations
+    data_source = DataSource.from_file_path(result.artifacts[0].path)  # Chain operations
 ```
 
 ---

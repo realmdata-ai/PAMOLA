@@ -329,40 +329,23 @@ print(f"Lemmatized: {lemmatized_tokens_list[0]}")
 ### Custom Lemmatizer Registration
 
 ```python
-from pamola_core.utils.nlp.tokenization import register_lemmatizer, lemmatize
+from pamola_core.utils.nlp.tokenization import LemmatizerRegistry, lemmatize
 
+# A custom lemmatizer is a per-token callable (or an object with a lemmatize(token) method).
+# It is consulted only for a language that has no built-in lemmatizer/stemmer, and the
+# language key must be a 2-letter code (other values are normalized to "en").
+replacements = {"krowy": "krowa", "koty": "kot"}
 
-# Define a custom lemmatizer for a specific domain
-def tech_lemmatizer(tokens, **kwargs):
-    """Custom lemmatizer for technology terms."""
-    replacements = {
-        'js': 'javascript',
-        'py': 'python',
-        'react.js': 'react',
-        'node.js': 'node',
-        'typescript': 'typescript',
-        'angular.js': 'angular'
-    }
-
-    result = []
-    for token in tokens:
-        lower_token = token.lower()
-        if lower_token in replacements:
-            result.append(replacements[lower_token])
-        else:
-            # Use the token as is
-            result.append(token)
-
-    return result
-
+def polish_lemmatizer(token):
+    """Toy dictionary-based lemmatizer for Polish."""
+    return replacements.get(token.lower(), token)
 
 # Register the custom lemmatizer
-register_lemmatizer('tech', tech_lemmatizer)
+LemmatizerRegistry.register("pl", polish_lemmatizer)
 
 # Use the custom lemmatizer
-tokens = ['Python', 'JS', 'React.js', 'Angular.js']
-lemmas = lemmatize(tokens, language='tech')
-print(f"Tech lemmas: {lemmas}")
+lemmas = lemmatize(["Koty", "krowy", "pies"], language="pl")
+print(f"Polish lemmas: {lemmas}")  # ['kot', 'krowa', 'pies']
 # Output: Tech lemmas: ['python', 'javascript', 'react', 'angular']
 ```
 
@@ -505,11 +488,12 @@ The `TokenizerFactory` selects tokenizers based on availability and preference:
    - Last choice: SimpleTokenizer (always available)
 
 ```python
-from pamola_core.utils.nlp.tokenization import TokenizerFactory, get_available_tokenizers
+from pamola_core.utils.nlp.base import DependencyManager
+from pamola_core.utils.nlp.tokenization import TokenizerFactory
 
-# Check what's available
-available = get_available_tokenizers()
-print(f"Available tokenizers: {available}")
+# Check which optional backends are installed
+status = DependencyManager.get_nlp_status()
+print(f"spaCy: {status['spacy']}, NLTK: {status['nltk']}, transformers: {status['transformers']}")
 
 # Create best available tokenizer
 tokenizer = TokenizerFactory.create_tokenizer("auto", language="en")
@@ -580,13 +564,13 @@ results = batch_tokenize(
 To control memory usage with caching:
 
 ```python
-from pamola_core.utils.nlp.tokenization_helpers import configure_cache
+from pamola_core.utils.nlp.tokenization import TokenizerFactory
 
-# Set cache size limit
-configure_cache(enable=True, max_size=500)
+# TokenizerFactory caches tokenizer instances; bypass the cache for one call
+tokenizer = TokenizerFactory.create_tokenizer("auto", language="en", no_cache=True)
 
-# Disable caching for memory-constrained environments
-configure_cache(enable=False)
+# Release all cached tokenizers in memory-constrained environments
+TokenizerFactory.clear_cache()
 ```
 
 ## Conclusion

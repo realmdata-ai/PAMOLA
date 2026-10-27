@@ -29,7 +29,7 @@ pamola_core.utils.ops.op_base.BaseOperation
 
 ```mermaid
 flowchart TD
-    A[User Script] -->|"DataFrame, task_dir"| B[NameOperation]
+    A[User Script] -->|"DataSource, task_dir"| B[FakeNameOperation]
     B -->|"field_name"| C[Prepare Operation]
     C --> D[Load Dictionary]
     C --> E[Initialize Generator]
@@ -91,7 +91,7 @@ The `FakeNameOperation` class is registered in the operations registry and provi
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `field_name` | str | Required | Name of the field to process |
-| `mode` | str | "ENRICH" | Operation mode: "REPLACE" or "ENRICH" |
+| `mode` | str | "REPLACE" | Operation mode: "REPLACE" or "ENRICH" |
 | `output_field_name` | str | None | Name for output field (if mode="ENRICH") |
 | `language` | str | "en" | Language for name generation |
 | `gender_field` | str | None | Field containing gender information |
@@ -101,14 +101,14 @@ The `FakeNameOperation` class is registered in the operations registry and provi
 | `use_faker` | bool | False | Whether to use Faker library if available |
 | `case` | str | "title" | Case formatting (upper, lower, title) |
 | `dictionaries` | dict | None | Paths to custom dictionaries |
-| `batch_size` | int | 10000 | Number of records to process in one batch |
+| `chunk_size` | int | 10000 | Number of records to process in one chunk |
 | `null_strategy` | str | "PRESERVE" | Strategy for handling NULL values |
 | `consistency_mechanism` | str | "prgn" | Method for ensuring consistency ("mapping" or "prgn") |
 | `mapping_store_path` | str | None | Path to store mappings |
 | `id_field` | str | None | Field for record identification |
 | `key` | str | None | Key for encryption/PRGN |
 | `context_salt` | str | None | Salt for PRGN |
-| `save_mapping` | bool | False | Whether to save mapping to file |
+| `save_mapping` | bool | False | Whether to save the mapping to file (written encrypted; requires `use_encryption=True` and `encryption_key`) |
 | `column_prefix` | str | "_" | Prefix for new column (if mode="ENRICH") |
 
 ## API Reference
@@ -118,7 +118,7 @@ The `FakeNameOperation` class is registered in the operations registry and provi
 | Method | Parameters | Description |
 |--------|------------|-------------|
 | `__init__(self, field_name, ...)` | `field_name` (str): Field to process<br>(...): Additional parameters | Initializes the name operation with configuration |
-| `execute(self, data_source, task_dir, reporter, **kwargs)` | `data_source`: DataFrame or file path<br>`task_dir` (Path): Directory for artifacts<br>`reporter`: Progress reporter<br>`**kwargs`: Additional parameters | Executes the name generation operation |
+| `execute(self, data_source, task_dir, reporter, **kwargs)` | `data_source` (DataSource): Input data<br>`task_dir` (Path): Directory for artifacts<br>`reporter`: Progress reporter<br>`**kwargs`: Additional parameters | Executes the name generation operation |
 | `process_batch(self, batch)` | `batch` (DataFrame): Batch of data to process | Processes a batch of data to generate synthetic names |
 | `process_value(self, value, **params)` | `value`: Original value<br>`**params`: Additional parameters | Processes a single value using the appropriate generation method |
 
@@ -129,18 +129,19 @@ The `FakeNameOperation` class is registered in the operations registry and provi
 | `_initialize_mapping_store(self, path)` | `path` (Union[str, Path]): Path to mapping store | Initializes the mapping store if needed |
 | `_collect_metrics(self, df)` | `df` (DataFrame): Processed DataFrame | Collects metrics for the name generation operation |
 | `_calculate_length_stats(self, series)` | `series` (Series): Series of strings | Calculates length statistics for a series of strings |
-| `_save_metrics(self, metrics_data, task_dir)` | `metrics_data` (Dict): Metrics data<br>`task_dir` (Path): Directory for artifacts | Saves metrics to a file and generates visualizations |
+| `_save_metrics(self, metrics, writer, result, reporter, progress_tracker, ...)` | Metrics dict, `DataWriter`, `OperationResult`, reporter, progress tracker | Saves metrics through the DataWriter and registers the artifact (inherited from `GeneratorOperation`) |
 
 ## Usage Examples
 
 ### Basic Usage
 
 ```python
-from pamola_core.fake_data.operations.name_op import NameOperation
 from pathlib import Path
+from pamola_core import FakeNameOperation
+from pamola_core.utils.ops.op_data_source import DataSource
 
 # Create name operation for field "full_name"
-name_op = NameOperation(
+name_op = FakeNameOperation(
     field_name="full_name",
     mode="ENRICH",      # Create new column
     language="en"       # Use English names
@@ -148,38 +149,38 @@ name_op = NameOperation(
 
 # Execute the operation
 result = name_op.execute(
-    data_frame,                # pandas DataFrame
-    Path("./task_directory"),  # Directory for artifacts
-    reporter                   # Progress reporter
+    data_source=DataSource.from_dataframe(data_frame),
+    task_dir=Path("./task_directory"),
+    reporter=reporter
 )
 
-# Access the processed DataFrame
-processed_df = result.data
+# The processed data is written to task_directory/output/
+print(result.status, result.metrics)
 ```
 
 ### Advanced Configuration
 
 ```python
 # Configure with more options
-name_op = NameOperation(
+name_op = FakeNameOperation(
     field_name="customer_name",
     mode="REPLACE",
     language="ru",
     gender_field="gender",
     format="LFM",
     consistency_mechanism="mapping",
-    save_mapping=True,
+    save_mapping=True,                   # mapping is saved encrypted:
+    use_encryption=True,                 # requires use_encryption
+    encryption_key="<task key>",         # and the task encryption key
     mapping_store_path="./mappings/names.json",
-    batch_size=5000,
+    chunk_size=5000,
     null_strategy="PRESERVE"
 )
 
-# Execute with additional parameters
 result = name_op.execute(
-    data_source="./data/customers.csv",  # File path
+    data_source=DataSource.from_file_path("./data/customers.csv"),
     task_dir=Path("./output"),
-    reporter=progress_reporter,
-    save_data=True                       # Save output to CSV
+    reporter=progress_reporter
 )
 
 # Access artifacts
@@ -189,22 +190,19 @@ for artifact in result.artifacts:
 
 ## Output Artifacts
 
-The operation produces several artifacts in the task directory:
+The operation produces several artifacts in the task directory (`{timestamp}` is the operation
+timestamp):
 
 ```
 task_dir/
 ├── output/
-│   └── name_generator_full_name_2023-08-15_123045.csv   # Processed data
+│   └── full_name_FakeNameOperation_output_{timestamp}.csv         # Processed data
 ├── metrics/
-│   └── name_generator_full_name_metrics.json            # Metrics in JSON
+│   └── full_name_FakeNameOperation_metrics_{timestamp}.json       # Metrics in JSON
 ├── maps/
-│   └── name_generator_full_name_mapping.json            # Mapping store
-├── reports/
-│   └── name_generator_full_name_report.md               # Metrics report
+│   └── NameGenerator_operation_full_name_mapping.json             # Mapping store (encrypted; only with save_mapping=True)
 └── visualizations/
-    ├── name_generator_full_name_value_distribution.png  # Value distribution
-    ├── name_generator_full_name_length_stats.png        # Length statistics
-    └── name_generator_full_name_replacements.png        # Replacement rate
+    └── FakeNameOperation_full_name_value_distribution_{timestamp}.png  # Value distribution (generate_visualization=True)
 ```
 
 ## Metrics Collection
@@ -220,10 +218,10 @@ The operation collects comprehensive metrics:
 
 ## Integration with PAMOLA.CORE Infrastructure
 
-The `NameOperation` class integrates with several pamola core components:
+The `FakeNameOperation` class integrates with several pamola core components:
 
 - **Operation Registry**: Registers via `@register()` decorator
-- **OperationResult**: Returns structured result with data, artifacts, metrics
+- **OperationResult**: Returns structured result with status, artifacts, metrics
 - **Progress Reporting**: Updates progress via provided reporter
 - **IO Utilities**: Uses `pamola_core.utils.io` for file operations
 - **Visualization**: Creates charts via `pamola_core.utils.visualization`

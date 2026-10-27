@@ -47,7 +47,7 @@ def __init__(
 **Example:**
 ```python
 from pamola_core.privacy_models import LDiversityCalculator
-from pamola_core.privacy_models.l_diversity import LDiversityReport
+from pamola_core.privacy_models.l_diversity.reporting import LDiversityReport
 
 processor = LDiversityCalculator(l=3, diversity_type='distinct')
 report = LDiversityReport(processor=processor)
@@ -144,7 +144,7 @@ tech_report = report.generate(output_format='technical')
 
 ```python
 from pamola_core.privacy_models import LDiversityCalculator
-from pamola_core.privacy_models.l_diversity import LDiversityReport
+from pamola_core.privacy_models.l_diversity.reporting import LDiversityReport
 
 processor = LDiversityCalculator(l=3, diversity_type='distinct')
 anonymized = processor.apply_model(df, quasi_ids)
@@ -162,7 +162,7 @@ print(f"Min diversity: {report_output['privacy_evaluation']['min_diversity']}")
 
 ```python
 from pamola_core.privacy_models import LDiversityCalculator
-from pamola_core.privacy_models.l_diversity import LDiversityReport
+from pamola_core.privacy_models.l_diversity.reporting import LDiversityReport
 import json
 
 # Process with caching
@@ -181,7 +181,7 @@ with open('ldiversity_report.json', 'w') as f:
 ### Example 3: Manual Report Data
 
 ```python
-from pamola_core.privacy_models.l_diversity import LDiversityReport
+from pamola_core.privacy_models.l_diversity.reporting import LDiversityReport
 
 # Manually assembled report data
 report_data = {
@@ -209,7 +209,7 @@ report_output = report.generate()
 
 ```python
 from pamola_core.privacy_models import LDiversityCalculator
-from pamola_core.privacy_models.l_diversity import LDiversityReport
+from pamola_core.privacy_models.l_diversity.reporting import LDiversityReport
 from pamola_core.privacy_models.l_diversity.attribute_risk import AttributeDisclosureRiskAnalyzer
 
 processor = LDiversityCalculator(l=3, diversity_type='entropy')

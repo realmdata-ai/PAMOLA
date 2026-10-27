@@ -101,7 +101,7 @@ def analyze_field_level(
 
 ```python
 import pandas as pd
-from pamola_core.analysis import analyze_field_level
+from pamola_core.analysis.field_analysis import analyze_field_level
 from pathlib import Path
 
 # Load data

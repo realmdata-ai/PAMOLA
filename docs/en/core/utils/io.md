@@ -201,9 +201,12 @@ flowchart TD
 | `get_file_stats()` | Gets statistics about a file | `file_path` | `Dict[str, Any]` |
 | `list_directory_contents()` | Lists files in a directory | `directory`, `pattern`, `recursive` | `List[Path]` |
 | `clear_directory()` | Removes files from a directory | `directory`, `ignore_patterns`, `confirm` | `int` |
-| `create_secure_temp_directory()` | Creates a secure temporary directory | `prefix`, `parent_dir`, `register_for_cleanup` | `Path` |
-| `get_temp_file_for_decryption()` | Creates a temporary file for decryption | `original_file`, `suffix`, `create` | `Path` |
-| `safe_remove_temp_file()` | Securely removes a temporary file | `file_path` | `bool` |
+| `create_secure_temp_directory()` * | Creates a secure temporary directory | `prefix`, `parent_dir`, `register_for_cleanup` | `Path` |
+| `get_temp_file_for_decryption()` * | Creates a temporary file for decryption | `original_file`, `suffix`, `create` | `Path` |
+| `safe_remove_temp_file()` * | Securely removes a temporary file | `file_path` | `bool` |
+
+\* Defined in `pamola_core.utils.io_helpers.directory_utils`, not re-exported by
+`pamola_core.utils.io`. `safe_remove_temp_file` is also exported from the top-level `pamola_core` package.
 
 ### Utility and Analysis Functions
 
@@ -381,7 +384,8 @@ print(f"Savings: {optimization_info['savings_percent']:.1f}%")
 ### Secure Directory Operations
 
 ```python
-from pamola_core.utils.io import ensure_directory, create_secure_temp_directory, safe_remove_temp_file
+from pamola_core.utils.io import ensure_directory
+from pamola_core.utils.io_helpers.directory_utils import create_secure_temp_directory, safe_remove_temp_file
 
 # Create a secure directory for sensitive data
 secure_dir = create_secure_temp_directory(prefix="sensitive_")

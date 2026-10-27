@@ -51,7 +51,7 @@ Implements Distance to Closest Record (DCR) privacy metric, which measures the m
 ## 5. API Reference & Key Methods
 | Method | Description |
 |--------|-------------|
-| `__init__(normalize_features, distance_metric, n_neighbors, batch_size)` | Initialize DCR metric with configuration |
+| `__init__(distance_metric, normalize_features, percentiles, use_faiss, aggregation, k_neighbors, max_comparisons, distance_thresholds, ordinal_columns)` | Initialize DCR metric with configuration |
 | `calculate_metric(original_df, transformed_df)` | Compute DCR between original and synthetic datasets |
 | `_calculate_dcr_faiss(...)` | Calculate DCR using FAISS index for efficient nearest neighbors |
 | `_interpret_dcr(dcr_stats)` | Interpret DCR statistics into risk level |
@@ -79,7 +79,7 @@ print(result['risk_level'])  # Risk assessment
 ```
 
 ## 7. Troubleshooting & Investigation Guide
-- Ensure original and synthetic DataFrames have matching columns
+- Ensure original and synthetic DataFrames have matching columns
 - FAISS requires faiss installation (pip install faiss-cpu or faiss-gpu)
 - Check data preprocessing for NaN/missing values before calculation
 
@@ -89,7 +89,7 @@ print(result['risk_level'])  # Risk assessment
 - Production-ready for synthetic data validation and privacy assessment
 
 ## 9. Challenges, Limitations & Enhancement Opportunities
-- FAISS integration requires faiss-cpu or faiss-gpu installation
+- FAISS integration requires faiss-cpu or faiss-gpu installation
 - Feature preprocessing impacts DCR interpretation
 - Future: add GPU acceleration and batch processing improvements
 
