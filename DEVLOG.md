@@ -5,7 +5,8 @@ Format follows the BEST PRW DEVLOG: dated entries, then ADRs, then the
 technical-debt register.
 
 Companion documents:
-- `docs/prompts/20260816_SYSTEM_CC_PAMOLA_CORE.md` — CC agent system prompt
+- `docs/prompts/` — CC agent prompts (git-ignored, kept outside the published repository)
+- `DATA_PROVENANCE.md` — origin and licence of every data asset
 - `docs/output/` — CC / CD / GCA reports
 - `CHANGELOG.md` — user-facing, release-scoped (Keep a Changelog / PEP 440)
 
