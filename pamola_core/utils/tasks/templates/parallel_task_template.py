@@ -172,7 +172,7 @@ class ParallelTask(BaseTask):
             failed_operations = [name for name, result in self.results.items()
                                  if result.status.name != 'SUCCESS']
 
-            # Доступ к атрибуту из config, а не напрямую
+            # Access the attribute via config rather than directly
             if failed_operations and not self.config.continue_on_error:
                 self.logger.error(f"Operations failed: {', '.join(failed_operations)}")
                 self.status = "operation_error"

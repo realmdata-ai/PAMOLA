@@ -1,8 +1,13 @@
 # Attacks Module Index
 
-**Module:** `pamola_core.attacks`
+**Module:** `pamola_core.attacks` (experimental, internal package - not exported from `pamola_core.__init__`)
 **Location:** `docs/en/core/attacks/`
-**Status:** Complete Documentation (8 files)
+
+The package carries only the attacks that measure **anonymization** quality: record linkage
+and attribute inference. Membership inference (a model-privacy question) and singling-out are
+not part of `pamola_core`. Distance to Closest Record (DCR) and Nearest Neighbor Distance Ratio
+(NNDR) are privacy **metrics**, implemented in `pamola_core.metrics.privacy` and documented in
+[Distance (DCR)](../metrics/privacy/distance.md) and [Neighbor (NNDR)](../metrics/privacy/neighbor.md).
 
 ## Quick Navigation
 
@@ -15,26 +20,11 @@
 - **[Linkage Attack](./linkage_attack.md)** — 3 record linkage methods
   - `record_linkage_attack()` — Exact matching
   - `probabilistic_linkage_attack()` — Fuzzy matching (Fellegi-Sunter)
-  - `cluster_vector_linkage_attack()` — PCA + cosine similarity
-
-#### Membership Inference Attacks
-- **[Membership Inference](./membership_inference.md)** — 3 membership detection methods
-  - `membership_inference_attack_dcr()` — Distance-based
-  - `membership_inference_attack_nndr()` — Ratio-based
-  - `membership_inference_attack_model()` — Confidence-based
+  - `cluster_vector_linkage_attack()` — TruncatedSVD + cosine similarity (CVPLA)
 
 #### Attribute Attacks
 - **[Attribute Inference](./attribute_inference.md)** — Sensitive attribute guessing
   - `attribute_inference_attack()` — Entropy-based feature selection
-
-### Metric Classes
-
-#### Distance Metrics
-- **[Distance to Closest Record (DCR)](./distance_to_closest_record.md)** — Dataset dissimilarity metric
-  - `calculate_dcr()` — Nearest neighbor distance computation
-
-- **[Nearest Neighbor Distance Ratio (NNDR)](./nearest_neighbor_distance_ratio.md)** — Confidence metric
-  - `calculate_nndr()` — Ratio-based nearest neighbor analysis
 
 #### Evaluation
 - **[Attack Metrics](./attack_metrics.md)** — Attack effectiveness evaluation
@@ -44,8 +34,8 @@
 
 ### Foundation
 - **[Base Attack](./base_attack.md)** — Abstract interfaces
-  - `AttackInitialization` class
-  - `PreprocessData` helper class
+  - `AttackInitialization` class (alias `BaseAttack`)
+  - `PreprocessData` helper class (`pamola_core.attacks.preprocess_data`)
 
 ## By Task
 
@@ -55,22 +45,10 @@
    - Exact/deterministic attributes → [Linkage Attack](./linkage_attack.md) → `record_linkage_attack()`
    - Noisy/real-world attributes → [Linkage Attack](./linkage_attack.md) → `probabilistic_linkage_attack()`
    - Multi-dimensional data → [Linkage Attack](./linkage_attack.md) → `cluster_vector_linkage_attack()`
-3. Measure risk with metrics:
-   - Baseline similarity → [DCR](./distance_to_closest_record.md)
-   - Confidence in matches → [NNDR](./nearest_neighbor_distance_ratio.md)
+3. Measure distance-based risk with the privacy metrics:
+   - Baseline similarity → [DCR](../metrics/privacy/distance.md)
+   - Confidence in matches → [NNDR](../metrics/privacy/neighbor.md)
 4. Evaluate success → [Attack Metrics](./attack_metrics.md)
-
-### I need to detect membership inference risk
-1. Read [Membership Inference](./membership_inference.md) overview
-2. Choose method:
-   - Simple distance-based → `membership_inference_attack_dcr()`
-   - Confidence-based → `membership_inference_attack_nndr()`
-   - ML-based → `membership_inference_attack_model()`
-3. Get ground truth (know who should be members)
-4. Evaluate with [Attack Metrics](./attack_metrics.md):
-   - `attack_metrics()` — Overall performance
-   - `attack_success_rate()` — Can you find members?
-   - `residual_risk_score()` — How much better than random?
 
 ### I need to infer hidden attributes
 1. Read [Attribute Inference](./attribute_inference.md) — understand entropy-based selection
@@ -89,15 +67,13 @@
 4. Use [Attack Metrics](./attack_metrics.md) to evaluate results
 
 ### I need to understand a metric
-- **DCR** → [Distance to Closest Record](./distance_to_closest_record.md) — "How far is the test record from nearest training record?"
-- **NNDR** → [Nearest Neighbor Distance Ratio](./nearest_neighbor_distance_ratio.md) — "Is this record unique (1st/2nd neighbor ratio)?"
+- **DCR** → [Distance (DCR)](../metrics/privacy/distance.md) — "How far is each transformed record from the nearest original record?"
+- **NNDR** → [Neighbor (NNDR)](../metrics/privacy/neighbor.md) — "Is the closest match clearly closer than the second closest?"
 - **Accuracy** → [Attack Metrics](./attack_metrics.md) → "Overall correctness of attack predictions"
-- **ASR** → [Attack Metrics](./attack_metrics.md) → "What % of actual members were identified?"
+- **ASR** → [Attack Metrics](./attack_metrics.md) → "What % of actual positives were identified?"
 - **RRS** → [Attack Metrics](./attack_metrics.md) → "Is attack better than random guessing?"
 
 ## Attack Selection Guide
-
-### Choose Attack Type
 
 | If You Have | Best Attack | Alternative |
 |------------|-------------|-------------|
@@ -105,72 +81,29 @@
 | Clear quasi-identifiers | Record Linkage | Probabilistic Linkage |
 | Noisy/misspelled data | Probabilistic Linkage | Record Linkage |
 | High-dimensional data | CVPLA Linkage | NNDR metric |
-| Training + test sets | Membership Inference | DCR/NNDR |
-| Ground truth membership | Model-based MIA | DCR/NNDR |
 | Partial sensitive attributes | Attribute Inference | None (use together) |
-| Need baseline metric | DCR | NNDR |
-| Need confidence scores | NNDR | DCR |
 | Need to compare methods | Attack Metrics | All metrics |
-
-### Risk Level Assessment
-
-**HIGH RISK** (Need stronger anonymization):
-- Linkage attack finds many matches
-- Membership inference ASR > 0.7
-- Attribute inference accuracy > 0.8
-- DCR mean < 1.0
-- NNDR mean < 0.5
-- RRS > 0.3
-
-**MEDIUM RISK** (Consider improvements):
-- Linkage attack finds some matches
-- Membership inference ASR 0.5-0.7
-- Attribute inference accuracy 0.6-0.8
-- DCR mean 1.0-3.0
-- NNDR mean 0.5-0.8
-- RRS 0.1-0.3
-
-**LOW RISK** (Good anonymization):
-- Linkage attack finds few/no matches
-- Membership inference ASR < 0.5
-- Attribute inference accuracy < 0.6
-- DCR mean > 3.0
-- NNDR mean > 0.8
-- RRS < 0.1
 
 ## Code Examples By Topic
 
 ### Basic Usage
 ```python
-from pamola_core.attacks import (
-    LinkageAttack, MembershipInference, AttributeInference,
-    DistanceToClosestRecord, AttackMetrics
-)
+from pamola_core.attacks import LinkageAttack, AttackMetrics
 import pandas as pd
 
 # Load data
 original = pd.read_csv('original.csv')
 anonymized = pd.read_csv('anonymized.csv')
 
-# Run attacks
+# Run a linkage attack
 linkage = LinkageAttack()
 matches = linkage.record_linkage_attack(original, anonymized, ['age', 'city'])
 
-mia = MembershipInference()
-predictions = mia.membership_inference_attack_dcr(original, anonymized)
-
-# Evaluate
+# Evaluate predictions against ground truth (y_true, y_pred are 0/1 arrays you supply)
 metrics = AttackMetrics()
-results = metrics.attack_metrics(y_true, predictions)
+results = metrics.attack_metrics(y_true, y_pred)
 print(f"Attack Accuracy: {results['Attack Accuracy']}")
 ```
-
-### Complete Workflow
-See [Membership Inference](./membership_inference.md#complete-membership-inference-workflow) for 40+ line example with:
-- Dataset creation
-- Multiple attack methods
-- Evaluation with all metrics
-- Risk classification
 
 ### Threshold Optimization
 See [Attack Metrics](./attack_metrics.md#threshold-optimization) for example showing:
@@ -183,96 +116,53 @@ See [Attack Metrics](./attack_metrics.md#threshold-optimization) for example sho
 ```python
 # Base classes
 from pamola_core.attacks import AttackInitialization, BaseAttack
+from pamola_core.attacks.preprocess_data import PreprocessData
 
-# Core attacks
+# Attacks
 from pamola_core.attacks import LinkageAttack
-from pamola_core.attacks import MembershipInference, MembershipInferenceAttack
 from pamola_core.attacks import AttributeInference, AttributeInferenceAttack
 
-# Metrics
-from pamola_core.attacks import DistanceToClosestRecord, DistanceToClosestRecordAttack
-from pamola_core.attacks import NearestNeighborDistanceRatio, NearestNeighborDistanceRatioAttack
+# Evaluation
 from pamola_core.attacks import AttackMetrics
 
-# All at once
-from pamola_core.attacks import (
-    AttackInitialization,
-    LinkageAttack,
-    MembershipInference,
-    AttributeInference,
-    DistanceToClosestRecord,
-    NearestNeighborDistanceRatio,
-    AttackMetrics,
-)
+# Distance-based privacy metrics live in the metrics package
+from pamola_core.metrics.privacy.distance import DistanceToClosestRecord
+from pamola_core.metrics.privacy.neighbor import NearestNeighborDistanceRatio
 ```
 
 ## Common Workflows
 
 ### Privacy Risk Assessment (Complete)
-1. **Baseline Metrics** → [DCR](./distance_to_closest_record.md)
+1. **Baseline Metrics** → [DCR](../metrics/privacy/distance.md)
 2. **Re-identification Test** → [Linkage Attack](./linkage_attack.md)
-3. **Membership Inference** → [Membership Inference](./membership_inference.md)
-4. **Attribute Risk** → [Attribute Inference](./attribute_inference.md)
-5. **Comprehensive Evaluation** → [Attack Metrics](./attack_metrics.md)
-
-### Quick Privacy Check (5 minutes)
-1. Compute [DCR](./distance_to_closest_record.md) → Check mean distance
-2. Run [Membership Inference](./membership_inference.md#quick-usage) → Check ASR
-3. Calculate [RRS](./attack_metrics.md#residual-risk-score) → Assess risk
-
-### Detailed Privacy Analysis (30 minutes)
-1. Profile data with [Profiling Module](../profiling/)
-2. Run all attacks from [Attacks Overview](./attacks_overview.md)
-3. Create comparison table (see [Membership Inference](./membership_inference.md#multi-method-comparison))
-4. Generate risk report with metrics from [Attack Metrics](./attack_metrics.md)
+3. **Attribute Risk** → [Attribute Inference](./attribute_inference.md)
+4. **Comprehensive Evaluation** → [Attack Metrics](./attack_metrics.md)
 
 ### Anonymization Validation
 1. Apply anonymization technique
-2. Run baseline attacks (Linkage, DCR)
+2. Run baseline attacks (Linkage) and the DCR metric
 3. Check metrics improve
 4. Iterate until risk acceptable
 
 ## Troubleshooting Quick Links
 
 - **"No matches found"** → [Linkage Attack Troubleshooting](./linkage_attack.md#troubleshooting)
-- **"All predictions are 0"** → [Membership Inference Troubleshooting](./membership_inference.md#troubleshooting)
 - **"Threshold issues"** → [Attack Metrics Troubleshooting](./attack_metrics.md#troubleshooting)
-- **"Empty array returned"** → [DCR Troubleshooting](./distance_to_closest_record.md#troubleshooting)
-- **"Performance too slow"** → [Linkage Attack Performance](./linkage_attack.md#troubleshooting) or [DCR Performance](./distance_to_closest_record.md#troubleshooting)
+- **"Performance too slow"** → [Linkage Attack Performance](./linkage_attack.md#troubleshooting)
 
 ## Related Documentation
 
 - **[Profiling Module](../profiling/)** — Analyze data before anonymization
-- **[Metrics Module](../metrics/)** — Privacy metrics (k-anonymity, l-diversity)
+- **[Metrics Module](../metrics/)** — Privacy metrics (DCR, NNDR, disclosure risk)
 - **[Anonymization Module](../anonymization/)** — Apply protective transformations
 - **[Privacy Models](../privacy_models/)** — Theoretical privacy foundations
 
-## Version Information
-
-- **Module Version:** 1.0
-- **Documentation Version:** 1.0
-- **Last Updated:** 2026-03-23
-- **Python Support:** 3.11+
-- **Dependencies:** numpy, pandas, scipy, scikit-learn, recordlinkage
-
 ## File Summary
 
-| File | Lines | Purpose | Key Classes |
-|------|-------|---------|-------------|
-| attacks_overview.md | ~300 | Module entry point | All classes overview |
-| base_attack.md | ~200 | Abstract interfaces | AttackInitialization |
-| linkage_attack.md | ~400 | Re-identification | LinkageAttack (3 methods) |
-| membership_inference.md | ~500 | Membership detection | MembershipInference (3 methods) |
-| attribute_inference.md | ~350 | Attribute inference | AttributeInference |
-| distance_to_closest_record.md | ~450 | Distance metric | DistanceToClosestRecord |
-| nearest_neighbor_distance_ratio.md | ~500 | Confidence metric | NearestNeighborDistanceRatio |
-| attack_metrics.md | ~500 | Evaluation | AttackMetrics (3 methods) |
-| **TOTAL** | **~3,200** | **Complete module** | **8 classes, 15+ methods** |
-
----
-
-**Questions?** Check relevant documentation file's [Troubleshooting](#troubleshooting) or [Best Practices](#best-practices) sections.
-
-**Getting Started?** Start with [Attacks Overview](./attacks_overview.md).
-
-**Need Examples?** Each documentation file includes 4-5+ detailed, runnable examples.
+| File | Purpose | Key Classes |
+|------|---------|-------------|
+| attacks_overview.md | Module entry point | All classes overview |
+| base_attack.md | Abstract interfaces | AttackInitialization, PreprocessData |
+| linkage_attack.md | Re-identification | LinkageAttack (3 methods) |
+| attribute_inference.md | Attribute inference | AttributeInference |
+| attack_metrics.md | Evaluation | AttackMetrics (3 methods) |

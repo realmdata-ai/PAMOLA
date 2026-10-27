@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        Secret redaction for diagnostics
 Package:       pamola_core.utils
-License:       BSD 3-Clause
+License:       MIT
 
 ONE definition of "this parameter is a secret" and ONE way to remove it, used at every
 boundary where parameters are serialized for people or for disk: ``config.json``

@@ -426,10 +426,10 @@ corr = PlotlyCorrelationMatrix(data=df_sample)
 
 ## Related Documentation
 
-- [base.py](./base.md) - Figure base classes and factory
-- [theme.py](./theme.md) - Theming system
-- [cor_utils.py](./cor_utils.md) - Correlation utilities
-- [Visualization Guide](../../../visualization-guide.md) - Comprehensive usage guide
+- `pamola_core/utils/vis_helpers/base.py` - Figure base classes and factory
+- `pamola_core/utils/vis_helpers/theme.py` - Theming system
+- `pamola_core/utils/vis_helpers/cor_utils.py` - Correlation utilities
+- [Visualization](../visualization.md) - Visualization module guide
 
 ## Summary
 

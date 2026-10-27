@@ -319,7 +319,8 @@ class TaskFactory:
             )
 
         try:
-            return cls.task_types[task_type](config)
+            task_cls = cls.task_types[task_type]
+            return task_cls(config)
         except Exception as e:
             raise TaskInitializationError(
                 task_name=task_type,

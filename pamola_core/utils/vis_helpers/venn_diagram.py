@@ -7,7 +7,7 @@ Description:
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for Venn diagrams using both Plotly and Matplotlib backends.
 Plotly is the primary implementation, while Matplotlib serves as a fallback when needed.

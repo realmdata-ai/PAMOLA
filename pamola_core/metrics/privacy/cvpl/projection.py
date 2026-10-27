@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL vectorization (phi) and projection (psi)
 Package:       pamola_core.metrics.privacy.cvpl
-License:       BSD 3-Clause
+License:       MIT
 
 ``phi``: declared attributes -> numeric vectors (numeric: mean-imputed z-score;
 categorical: one-hot with a bounded width). ``psi``: PCA keeping the smallest number

@@ -96,7 +96,7 @@ def __init__(
 ## Installation & Import
 
 ```python
-from pamola_core.anonymization.noise import UniformTemporalNoiseOperation
+from pamola_core import UniformTemporalNoiseOperation
 
 # Or import from the package root
 from pamola_core.anonymization import UniformTemporalNoiseOperation
@@ -108,7 +108,7 @@ from pamola_core.anonymization import UniformTemporalNoiseOperation
 
 ```python
 import pandas as pd
-from pamola_core.anonymization.noise import UniformTemporalNoiseOperation
+from pamola_core import UniformTemporalNoiseOperation
 
 # Create sample data
 df = pd.DataFrame({
@@ -183,7 +183,7 @@ At least one of these must be specified:
 | `mode` | str | "REPLACE" | "REPLACE" or "ENRICH" |
 | `output_field_name` | str | None | Output field name (ENRICH mode) |
 | `null_strategy` | str | "PRESERVE" | How to handle nulls |
-| `batch_size` | int | 10000 | Batch size for processing |
+| `chunk_size` | int | 10000 | Chunk size for processing |
 | `engine` | str | "auto" | Processing engine: "pandas", "dask", "auto" |
 
 ## Advanced Features
@@ -346,11 +346,11 @@ print(f"Order preservation: {temporal_impact['ordering_preservation']['kendall_t
 ### Memory Optimization
 
 ```python
-# Enable adaptive batch sizing for large datasets
+# Adaptive chunk sizing for large datasets
 operation = UniformTemporalNoiseOperation(
     field_name='timestamp',
     noise_range_hours=48,
-    adaptive_batch_size=True
+    adaptive_chunk_size=True
 )
 ```
 
@@ -364,8 +364,7 @@ operation = UniformTemporalNoiseOperation(
     field_name='event_time',
     noise_range_days=7,
     engine='auto',              # Automatic Dask switching
-    max_rows_in_memory=500000,  # Dask threshold
-    batch_size=50000           # Larger batches for efficiency
+    chunk_size=50000           # Larger batches for efficiency
 )
 ```
 
@@ -448,7 +447,7 @@ event_noise = UniformTemporalNoiseOperation(
 )
 
 # Check if temporal ordering is preserved
-result = event_noise.execute(data_source, task_dir)
+result = event_noise.execute(data_source, task_dir, reporter)
 ordering_preserved = result.metrics['temporal_impact']['ordering_preservation']['order_fully_preserved']
 ```
 
@@ -494,7 +493,7 @@ operation = UniformTemporalNoiseOperation(
     field_name='timestamp',
     noise_range_days=7,
     preserve_weekends=False,  # Disable for performance
-    batch_size=25000         # Smaller batches
+    chunk_size=25000         # Smaller batches
 )
 ```
 
@@ -502,7 +501,7 @@ operation = UniformTemporalNoiseOperation(
 
 ```python
 # Validate temporal data before processing
-from pamola_core.anonymization.commons.validation import DateTimeFieldValidator
+from pamola_core.anonymization.commons.validation.field_validators import DateTimeFieldValidator
 
 validator = DateTimeFieldValidator()
 result = validator.validate(df['date_field'])
@@ -617,11 +616,11 @@ class UniformTemporalNoiseOperation(AnonymizationOperation):
 ## Related Operations
 
 - **UniformNumericNoiseOperation**: For adding noise to numeric fields
-- **DateGeneralizationOperation**: For date generalization (binning)
+- **DateTimeGeneralizationOperation**: For date generalization (binning)
 - **Future**: Temporal pattern mining protection
 
 ## References
 
-- [PAMOLA.CORE Noise Operations Sub-Specification](./specs/noise_srs.md)
-- [Temporal Privacy Patterns](./guides/temporal_privacy.md)
-- [Datetime Anonymization Best Practices](./guides/datetime_anon.md)
+- [Base Anonymization Operation](../base_anonymization_op.md)
+- [Uniform Numeric Noise Operation](./uniform_numeric_op.md)
+- [DateTime Generalization Operation](../generalization/datetime_op.md)

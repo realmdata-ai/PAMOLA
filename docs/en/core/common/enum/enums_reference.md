@@ -1,8 +1,6 @@
 # Enumerations Quick Reference
 
 **Module:** `pamola_core.common.enum`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
 
 ## Overview
 
@@ -32,8 +30,7 @@ This document provides a comprehensive quick-reference table of all enumerations
 
 | Enum | Members | Values | Purpose |
 |------|---------|--------|---------|
-| **FidelityMetrics** | KS, KL, JS, WASSERSTEIN | "ks", "kl", "js", "wasserstein" | Statistical similarity between datasets |
-| **FidelityMetricsType** | KS, KL, JS, WASSERSTEIN | "ks", "kl", "js", "wasserstein" | Type variant of fidelity metrics |
+| **FidelityMetricsType** | KS, KL | "ks", "kl" | Statistical similarity between datasets (metrics selectable in `FidelityOperation`) |
 
 ### Privacy Metrics
 
@@ -110,15 +107,12 @@ DistanceMetricType.MAHALANOBIS    # "mahalanobis"   - Statistical distance
 
 **Documentation:** [DistanceMetricType](./distance_metric_type.md)
 
-### FidelityMetrics / FidelityMetricsType
+### FidelityMetricsType
 ```python
-from pamola_core.common.enum.fidelity_metrics import FidelityMetrics
 from pamola_core.common.enum.fidelity_metrics_type import FidelityMetricsType
 
-FidelityMetrics.KS             # "ks"          - Kolmogorov-Smirnov test
-FidelityMetrics.KL             # "kl"          - Kullback-Leibler divergence
-FidelityMetrics.JS             # "js"          - Jensen-Shannon divergence
-FidelityMetrics.WASSERSTEIN    # "wasserstein" - Wasserstein distance
+FidelityMetricsType.KS         # "ks"          - Kolmogorov-Smirnov test
+FidelityMetricsType.KL         # "kl"          - Kullback-Leibler divergence
 ```
 
 ### PrivacyMetricsType
@@ -276,7 +270,7 @@ groups_with_titles = get_groups_with_titles("NumericGeneralizationConfig")
 from pamola_core.common.enum.encryption_mode import EncryptionMode
 from pamola_core.common.enum.mask_strategy_enum import MaskStrategyEnum
 from pamola_core.common.enum.distance_metric_type import DistanceMetricType
-from pamola_core.common.enum.fidelity_metrics import FidelityMetrics
+from pamola_core.common.enum.fidelity_metrics_type import FidelityMetricsType
 from pamola_core.common.enum.privacy_metrics_type import PrivacyMetricsType
 from pamola_core.common.enum.utility_metrics_type import UtilityMetricsType
 
@@ -316,7 +310,7 @@ from pamola_core.common.enum.form_groups import GroupName, get_groups_for_operat
 **Data Quality**
 - `UtilityMetricsType` - Measure data utility
 - `StatisticalMethod` - Aggregation method
-- `FidelityMetrics` - Statistical similarity
+- `FidelityMetricsType` - Statistical similarity
 
 **ML Operations**
 - `ModelType` - Select model algorithm

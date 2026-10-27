@@ -16,7 +16,8 @@ maintainers = [
 
 description = "Pamola Core library for data anonymization, privacy models, metrics, and utilities"
 readme = "README.md"
-license = { text = "BSD-3-Clause" }
+license = "MIT"
+license-files = ["LICENSE"]
 
 keywords = [
     "privacy",
@@ -40,7 +41,6 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Information Analysis",
     "Topic :: Security",
@@ -185,7 +185,7 @@ ignore = [
 # report methods) was removed together with the duplicates it covered.
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0", "wheel"]  # >=77: PEP 639 SPDX `license` / `license-files`
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

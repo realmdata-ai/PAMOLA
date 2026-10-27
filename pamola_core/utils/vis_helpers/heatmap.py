@@ -4,7 +4,7 @@ Module: Heatmap Visualization Implementation
 Description: Thread-safe heatmap visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for heatmaps using both
 Plotly (primary) and Matplotlib (fallback) backends to create

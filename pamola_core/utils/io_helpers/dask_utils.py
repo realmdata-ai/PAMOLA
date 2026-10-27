@@ -6,7 +6,7 @@ Version:       1.1.0+refactor.2025.05.22
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
    Utilities for leveraging Dask distributed computing with PAMOLA I/O modules.
    Provides seamless integration between PAMOLA's I/O operations and Dask's

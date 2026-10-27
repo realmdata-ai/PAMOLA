@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       Mar 2025
 Updated:       2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     Enhanced Kullback–Leibler (KL) divergence implementation with improved confidence level

@@ -260,14 +260,10 @@ anonymized = processor.apply_model(df, quasi_identifiers=['age_group', 'location
 
 ```python
 from pamola_core.privacy_models import LDiversityCalculator
-from pamola_core.transformations import DataTransformer
 
-# Load data
-df = load_data()
-
-# Apply transformations
-transformer = DataTransformer()
-df_transformed = transformer.apply_transformations(df, transformations)
+# Load data and apply any preparatory transformations first
+# (e.g. with the pamola_core transformation operations such as CleanInvalidValuesOperation)
+df_transformed = load_data()
 
 # Apply privacy model
 privacy_processor = LDiversityCalculator(l=4, diversity_type='entropy')
@@ -284,14 +280,13 @@ save_data(df_anonymized)
 
 ```python
 from pamola_core.privacy_models import LDiversityCalculator
-from pamola_core.profiling import ProfileAnalyzer
+from pamola_core import analyze_dataset_attributes
 
-# Analyze dataset
-analyzer = ProfileAnalyzer()
-profile = analyzer.analyze_dataset(df)
+# Classify column roles (direct identifier, quasi-identifier, sensitive, ...)
+profile = analyze_dataset_attributes(df)
 
-# Extract quasi-identifiers from profile
-quasi_ids = profile['quasi_identifiers']
+# Extract quasi-identifiers from the profile
+quasi_ids = profile['column_groups']['QUASI_IDENTIFIER']
 
 # Apply privacy model
 processor = LDiversityCalculator(l=3)

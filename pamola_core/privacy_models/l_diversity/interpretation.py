@@ -13,8 +13,8 @@ Key Features:
 This module is used by the main privacy.py module but can also be used
 independently for custom risk interpretation needs.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
-Licensed under BSD 3-Clause License
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
+Licensed under the MIT License
 """
 
 import logging

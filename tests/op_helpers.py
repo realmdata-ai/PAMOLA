@@ -4,7 +4,7 @@ Module: Operation Testing Helpers
 Description: Test utilities for operation unit testing
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides testing utilities for PAMOLA.CORE operations,
 including test doubles, assertion helpers, and fixture setup methods.

@@ -117,7 +117,7 @@ report_output = report.generate(include_visualizations=True)
 {
     'report_type': 'k-anonymity',
     'timestamp': '2026-03-23T10:30:00Z',
-    'pamola_version': '0.0.1',
+    'pamola_version': '1.0.0rc1',
     'report_id': 'ka_20260323_103000'
 }
 ```
@@ -206,7 +206,7 @@ report_output = report.generate(include_visualizations=True)
 
 ```python
 from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 
 # Process data
 processor = KAnonymityProcessor(k=5)
@@ -239,7 +239,7 @@ print(f"Threshold: {report_output['anonymization_result']['threshold_status']}")
 
 ```python
 from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 import json
 
 # Step 1: Evaluate
@@ -299,7 +299,7 @@ print(report['at_risk_records'], report['at_risk_percentage'])
 
 ```python
 from pamola_core.privacy_models import KAnonymityProcessor
-from pamola_core.privacy_models.k_anonymity import KAnonymityReport
+from pamola_core.privacy_models.k_anonymity.ka_reporting import KAnonymityReport
 
 processor = KAnonymityProcessor(k=5)
 anonymized = processor.apply_model(df, quasi_ids)
@@ -372,7 +372,7 @@ final_report = report.generate(include_visualizations=True)
    report_data = {
        'metadata': {
            'report_version': '1.0',
-           'pamola_version': '0.0.1',
+           'pamola_version': '1.0.0rc1',
            'framework': 'internal policy'
        },
        ...

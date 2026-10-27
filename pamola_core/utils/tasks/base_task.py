@@ -4,7 +4,7 @@ Module: Base Task
 Description: Foundation class for all task implementations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides the base class that all tasks in the PAMOLA ecosystem
 should inherit from. It defines the standard task lifecycle, configuration

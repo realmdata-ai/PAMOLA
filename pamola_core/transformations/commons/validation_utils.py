@@ -5,7 +5,7 @@ Description: Validation utilities for transformation operations, ensuring parame
              schema correctness, and constraint enforcement.
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 """
 
 import logging

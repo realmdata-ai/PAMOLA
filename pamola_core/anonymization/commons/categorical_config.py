@@ -8,7 +8,7 @@ Status:        Stable
 Author:        PAMOLA Core Team
 Created:       2025-01-23
 Updated:       2025-10-14
-License:       BSD 3-Clause
+License:       MIT
 
 Description
 Configuration management for categorical data generalization operations in PAMOLA.CORE.

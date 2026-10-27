@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   Field-level analysis utilities for dataset privacy and quality assessment.

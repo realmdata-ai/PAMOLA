@@ -41,7 +41,7 @@ The UniformNumericNoiseOperation adds controlled random noise to numeric data fi
 ## Installation & Import
 
 ```python
-from pamola_core.anonymization.noise import UniformNumericNoiseOperation
+from pamola_core import UniformNumericNoiseOperation
 
 # Or import from the package root
 from pamola_core.anonymization import UniformNumericNoiseOperation
@@ -53,7 +53,7 @@ from pamola_core.anonymization import UniformNumericNoiseOperation
 
 ```python
 import pandas as pd
-from pamola_core.anonymization.noise import UniformNumericNoiseOperation
+from pamola_core import UniformNumericNoiseOperation
 
 # Create sample data
 df = pd.DataFrame({
@@ -248,11 +248,11 @@ print(f"Distribution p-value: {metrics['distribution_preservation']['ks_pvalue']
 The operation automatically optimizes memory usage:
 
 ```python
-# Enable adaptive batch sizing
+# Adaptive chunk sizing
 operation = UniformNumericNoiseOperation(
     field_name='value',
     noise_range=100,
-    adaptive_batch_size=True  # Adjusts batch size based on memory
+    adaptive_chunk_size=True  # Adjusts chunk size based on memory (default)
 )
 ```
 
@@ -266,14 +266,13 @@ operation = UniformNumericNoiseOperation(
     field_name='amount',
     noise_range=1000,
     engine='auto',              # Automatic engine selection
-    max_rows_in_memory=500000,  # Switch to Dask above this
-    dask_chunk_size='50MB'      # Partition size for Dask
+    dask_partition_size='50MB'      # Partition size for Dask
 )
 ```
 
 ### Performance Tips
 
-1. **Batch Size**: Larger batches are more efficient but use more memory
+1. **Chunk Size**: Larger chunks are more efficient but use more memory
 2. **Secure Random**: Disable for non-sensitive data to improve speed
 3. **Statistical Scaling**: Pre-calculate if applying to multiple datasets
 4. **Bounds Checking**: Minimize bound constraints for better performance
@@ -330,7 +329,7 @@ age_noise = UniformNumericNoiseOperation(
     round_to_integer=True
 )
 
-result = age_noise.execute(data_source, task_dir)
+result = age_noise.execute(data_source, task_dir, reporter)
 ```
 
 ### Example 2: Financial Data Protection
@@ -387,7 +386,7 @@ operation = UniformNumericNoiseOperation(
     field_name='sensor_reading',
     noise_range=0.1,
     noise_type='multiplicative',
-    batch_size=50000
+    chunk_size=50000
 )
 
 # Execute with progress tracking
@@ -424,13 +423,13 @@ operation = UniformNumericNoiseOperation(
 #### 3. Memory Issues
 ```python
 # Error: MemoryError during processing
-# Solution: Enable Dask or reduce batch size
+# Solution: Enable Dask or reduce chunk size
 operation = UniformNumericNoiseOperation(
     field_name='large_field',
     noise_range=1000,
     engine='dask',           # Force Dask usage
-    batch_size=5000,         # Smaller batches
-    dask_chunk_size='25MB'   # Smaller partitions
+    chunk_size=5000,         # Smaller batches
+    dask_partition_size='25MB'   # Smaller partitions
 )
 ```
 
@@ -517,6 +516,5 @@ class UniformNumericNoiseOperation(AnonymizationOperation):
 
 ## References
 
-- [PAMOLA.CORE Noise Operations Sub-Specification](./specs/noise_srs.md)
-- [Anonymization Best Practices Guide](./guides/anonymization.md)
-- [Privacy-Utility Tradeoff Analysis](./guides/privacy_utility.md)
+- [Base Anonymization Operation](../base_anonymization_op.md)
+- [Uniform Temporal Noise Operation](./uniform_temporal_op.md)

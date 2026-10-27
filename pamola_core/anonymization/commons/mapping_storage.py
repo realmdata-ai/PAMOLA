@@ -6,7 +6,7 @@ Version:       2.1.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-20
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module provides secure storage and retrieval of pseudonymization mappings

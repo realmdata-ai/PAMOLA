@@ -189,8 +189,8 @@ if metric1 == DistanceMetricType.EUCLIDEAN:
 
 ```python
 from pamola_core.common.enum.distance_metric_type import DistanceMetricType
-from pamola_core.metrics import PrivacyMetricsConfig
 
+# Illustrative configuration dictionaries (plain dicts, not a pamola_core config class)
 # Configure privacy metrics with specific distance metric
 privacy_config = {
     "metric_type": DistanceMetricType.MAHALANOBIS,
@@ -371,7 +371,7 @@ for metric in [DistanceMetricType.EUCLIDEAN, DistanceMetricType.MANHATTAN]:
 
 ## Related Metrics
 
-- **Fidelity Metrics** (`pamola_core.common.enum.fidelity_metrics`) - Statistical similarity
+- **Fidelity Metrics** (`pamola_core.common.enum.fidelity_metrics_type`) - Statistical similarity
 - **Privacy Metrics** (`pamola_core.common.enum.privacy_metrics_type`) - Privacy evaluation
 - **Utility Metrics** (`pamola_core.common.enum.utility_metrics_type`) - Data utility
 

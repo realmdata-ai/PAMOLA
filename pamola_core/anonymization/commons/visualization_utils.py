@@ -6,7 +6,7 @@ Author: PAMOLA Core Team
 Created: 2024-01
 Modified: 2025-01
 Version: 2.1.0
-License: BSD 3-Clause
+License: MIT
 
 This module provides helper utilities for visualizing anonymization metrics
 calculated by metric_utils.py and privacy_metric_utils.py. It serves as a

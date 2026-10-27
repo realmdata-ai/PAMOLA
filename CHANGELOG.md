@@ -118,6 +118,39 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   release installable on 3.10 (4.1.0) is still affected; `filelock==4.2.1` is now an unconditional pin. Ruff
   `target-version` is `py311`. Applications on Python 3.10 must stay on `1.0.0.dev*` or upgrade Python.
 
+### Licence
+
+- **Relicensed from BSD-3-Clause to MIT; Realm Inveo Inc. (REALMDATA) is the only copyright
+  holder.** `LICENSE` is the standard MIT text; the package metadata declare
+  `License-Expression: MIT` (PEP 639) and ship `LICENSE`; module headers and the API reference
+  carry the same notice. Releases published before this change keep their original licence.
+
+### Documentation and data
+
+- **README examples run.** The quickstart called `TaskReporter` with arguments it does not take and
+  showed two operations that, each reading the same input, produced two files with the other
+  identifier in clear text; the metrics example passed `quasi_identifiers` to
+  `PrivacyMetricOperation` (a `TypeError`). Both are rewritten and verified, the README now says
+  that an operation transforms only its own field of the dataset it is given, and
+  `tests/test_readme_examples.py` executes every Python block of `README.md`.
+- **The repository is English-only.** Russian-language internal material (`docs/ru`, `docs/specs`,
+  `docs/mocks`, four working reports in `docs/output`), the superseded August 2026 audit reports and the remnants of the bilingual MkDocs
+  build (`docs/common`, an empty `mkdocs.yml`) were removed; Russian comments, docstrings and
+  messages in the code were translated. Russian *data* used by the multilingual features (name
+  dictionaries, stop words, keyword and phone patterns) is unchanged.
+- **Documentation of removed code was deleted** (LLM contour, membership inference, the old
+  `attacks/` DCR/NNDR duplicates, `email_dask`, `op_test_helpers`, scripts and tools that are not in
+  the repository), and the remaining `docs/en` examples were corrected against the current API.
+- **`utils.reporting` (internal) emits English labels**: task categories (`Profiling`,
+  `Anonymization`, ...) and the default report title were Russian.
+- **Data provenance register.** `DATA_PROVENANCE.md` records the origin, licence and verification
+  status of every data asset in the repository and the package, and the terms of the third-party
+  corpora used for verification (which are never distributed).
+- **Removed `data/raw/hr_job_resume/HR_JOB_SAMPLE.csv`.** Described as synthetic job postings, it
+  held CV records with names, dates of birth, e-mail addresses and phone numbers, without a
+  passport or generator, so its synthetic origin could not be established. It was not used by any
+  test or example and was never part of the package.
+
 ## [1.0.0rc1] - 2026-10-24
 
 ### As-built review fixes (ASB)

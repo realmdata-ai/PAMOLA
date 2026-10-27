@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-05-20
 Updated:       2025-06-20
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module implements consistent mapping pseudonymization for sensitive data fields.

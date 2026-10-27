@@ -6,7 +6,7 @@ Version:       1.2.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   This module provides essential field manipulation utilities for the PAMOLA.CORE

@@ -33,13 +33,12 @@ The Categorical Generalization module provides privacy-preserving transformation
 - **Comprehensive Metrics**: Privacy metrics, information loss, and performance tracking
 - **Rich Visualizations**: Distribution comparisons, hierarchy sunbursts, and metric dashboards
 - **Flexible NULL Handling**: Multiple strategies for NULL value processing
-- **Error Recovery**: Configurable error handling with batch-level recovery
 
 ### Design Principles
 
 1. **Facade Pattern**: Minimal orchestration layer delegating to specialized modules
 2. **Thread Safety**: All operations are thread-safe with RLock protection
-3. **Performance**: Vectorized operations, caching, and adaptive batch sizing
+3. **Performance**: Vectorized operations, caching, and adaptive chunk sizing
 4. **Extensibility**: Easy to add new strategies or customize behavior
 5. **Observability**: Comprehensive logging with trace IDs and metrics
 
@@ -191,7 +190,7 @@ plotly >= 5.0.0  # For interactive charts
 ### Basic Setup
 
 ```python
-from pamola_core.anonymization.generalization import CategoricalGeneralizationOperation
+from pamola_core import CategoricalGeneralizationOperation
 
 # Create operation
 operation = CategoricalGeneralizationOperation(
@@ -389,12 +388,8 @@ operation = CategoricalGeneralizationOperation(
     
     # Performance settings
     engine="auto",  # Switch to Dask for large data
-    max_rows_in_memory=1000000,
-    adaptive_batch_size=True,
-    
-    # Error handling
-    continue_on_error=True,
-    error_batch_handling="log"
+    chunk_size=100000,
+    adaptive_chunk_size=True
 )
 ```
 
@@ -433,11 +428,11 @@ operation = CategoricalGeneralizationOperation(
 | `hierarchy_level` | int | 1 | Level of generalization (1-5) |
 | `min_group_size` | int | 10 | Minimum size for groups |
 | `freq_threshold` | float | 0.01 | Frequency threshold (0-1) |
-| `max_categories` | int | 1000 | Maximum categories to preserve |
+| `max_categories` | int | 1000000 | Maximum categories to preserve |
 | `null_strategy` | str | "PRESERVE" | NULL handling strategy |
 | `engine` | str | "auto" | Processing engine selection |
-| `batch_size` | int | 10000 | Records per batch |
-| `use_cache` | bool | True | Enable result caching |
+| `chunk_size` | int | 10000 | Records per chunk |
+| `use_cache` | bool | False | Enable result caching |
 
 ### Methods
 
@@ -455,11 +450,6 @@ def reset_state(self) -> None
 ```
 Reset internal state after execution.
 
-#### get_batch_metrics()
-```python
-def get_batch_metrics(self) -> List[Dict[str, Any]]
-```
-Retrieve collected batch metrics.
 
 ### NULL Strategies
 
@@ -485,7 +475,7 @@ Retrieve collected batch metrics.
   "similarity_threshold": 0.85,
   "null_strategy": "PRESERVE",
   "engine": "auto",
-  "batch_size": 50000,
+  "chunk_size": 50000,
   "privacy_check_enabled": true,
   "min_acceptable_k": 5
 }
@@ -591,34 +581,33 @@ config = {
 
 ### Large Dataset Support (Dask)
 
-The module automatically switches to Dask for datasets exceeding the configured threshold:
+With `engine="auto"` (the default) the base class selects pandas or Dask from the data size:
 
 ```python
-# Automatic Dask switching (v3.0.0 feature from base class)
+# Automatic engine selection (from the base class)
 operation = CategoricalGeneralizationOperation(
     field_name="category",
     strategy="hierarchy",
-    engine="auto",               # Automatic engine selection
-    max_rows_in_memory=1000000,  # Switch to Dask above this threshold
-    dask_chunk_size="100MB",     # Size of Dask partitions
-    dask_npartitions=None        # Auto-calculate partitions
+    engine="auto",                # Automatic engine selection
+    dask_partition_size="100MB",  # Size of Dask partitions
+    npartitions=None              # Auto-calculate partitions
 )
 
 # Force Dask usage
 operation = CategoricalGeneralizationOperation(
     field_name="category",
     engine="dask",  # Always use Dask
-    dask_chunk_size="50MB"
+    dask_partition_size="50MB"
 )
 ```
 
 **Dask Processing Flow:**
-1. Data exceeds `max_rows_in_memory` threshold
-2. Automatically converts to Dask DataFrame
+1. The engine selection picks Dask (`engine="dask"`, or `engine="auto"` for large data)
+2. Converts to Dask DataFrame
 3. Processes in distributed partitions
 4. Converts back to pandas for output
 
-**Note:** The base class `AnonymizationOperation` handles all Dask management transparently.
+**Note:** The base class `AnonymizationOperation` handles Dask management.
 
 ### Performance Metrics
 
@@ -631,7 +620,7 @@ operation = CategoricalGeneralizationOperation(
 ### Optimization Tips
 
 1. **Enable Caching**: Use `use_cache=True` for repeated operations
-2. **Adaptive Batch Size**: Enable `adaptive_batch_size=True`
+2. **Adaptive Chunk Size**: `adaptive_chunk_size=True` (default)
 3. **Optimize Memory**: Use `optimize_memory=True` for dtype optimization
 4. **Pre-calculate Value Counts**: Pass via context for multiple operations
 
@@ -680,8 +669,7 @@ operation = CategoricalGeneralizationOperation(
     case_sensitive=False,
     fuzzy_matching=True,
     
-    # Error handling
-    continue_on_error=True,
+    # NULL handling
     null_strategy="ANONYMIZE"
 )
 ```
@@ -699,7 +687,7 @@ operation = CategoricalGeneralizationOperation(
     
     # Performance optimization
     engine="auto",
-    batch_size=100000,
+    chunk_size=100000,
     use_cache=True
 )
 ```
@@ -724,8 +712,8 @@ operation = CategoricalGeneralizationOperation(
 # Solution: Force Dask usage
 operation = CategoricalGeneralizationOperation(
     engine="dask",  # Force Dask
-    dask_chunk_size=25000,  # Smaller chunks
-    batch_size=5000  # Smaller batches
+    dask_partition_size="25MB",  # Smaller partitions
+    chunk_size=5000  # Smaller chunks
 )
 ```
 
@@ -758,60 +746,8 @@ operation = CategoricalGeneralizationOperation(
 ```python
 # Get detailed metrics after execution
 result = operation.execute(data_source, task_dir, reporter)
-
-# Analyze batch metrics
-batch_metrics = operation.get_batch_metrics()
-for metric in batch_metrics:
-    print(f"Batch {metric['batch_id']}: {metric['performance']['records_per_second']} rec/s")
+print(result.execution_time, result.metrics)
 ```
-
-## Migration Guide
-
-### From v2.x to v4.0
-
-1. **Import Changes**:
-```python
-# Old
-from pamola_core.anonymization.categorical import CategoricalGeneralization
-
-# New
-from pamola_core.anonymization.generalization import CategoricalGeneralizationOperation
-```
-
-2. **Configuration Changes**:
-```python
-# Old
-operation = CategoricalGeneralization(
-    field_name="city",
-    hierarchy_path="cities.json",
-    level=2
-)
-
-# New
-operation = CategoricalGeneralizationOperation(
-    field_name="city",
-    strategy="hierarchy",
-    external_dictionary_path="cities.json",
-    hierarchy_level=2
-)
-```
-
-3. **New Features Available**:
-- NULL strategies
-- Error batch handling
-- Dask support
-- Privacy metrics
-- State reset
-
-### Backward Compatibility
-
-A legacy wrapper is available for smooth migration:
-```python
-# Legacy support (will show deprecation warning)
-from pamola_core.anonymization.generalization.categorical_legacy import CategoricalGeneralization
-```
-
----
 
 ## Support & Contributing
 
@@ -820,5 +756,5 @@ For questions, issues, or contributions:
 - Issues: [GitHub Issues](https://github.com/pamola/pamola_core/issues)
 - Email: support@pamola.ai
 
-**License:** BSD 3-Clause  
+**License:** MIT  
 **Copyright:** © 2025 PAMOLA Core Team

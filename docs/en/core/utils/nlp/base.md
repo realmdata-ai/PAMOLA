@@ -4,9 +4,8 @@
 
 The `base.py` module is the foundational component of the NLP package in PAMOLA.CORE. It provides fundamental utilities, constants, and base classes for all NLP package components, including error hierarchies, dependency management, resource path handling, and common utility functions.
 
-**Version:** 1.2.0  
 **Status:** stable  
-**License:** BSD 3-Clause
+**License:** MIT
 
 ## Key Features
 
@@ -36,54 +35,21 @@ These paths can be overridden via environment variables for deployment flexibili
 
 ### 2. Error Hierarchy
 
-#### Base NLP Errors
+The NLP exception classes are **not** defined in `pamola_core.utils.nlp.base`; they live in
+`pamola_core.errors.exceptions` (module `pamola_core/errors/exceptions/nlp.py`) and all derive
+from `BasePamolaError`:
 
-```python
-class NLPError(Exception)
-```
-Base class for all NLP module exceptions. All custom exceptions in the NLP module inherit from this class.
+| Class | Parent | Raised when |
+|-------|--------|-------------|
+| `NLPError` | `BasePamolaError` | Generic NLP failure |
+| `PromptValidationError` | `BasePamolaError` | Prompt validation fails |
+| `ResourceNotFoundError` | `BasePamolaError` | A required resource (stopwords, dictionaries, etc.) is missing |
+| `ModelNotAvailableError` | `BasePamolaError` | A required NLP model (e.g., spaCy model) is not available |
+| `ModelLoadError` | `BasePamolaError` | A model cannot be loaded |
+| `UnsupportedLanguageError` | `BasePamolaError` | An operation is requested for an unsupported language |
+| `LLMError` | `BasePamolaError` | Reserved LLM error family (`LLMConnectionError`, `LLMGenerationError`, `LLMResponseError`); `pamola_core` ships no LLM client |
 
-```python
-class ResourceNotFoundError(NLPError)
-```
-Raised when a required resource (stopwords, dictionaries, etc.) is not found.
-
-```python
-class ModelNotAvailableError(NLPError)
-```
-Raised when a required NLP model (e.g., spaCy model) is not available or cannot be loaded.
-
-```python
-class UnsupportedLanguageError(NLPError)
-```
-Raised when operations are requested for an unsupported language.
-
-```python
-class ConfigurationError(NLPError)
-```
-Raised for configuration-related errors (invalid values, missing parameters, conflicts).
-
-#### LLM-Specific Errors
-
-```python
-class LLMError(NLPError)
-```
-Base exception for all Large Language Model operations.
-
-```python
-class LLMConnectionError(LLMError)
-```
-Raised when LLM connection fails (network issues, authentication, timeouts).
-
-```python
-class LLMGenerationError(LLMError)
-```
-Raised during text generation (model failures, token limits, invalid parameters).
-
-```python
-class LLMResponseError(LLMError)
-```
-Raised when response is invalid (empty responses, parsing failures, validation errors).
+`ConfigurationError` is defined in `pamola_core.errors.exceptions` (`core_domain.py`).
 
 ### 3. Dependency Management
 
@@ -115,8 +81,8 @@ Checks if a module's version meets specified requirements. Returns `(requirement
 def get_nlp_status(cls) -> Dict[str, bool]
 ```
 Returns availability status of common NLP dependencies:
-- nltk, spacy, pymorphy2, langdetect, fasttext, transformers
-- LLM-related: lmstudio, tiktoken, openai, anthropic
+- nltk, spacy, pymorphy2, langdetect, fasttext, transformers, wordcloud
+- lmstudio, tiktoken, openai, anthropic (only probed for availability; none is a `pamola_core` dependency)
 
 ```python
 @classmethod
@@ -170,7 +136,7 @@ Abstract base class for cache implementations. All cache implementations must im
 
 ### Error Handling
 ```python
-from pamola_core.utils.nlp.base import NLPError, ResourceNotFoundError
+from pamola_core.errors.exceptions import NLPError, ResourceNotFoundError
 
 try:
     load_resource("unknown_resource.txt")
@@ -250,6 +216,5 @@ This module serves as the foundation for all NLP operations in PAMOLA.CORE:
 
 ## Changelog
 
-- **1.2.0**: Added LLM error hierarchy for new LLM subsystem
 - **1.1.0**: Enhanced dependency management with version checking
 - **1.0.0**: Initial implementation

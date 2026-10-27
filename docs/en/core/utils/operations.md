@@ -32,10 +32,9 @@ pamola_core/utils/ops/
 ├── op_field_utils.py            # Field manipulation and naming utilities
 ├── op_registry.py               # Operation discovery and registration
 ├── op_result.py                 # Operation result and artifact management
-├── op_test_helpers.py           # Testing utilities and mocks
 └── templates/                   # Templates for new operations
     ├── operation_skeleton.py    # Base template for new operations
-    └── config_example.json      # Example configuration schema
+    └── config_example.jsonc     # Example configuration schema
 ```
 
 ## Architecture and Data Flow
@@ -332,7 +331,7 @@ class MyAnonymizationOperation(DataFrameOperation):
 - Validate all external inputs
 
 #### 6. Testing
-- Use op_test_helpers for test setup
+- Build in-memory inputs with `DataSource.from_dataframe()` and a temporary `task_dir`
 - Test both success and failure paths
 - Verify artifact creation
 - Mock external dependencies
@@ -432,31 +431,28 @@ def execute(self, data_source, task_dir, reporter, **kwargs):
 
 ### Unit Testing
 
-```python
-from pamola_core.utils.ops.op_test_helpers import (
-    MockDataSource,
-    StubDataWriter,
-    create_test_operation_env,
-    assert_artifact_exists,
-    assert_metrics_content
-)
+`pamola_core` does not ship a dedicated test-helper module; use pytest fixtures such as
+`tmp_path` together with an in-memory `DataSource`:
 
-def test_operation():
-    # Setup test environment
-    tmp_path, reporter = create_test_operation_env(Path("/tmp"))
-    
-    # Create mock data
+```python
+import pandas as pd
+from unittest.mock import MagicMock
+
+from pamola_core.utils.ops.op_data_source import DataSource
+from pamola_core.utils.ops.op_result import OperationStatus
+
+def test_operation(tmp_path):
+    # Create in-memory input data
     df = pd.DataFrame({"id": [1, 2, 3], "value": [10, 20, 30]})
-    data_source = MockDataSource.from_dataframe(df)
-    
-    # Run operation
+    data_source = DataSource.from_dataframe(df)
+
+    # Run operation (run() takes keyword-only arguments)
     op = MyOperation()
-    result = op.run(data_source, tmp_path, reporter)
-    
+    result = op.run(data_source=data_source, task_dir=tmp_path, reporter=MagicMock())
+
     # Verify results
     assert result.status == OperationStatus.SUCCESS
-    assert_artifact_exists(tmp_path, "output", "processed_*.csv")
-    assert_metrics_content(tmp_path, {"records_processed": 3})
+    assert list((tmp_path / "output").glob("*.csv"))
 ```
 
 ## Common Pitfalls and Solutions

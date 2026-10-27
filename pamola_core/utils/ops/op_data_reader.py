@@ -4,7 +4,7 @@ Module: Data Reader
 Description: Unified data reading capabilities for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides a specialized reader for various data sources,
 ensuring optimal integration with io.py and consistent handling of
@@ -159,7 +159,7 @@ class DataReader:
         # Initialize result and error info
         df = None
         error_info = None
-        memory_info = {}  # Инициализируем переменную memory_info
+        memory_info = {}  # Initialize the memory_info variable
         file_memory_infos = []
         system_memory = {}
 

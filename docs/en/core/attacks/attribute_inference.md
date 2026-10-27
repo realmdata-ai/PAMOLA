@@ -1,8 +1,6 @@
 # Attribute Inference Documentation
 
 **Module:** `pamola_core.attacks.attribute_inference`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -336,15 +334,13 @@ for attr in sensitive_attrs:
 # For inference attack, we want GOOD predictor
 ```
 
-**3. Use with Linkage or Membership Inference**
+**3. Use with Linkage**
 ```python
 # Complete attack chain:
 # 1. Linkage: Re-identify individuals
-# 2. Membership: Confirm they were in training set
-# 3. Attribute: Infer their sensitive attributes
+# 2. Attribute: Infer their sensitive attributes
 
-matches = linkage.record_linkage_attack(original, anonymized)
-memberships = mia.membership_inference_attack_dcr(original, anonymized)
+matches = linkage.record_linkage_attack(original, anonymized, ['age', 'city'])
 salaries = aia.attribute_inference_attack(original, anonymized, 'salary')
 
 # If all succeed, privacy is severely compromised
@@ -423,12 +419,11 @@ for col in data_train.columns:
 - A: Target attribute and features are independent.
 ```python
 # Good news for privacy! Means attribute is not inferrable from visible features
-# Continue with other anonymization tests (linkage, membership inference)
+# Continue with other anonymization tests (linkage, DCR/NNDR metrics)
 ```
 
 ## Related Components
 
 - **[Linkage Attack](./linkage_attack.md)** — Re-identify individuals first
-- **[Membership Inference](./membership_inference.md)** — Confirm membership before attribute inference
 - **[Attribute Metrics](./attack_metrics.md)** — Evaluate attack success rates
 - **[Profiling Module](../profiling/)** — Analyze feature entropy and importance before anonymization

@@ -5,11 +5,42 @@ Format follows the BEST PRW DEVLOG: dated entries, then ADRs, then the
 technical-debt register.
 
 Companion documents:
-- `docs/prompts/20260816_SYSTEM_CC_PAMOLA_CORE.md` — CC agent system prompt
+- `docs/prompts/` — CC agent prompts (git-ignored, kept outside the published repository)
+- `DATA_PROVENANCE.md` — origin and licence of every data asset
 - `docs/output/` — CC / CD / GCA reports
 - `CHANGELOG.md` — user-facing, release-scoped (Keep a Changelog / PEP 440)
 
 DEVLOG is for *why and how*; CHANGELOG is for *what shipped*.
+
+---
+
+## 2026-10-27 — MIT licence, English-only repository, data provenance
+
+Branch `docs/english-only-docs-and-data-provenance`. Prompted by the pre-PyPI audit of
+`1.0.0rc1` (maintainers' archive, BOX `PAMOLA/core/20261027_*`).
+
+**Decision (Val, 2026-10-27): the project is relicensed from BSD-3-Clause to MIT, with
+Realm Inveo Inc. (REALMDATA) as the only copyright holder.** `LICENSE` is the verbatim MIT
+text with no additional clauses; `pyproject.toml` declares `license = "MIT"` and
+`license-files` (PEP 639, setuptools >= 77, which also removes the build-time deprecation of
+the licence table and classifier); every module header and the Sphinx metadata name the single
+holder. Earlier releases (`0.0.1` .. `1.0.0.dev4`) stay under the terms they were published
+with. `data/raw/crossparty_anti-fraud` keeps its own Apache-2.0 licence until decided otherwise.
+
+**English only.** Russian-language internal material (`docs/ru`, `docs/specs`, `docs/mocks`,
+four working reports in `docs/output`), the superseded August 2026 audit reports and the dead bilingual MkDocs remnants left the tree
+(archived outside the repository); Russian prose in code was translated. Russian *data* for
+the multilingual features stays.
+
+**Documentation measured, not read.** Every Python block of `docs/en` and `README.md` is
+checked for imports that resolve and constructor arguments the API accepts: 122 broken imports,
+49 rejected arguments and 86 broken links went to zero; pages for removed code were deleted.
+`tests/test_readme_examples.py` now executes the README.
+
+**Data provenance.** `DATA_PROVENANCE.md` is the per-asset register. `HR_JOB_SAMPLE.csv`
+(CV records with contact data, no passport, synthetic origin unprovable) was removed from the
+tree; whether to purge it from history is an open maintainer decision, listed with the other
+open actions at the end of the register.
 
 ---
 
@@ -46,7 +77,7 @@ the different-test-each-run symptom across two runs with disjoint failure sets;
 Eight `F811` sites, quarantined in `pyproject.toml` since #105, turned out to be
 **three distinct defects**. Collapsing them under one rule name is what let them
 survive. Case-by-case analysis, written before any code changed:
-`docs/output/20260817_CC_TD_PC_15_ANALYSIS.md`.
+`20260817_CC_TD_PC_15_ANALYSIS.md` (archived outside the repository).
 
 - **Four dead tests and one dead class.** Later definitions won; the earlier
   bodies never ran, and the suite reported passes for them.
@@ -111,9 +142,10 @@ capability returns it needs a design, tests and an explicit promotion.
 
 ## 2026-08-17 — 1.0 cleanup: ~12 600 lines removed, singling-out added
 
-Sections A and B of `docs/output/20260816_CC_RUNBOOK_1_0.md` executed, plus the
-decisions Val took on top of them. Session report:
-`docs/output/20260817_CC_SESSION_REPORT.md`.
+Sections A and B of the 1.0 runbook (`20260816_CC_RUNBOOK_1_0.md`) executed, plus the
+decisions Val took on top of them. Session report: `20260817_CC_SESSION_REPORT.md`.
+Both were written in Russian and moved to the maintainers' archive on 2026-10-26
+(BOX `PAMOLA/core/20261026_REPO_DOCS_ARCHIVE/docs/output/`); the repository is English-only.
 
 **Positioning changed, and it invalidated an ADR.** CD established that BEST
 retired the pamola-core bridge on **2026-06-14** (`BRIDGED_OP_CODES = 0`,
@@ -198,7 +230,7 @@ correct. What the yank bought is the change from a *silent, misleading* failure
 a *loud, actionable* one.
 
 TD-PC-09 resolved. Full record and sign-off in
-`docs/output/20260816_CC_PYPI_YANK_RUNBOOK.md` §8.
+`20260816_CC_PYPI_YANK_RUNBOOK.md` (archived outside the repository) §8.
 
 ---
 
@@ -221,7 +253,7 @@ TD-PC-09 resolved. Full record and sign-off in
 - **Upstream ownership:** the Titan team authors most commits
   (`thuan.dang` 136 + 24, `Hoang Ha Huy` 115, `lannguyen53` 58,
   `ValKhv` 52, others). CC is a *co-worker on a public repo*, not the owner.
-- **Open findings:** `docs/output/20260816_CC_REPO_AUDIT.md`
+- **Open findings:** `20260816_CC_REPO_AUDIT.md` (archived outside the repository)
 
 ---
 
@@ -240,7 +272,7 @@ conventions, mirroring the BEST PRW setup.
   prompt, modelled on BEST's `docs/prompts/20260322_SYSTEM_GCA.md`. It records
   the operation contract, the BEST-bridge compatibility constraint, the
   branching/release policy, and the report format.
-- Wrote this DEVLOG and `docs/output/20260816_CC_REPO_AUDIT.md`.
+- Wrote this DEVLOG and `20260816_CC_REPO_AUDIT.md` (archived outside the repository).
 
 **Nothing in `pamola_core/`, `tests/`, or CI was modified.** The audit is
 observation only; every finding is a proposal awaiting Val's decision.
@@ -350,7 +382,7 @@ against 2 363 MB for the `dev3` set (−60 %).
 - **PR #101** — `1.0.0.dev4` release prep: packaging metadata, package-data,
   CI `[dev]`→`[test]`, README `--pre` note, and the dependency corrections
   above. Verified on a clean environment before requesting merge.
-- **Yank runbook** — `docs/output/20260816_CC_PYPI_YANK_RUNBOOK.md`. Strict
+- **Yank runbook** — `20260816_CC_PYPI_YANK_RUNBOOK.md` (archived outside the repository). Strict
   ordering: publish `1.0.0.dev4` **first**, yank `0.0.1` second. Yanking first
   would leave plain `pip install` failing outright rather than serving the stub.
 - Note: pushing `chore/sync-main-into-develop` reported
@@ -499,7 +531,7 @@ projects are siblings in one ecosystem, not a stack.
 | TD-PC-11 | Test suite is not hermetic — ambient `PAMOLA_PROJECT_ROOT` breaks 5 tests; no root `conftest.py` exists | Medium | CC | **RESOLVED** 2026-08-17 |
 | TD-PC-12 | Test suite writes 43 files into the working tree, incl. `pamola_core/utils/resources/` and `configs/` | **High** | CC | OPEN — `.gitignore` is a stopgap |
 | TD-PC-14 | `TestDataWriter` fails a different test each run | Medium | CC | **RESOLVED** 2026-08-17 — PR #107. `MPLBACKEND=Agg` in `tests/conftest.py`. The library's `matplotlib_agg_context()` did not prevent it: it *restores* the GUI backend on exit, so the fix had to be at the environment level, not the call site. Causality verified by reproducing the flake under forced `TkAgg` |
-| TD-PC-15 | Six tests in `tests/` are shadowed by F811 and never execute | Medium | CC | **RESOLVED** 2026-08-17 — PR #108. Quarantine lifted; `ruff F811` clean over `tests/` with no exemptions. Analysis: `docs/output/20260817_CC_TD_PC_15_ANALYSIS.md` |
+| TD-PC-15 | Six tests in `tests/` are shadowed by F811 and never execute | Medium | CC | **RESOLVED** 2026-08-17 — PR #108. Quarantine lifted; `ruff F811` clean over `tests/` with no exemptions. Analysis: `20260817_CC_TD_PC_15_ANALYSIS.md` (archived outside the repository) |
 | TD-PC-16 | `FidelityMetricsType` lost `JS`; a working `_jensen_shannon_divergence` helper exists in `statistical_fidelity.py` but is unreachable from `FidelityOperation` | Low | CC | OPEN |
 | TD-PC-17 | Ambiguous `dd/mm` vs `mm/dd` dates resolve to US convention; previously silent, now explicit in `common/regex/patterns.py` | Low | Val | OPEN — product decision |
 | TD-PC-13 | 8 module-scope imports were undeclared, arriving only transitively | **High** | CC | **RESOLVED** — PR #101 |
@@ -538,14 +570,14 @@ has not altered and will not alter any ruleset. Until it is configured, CC does
 not enable auto-merge on any PR touching code or tests.
 
 Detail, evidence, and proposed remediation for each: see
-`docs/output/20260816_CC_REPO_AUDIT.md`.
+`20260816_CC_REPO_AUDIT.md` (archived outside the repository).
 
 ---
 
 ## Open Questions
 
 The authoritative register — with answers, dates, and who answered — is the
-**Question Register** in `docs/output/20260816_CC_REPO_AUDIT.md`. Summary:
+**Question Register** in `20260816_CC_REPO_AUDIT.md` (archived outside the repository). Summary:
 
 | ID | Question | Status |
 |---|---|---|

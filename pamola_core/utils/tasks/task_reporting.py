@@ -4,7 +4,7 @@ Module: Task Reporting
 Description: Task execution reporting and artifact tracking
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for creating and managing task reports,
 including tracking operations, artifacts, and generating JSON reports.

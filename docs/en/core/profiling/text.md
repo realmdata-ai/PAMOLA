@@ -163,9 +163,10 @@ The operation uses a multi-tier approach for category matching:
 ### Basic Usage
 
 ```python
-from pamola_core.utils.ops.op_data_source import DataFrameSource
+from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.profiling.analyzers.text import TextSemanticCategorizerOperation
-from pamola_core.utils.ops.op_task import BaseTask
+from pamola_core.utils.progress import HierarchicalProgressTracker
+from unittest.mock import MagicMock
 import pandas as pd
 from pathlib import Path
 
@@ -176,7 +177,7 @@ df = pd.DataFrame({
 })
 
 # Create a data source from the DataFrame
-data_source = DataFrameSource(df)
+data_source = DataSource.from_dataframe(df)
 
 # Create the operation
 operation = TextSemanticCategorizerOperation(
@@ -191,8 +192,8 @@ operation = TextSemanticCategorizerOperation(
 task_dir = Path("tasks/job_title_analysis")
 
 # Create reporter and progress tracker
-reporter = SimpleReporter()
-progress_tracker = HierarchicalHierarchicalProgressTracker(total=5)
+reporter = MagicMock()  # or your reporter object
+progress_tracker = HierarchicalProgressTracker(total=5, description="Text profiling")
 
 # Execute the operation
 result = operation.execute(
@@ -211,56 +212,32 @@ print(f"Artifacts: {result.artifacts}")
 ### Integration with Task Framework
 
 ```python
-from pamola_core.utils.ops.op_task import BaseTask
+from pamola_core.utils.tasks.base_task import BaseTask
 from pamola_core.profiling.analyzers.text import TextSemanticCategorizerOperation
-from pamola_core.utils.ops.op_registry import register_operation
 
-# Register the operation
-register_operation("text_semantic", TextSemanticCategorizerOperation)
 
-# Create a task class
 class TextProfilingTask(BaseTask):
-    def __init__(self, config):
-        super().__init__(config)
-        self.operations = []
-        
-    def configure(self):
-        # Configure operations based on config
-        text_fields = self.config.get("text_fields", [])
-        for field in text_fields:
-            self.operations.append(
-                TextSemanticCategorizerOperation(
-                    field_name=field,
-                    entity_type=self.config.get("entity_type", "generic"),
-                    dictionary_path=self.config.get("dictionary_path"),
-                    use_ner=self.config.get("use_ner", True)
-                )
-            )
-    
-    def execute(self):
-        # Execute all operations
-        results = []
-        for op in self.operations:
-            result = op.execute(
-                data_source=self.data_source,
-                task_dir=self.task_dir,
-                reporter=self.reporter,
-                progress_tracker=self.progress_tracker
-            )
-            results.append(result)
-        return results
+    TEXT_FIELDS = ["job_title", "skills", "education"]
 
-# Usage
-config = {
-    "text_fields": ["job_title", "skills", "education"],
-    "entity_type": "job",
-    "dictionary_path": "dictionaries/jobs.json",
-    "use_ner": True
-}
+    def configure_operations(self) -> None:
+        # One operation per text field; operations run in the order they are added
+        for field in self.TEXT_FIELDS:
+            self.add_operation(
+                TextSemanticCategorizerOperation,
+                field_name=field,
+                entity_type="job",
+                dictionary_path="dictionaries/jobs.json",
+                use_ner=True,
+            )
 
-task = TextProfilingTask(config)
-task.configure()
-results = task.execute()
+
+task = TextProfilingTask(
+    task_id="t_text_profiling",
+    task_type="profiling",
+    description="Semantic categorization of text fields",
+    input_datasets={"main": "data/resumes.csv"},
+)
+success = task.run()
 ```
 
 ## Best Practices

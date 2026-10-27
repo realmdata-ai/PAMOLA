@@ -4,7 +4,7 @@ Module: Split By ID Values Operation
 Description: Operation for splitting datasets by ID values or partitioning strategies
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for splitting datasets into multiple subsets
 based on ID values or automatic partitioning strategies, while maintaining data utility.

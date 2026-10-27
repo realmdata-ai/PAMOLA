@@ -12,7 +12,7 @@ All major steps and data preparation are logged at DEBUG level for traceability.
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 """
 
 import logging

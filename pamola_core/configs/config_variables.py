@@ -6,7 +6,7 @@ anonymization model within the PAMOLA ecosystem.
 Settings are dynamically loaded and can be overridden via environment
 variables or user-defined configuration files.
 
-(C) 2024 Realm Inveo Inc. & DGT Network Inc.
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 """
 
 import os

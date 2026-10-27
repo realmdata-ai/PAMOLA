@@ -18,12 +18,12 @@ pamola_core.utils/
 │   ├── op_data_source.md    # DataSource management
 │   ├── op_data_source_helpers.md # Helper functions (NEW)
 │   ├── op_data_writer.md    # Standardized output writing
-│   ├── op_cache.py
-│   ├── op_config.py
-│   ├── op_field_utils.py
-│   ├── op_registry.py
-│   ├── op_result.py
-│   └── op_test_helpers.py
+│   ├── op_cache.md
+│   ├── op_config.md
+│   ├── op_data_processing.md
+│   ├── op_field_utils.md
+│   ├── op_registry.md
+│   └── op_result.md
 │
 ├── tasks/                    # Task Management
 │   ├── base_task.md         # BaseTask facade
@@ -103,7 +103,7 @@ pamola_core.utils/
     ├── progress.py
     ├── reporting/         # Reporting infrastructure
     ├── statistical_metrics.py
-    ├── visualization.md
+    ├── visualization.py
     ├── crypto_helpers/    # Cryptography utilities
     └── __init__.py
 ```
@@ -117,8 +117,8 @@ pamola_core.utils/
 - **[Data Source](ops/op_data_source.md)** - Manage input/auxiliary datasets
 - **[Data Writer](ops/op_data_writer.md)** - Standardized output writing
 - **[Data Source Helpers](ops/op_data_source_helpers.md)** - Memory, schema, sampling utilities
-- **[Operation Registry](ops/op_registry.py)** - Register and lookup operations
-- **[Operation Result](ops/op_result.py)** - Operation execution results
+- **[Operation Registry](ops/op_registry.md)** - Register and lookup operations
+- **[Operation Result](ops/op_result.md)** - Operation execution results
 
 ### Working with Tasks
 
@@ -158,10 +158,9 @@ pamola_core.utils/
 
 ### Other Utilities
 
-- **[Base Reporting](base_reporting.md)** - Reporting infrastructure
 - **[Logging](logging.md)** - PAMOLA logging system
 - **[Progress Tracking](progress.md)** - Progress visualization
-- **[Cryptography](crypto.md)** - Encryption utilities
+- **[Cryptography](crypto_files.md)** - Encryption utilities
 - **[File I/O](io.md)** - High-level file operations
 - **[NLP Utilities](nlp/)** - Natural language processing
 
@@ -403,7 +402,6 @@ TaskRunner orchestrates:
 
 ## Version Information
 
-- **PAMOLA.CORE Version:** 0.0.1
 - **Python Support:** 3.11 - 3.12
 - **Last Updated:** 2026-03-23
 - **Documentation Format:** Markdown

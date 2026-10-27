@@ -332,7 +332,7 @@ masked_full = full_op.mask_full_value('SensitiveData', {'mask_char': '*'})
 ```python
 from pathlib import Path
 from pamola_core.utils.ops.op_data_source import DataSource
-from pamola_core.anonymization.your_module import YourAnonymizationOperation
+from my_package.my_operations import YourAnonymizationOperation  # placeholder: your BaseAnonymizationOperation subclass
 
 # Create data source
 data_source = DataSource.from_file_path("data.csv", name="main")
@@ -460,8 +460,8 @@ class MemoryEfficientOperation(AnonymizationOperation):
         super().__init__(
             field_name=field_name,
             optimize_memory=True,
-            adaptive_batch_size=True,
-            batch_size=5000,  # Smaller batches for memory-intensive ops
+            adaptive_chunk_size=True,
+            chunk_size=5000,  # Smaller chunks for memory-intensive ops
             **kwargs
         )
 ```
@@ -540,11 +540,11 @@ def _generate_custom_visualizations(self, original_data, anonymized_data, task_d
 
 1. **Memory Errors with Large Datasets**
    ```python
-   # Solution: Reduce batch size or enable adaptive sizing
+   # Solution: Reduce chunk size or enable adaptive sizing
    operation = YourOperation(
        field_name="large_field",
-       batch_size=1000,  # Smaller batches
-       adaptive_batch_size=True,
+       chunk_size=1000,  # Smaller chunks
+       adaptive_chunk_size=True,
        optimize_memory=True
    )
    ```
@@ -595,7 +595,7 @@ def _generate_custom_visualizations(self, original_data, anonymized_data, task_d
    ```python
    # After creating operation
    print(f"Cache parameters: {operation._get_cache_parameters()}")
-   print(f"Batch size: {operation.batch_size}")
+   print(f"Chunk size: {operation.chunk_size}")
    ```
 
 3. **Inspect Results**
@@ -648,7 +648,7 @@ By following the extension and onboarding guidance in this documentation, develo
 > - For module-specific logic, parameters, and examples, document only the unique aspects in the module operation doc and refer to this file for all shared base class details.
 > - Example reference section for module docs:
 >
->   > **Reference:** This operation inherits from the abstract base class documented in [base_anonymization_op.md](../base_anonymization_op.md). See that file for all shared parameters, methods, and usage patterns.
+>   > **Reference:** This operation inherits from the abstract base class documented in `base_anonymization_op.md` (link it relatively, e.g. `../base_anonymization_op.md`). See that file for all shared parameters, methods, and usage patterns.
 
 For additional examples and advanced usage patterns, refer to the existing operation implementations in the `pamola_core.anonymization` package.
 

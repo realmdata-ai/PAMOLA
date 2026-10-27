@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL Linkage Operation
 Package:       pamola_core.metrics.operations
-License:       BSD 3-Clause
+License:       MIT
 
 ``CVPLLinkageOperation`` measures how far a protected release can be linked back to
 its source with the CVPL operator chain ``B_lambda -> phi -> PCA -> cosine -> tau``.

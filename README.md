@@ -5,9 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-BSD%203--Clause-blue.svg"></a>
+  <a href="https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <a href="https://www.python.org/downloads/"><img alt="Python" src="https://img.shields.io/badge/python-3.11--3.12-blue.svg"></a>
-  <a href="https://pypi.org/project/pamola-core/"><img alt="PyPI" src="https://img.shields.io/badge/pypi-1.0.0.dev4-orange.svg"></a>
+  <a href="https://pypi.org/project/pamola-core/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pamola-core?include_prereleases&label=pypi"></a>
   <img alt="Status" src="https://img.shields.io/badge/status-active%20development-orange.svg">
 </p>
 
@@ -46,44 +46,58 @@ from pathlib import Path
 
 import pandas as pd
 
-from pamola_core import HashBasedPseudonymizationOperation, FullMaskingOperation
-from pamola_core.utils.ops.op_data_source import DataSource
-from pamola_core.utils.tasks.task_reporting import TaskReporter
-from pamola_core.utils.progress import HierarchicalProgressTracker
+from pamola_core import DataSource, FullMaskingOperation, HashBasedPseudonymizationOperation
 
-df = pd.read_csv("customers.csv")
-data_source = DataSource(dataframes={"main": df})
-task_dir = Path("./anonymize_customers")
-reporter = TaskReporter(task_dir=task_dir, task_name="anonymize")
-tracker = HierarchicalProgressTracker(total=2, description="Anonymize")
+df = pd.DataFrame({
+    "customer_id": [101, 102, 103],
+    "email": ["ann@example.com", "bob@example.com", "cy@example.com"],
+    "phone": ["+1 416 555 0101", "+1 416 555 0102", "+1 416 555 0103"],
+})
+task_dir = Path("anonymize_customers")
 
-# 1) Irreversible hash-based pseudonymization of the email column
-HashBasedPseudonymizationOperation(
-    field_name="email",
-    algorithm="sha3_256",
-    salt_config={"source": "parameter", "value": "ab" * 32},
-    use_pepper=True,
-).execute(data_source, task_dir, reporter, tracker)
 
-# 2) Mask the phone column entirely
-FullMaskingOperation(
-    field_name="phone",
-    mask_char="*",
-).execute(data_source, task_dir, reporter, tracker)
+def output_of(result):
+    """Each operation writes its own output file; read it back to feed the next step."""
+    return pd.read_csv(result.get_artifacts_by_category("output")[0].path)
+
+
+# 1) Keyed, irreversible hash of the e-mail column
+hashed = HashBasedPseudonymizationOperation(field_name="email").execute(
+    DataSource(dataframes={"main": df}), task_dir / "01_hash_email", reporter=None
+)
+
+# 2) Mask the phone column of the hashed output
+masked = FullMaskingOperation(field_name="phone").execute(
+    DataSource(dataframes={"main": output_of(hashed)}), task_dir / "02_mask_phone", reporter=None
+)
+
+print(masked.status)        # OperationStatus.SUCCESS
+print(output_of(masked))    # e-mail hashed, phone masked, customer_id unchanged
 ```
 
-**Output structure (`task_dir/`):**
+> **One operation, one field, one output file.** An operation reads the dataset you pass in its
+> `DataSource` and writes a complete copy with *its* field transformed. It does not see what another
+> operation did to the same dataset. To protect several fields, feed each operation the output of
+> the previous one, as above — otherwise every output file still contains the other fields in
+> clear text. Give each operation its own directory so its `config.json` is kept.
+>
+> The hash uses a fresh random pepper per run (`use_pepper=True` by default), so it cannot be
+> recomputed from the e-mail alone; on three e-mails the operation also warns that hashing a
+> low-entropy column is reversible by enumeration.
+
+**Output structure (per operation directory):**
 
 ```
-anonymize_customers/
+anonymize_customers/01_hash_email/
 ├── config.json           # Operation configuration (secrets redacted)
-├── output/               # Anonymized data (csv/parquet)
-├── metrics/              # Privacy & quality metrics (JSON)
-├── visualizations/       # Generated charts (PNG)
-└── logs/                 # Per-task execution log
+├── output/               # The transformed dataset (CSV by default, Parquet with output_format="parquet")
+└── metrics/              # Operation metrics (JSON)
 ```
 
-> **Security note (since 1.0.0.dev3):** `config.json` redacts sensitive parameters (e.g. AES-256 mapping encryption keys) via `OperationConfig.SENSITIVE_KEYS`. See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
+Charts (`visualizations/`) are written only with `generate_visualization=True` and the `viz` extra;
+the consistent-mapping operation adds an encrypted `maps/` directory.
+
+> **Security note:** `config.json` redacts sensitive parameters (salts, mapping encryption keys, fake-data keys) declared in `OperationConfig.SENSITIVE_KEYS`. See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
 
 ---
 
@@ -101,6 +115,8 @@ PAMOLA.CORE is part of a comprehensive privacy engineering stack:
 | **PAMOLA.INSIGHT** | Agent modules for LLM integration | Commercial |
 
 > **Scope of CORE:** This package provides anonymization and pseudonymization primitives, classical privacy metrics, and reproducibility plumbing. It does **not** implement formal differential-privacy synthetic-data generation — that lives in PAMOLA.SYNT / PAMOLA.BEST.
+>
+> CORE also does not *search* for a k-anonymous generalization the way ARX or Mondrian-style tools do. You choose the generalization levels, apply them with the generalization and suppression operations, and verify the result with `KAnonymityProfilerOperation` (its ENRICH mode adds a per-record k that `RecordSuppressionOperation(suppression_condition="risk")` can act on).
 
 ---
 
@@ -132,52 +148,69 @@ All classes below are exported from the top-level `pamola_core` package.
 
 ## Pseudonymization Spotlight
 
-The `1.0.0.dev3` release hardened the pseudonymization stack:
-
 ```python
 from pamola_core import ConsistentMappingPseudonymizationOperation
 
 op = ConsistentMappingPseudonymizationOperation(
     field_name="customer_id",
-    mapping_encryption_key="ab" * 32,         # 256-bit hex key
+    mapping_encryption_key="ab" * 32,         # 256-bit hex key - keep it out of source control
     pseudonym_type="uuid",                    # or "sequential" / "random_string"
     mapping_format="csv",                     # encrypted at rest with AES-256-GCM
     persist_frequency=1000,
 )
 
 # Outputs:
-#  - {task_dir}/output/         anonymized data
-#  - {task_dir}/output/         encrypted mapping file (re-identification key)
+#  - {task_dir}/output/         pseudonymized data
+#  - {task_dir}/maps/           encrypted mapping file (*.enc) - the re-identification key
 #  - {task_dir}/metrics/        operation metrics
 #  - {task_dir}/config.json     mapping_encryption_key is replaced with "*REDACTED*"
 ```
 
 Highlights:
 
-- **AES-256-GCM mapping encryption keys are never persisted to disk.** A new `OperationConfig.SENSITIVE_KEYS` declaration + `to_safe_dict()` redacts secrets before any `save_config()` call.
-- **Hash-based op rejects weak salts** (all-zero or empty) when `use_pepper=False`.
+- **Mapping encryption keys are never persisted to disk.** `OperationConfig.SENSITIVE_KEYS` + `to_safe_dict()` redact secrets before any `save_config()` call.
+- **No plain-text mapping file is ever written**: mappings and their backups are encrypted in memory and replaced atomically.
+- **Hash-based op rejects weak salts** (all-zero or empty) when `use_pepper=False`, and warns when the source column has so few distinct values that the hash is reversible by enumeration.
 - **Per-run session id** invalidates stale disk cache when `use_pepper=True`, so previous-run pseudonyms cannot be served back.
-- **Compound identifiers**, **ENRICH/REPLACE modes**, **reverse mapping**, and **Dask pickle safety** are covered by 41 dedicated tests.
+- **Compound identifiers**, **ENRICH/REPLACE modes**, **reverse mapping**, and **Dask pickle safety** have dedicated tests.
 
 ---
 
 ## Metrics
 
-Metric operations write JSON artifacts under `{task_dir}/metrics/`:
+Metric operations compare an original and a transformed dataset and write JSON artifacts under `{task_dir}/metrics/`:
 
 ```python
-from pamola_core import FidelityOperation, PrivacyMetricOperation
+from pathlib import Path
 
-FidelityOperation(
-    fidelity_metrics=["ks", "kl"],
-    columns=["age", "income"],
-).execute(data_source, task_dir, reporter, tracker)
+import numpy as np
+import pandas as pd
 
-PrivacyMetricOperation(
+from pamola_core import DataSource, FidelityOperation, PrivacyMetricOperation
+
+rng = np.random.default_rng(0)
+original_df = pd.DataFrame({
+    "age": rng.integers(18, 90, 1000),
+    "gender": rng.choice(["F", "M"], 1000),
+    "income": rng.normal(50_000, 15_000, 1000).round(),
+})
+anonymized_df = original_df.assign(age=(original_df["age"] // 10) * 10)  # 10-year bands
+
+pair = DataSource(dataframes={"original": original_df, "transformed": anonymized_df})
+names = {"original_dataset_name": "original", "transformed_dataset_name": "transformed"}
+task_dir = Path("metrics_task")
+
+fidelity = FidelityOperation(fidelity_metrics=["ks", "kl"], columns=["age", "income"]).execute(
+    pair, task_dir / "fidelity", reporter=None, **names
+)
+privacy = PrivacyMetricOperation(
     privacy_metrics=["dcr", "nndr", "uniqueness"],
-    quasi_identifiers=["age", "gender", "zipcode"],
-).execute(data_source, task_dir, reporter, tracker)
+    columns=["age", "gender", "income"],
+    metric_params={"uniqueness": {"quasi_identifiers": ["age", "gender"], "sensitives": ["income"]}},
+).execute(pair, task_dir / "privacy", reporter=None, **names)
 ```
+
+DCR/NNDR run an exact, block-wise search with bounded memory; above 10K × 10K records FAISS is selected automatically where it returns the same result as the exact search. A comparison that would exceed `max_comparisons` fails with a typed `ResourceError` instead of exhausting memory.
 
 For dataset-level utility scoring (classification / regression downstream models) use `UtilityMetricOperation`.
 
@@ -194,8 +227,12 @@ pip install --pre pamola-core
 > **The `--pre` flag is required.** Every `1.0.0` release so far is a
 > pre-release, and `pip` skips pre-releases by default — so a plain
 > `pip install pamola-core` will **not** give you this library. You can also
-> pin the exact version instead: `pip install pamola-core==1.0.0.dev4`.
+> pin an exact version from the [release history](https://pypi.org/project/pamola-core/#history),
+> e.g. `pip install "pamola-core==<version>"`.
 > The flag stops being necessary once `1.0.0` final ships.
+>
+> The base install is large (about 0.9 GB of dependencies: pandas, scikit-learn, Dask, spaCy,
+> FAISS, PyArrow and others). Install it into a virtual environment.
 
 **From source:**
 
@@ -261,7 +298,7 @@ PAMOLA.CORE supports Python **3.11 and 3.12** (`requires-python = ">=3.11,<3.13"
 | 3.11 | ✅ |
 | 3.12 | ✅ |
 | 3.10 and below | ❌ |
-| 3.13 and above | ❌ (blocked by third-party dependencies) |
+| 3.13 and above | ❌ (not yet: the pinned `numpy 1.26.4` / `pandas 2.2.2` and `fasttext-wheel 0.9.2` publish no 3.13 wheels) |
 
 ---
 
@@ -275,9 +312,9 @@ A non-exhaustive view of the heaviest third-party packages (full list in `pyproj
 | **pandas** | `2.2.2` | The DataFrame container for every CORE operation |
 | **scikit-learn** | `1.7.2` | Classification/regression metrics, nearest-neighbor distance, model-based utility |
 | **scipy** | `1.15.3` | Statistical tests (KS, KL divergence) used by `FidelityOperation` |
-| **cryptography** | `46.0.3` | AES-256-GCM mapping encryption for `ConsistentMappingPseudonymizationOperation` |
-| **dask[complete]** | `2025.11.0` | Optional out-of-core / distributed execution path |
-| **pyarrow** | `14.0.2` | Parquet I/O |
+| **cryptography** | `50.0.0` | AES-256-GCM mapping encryption for `ConsistentMappingPseudonymizationOperation` |
+| **dask[complete]** | `2026.1.1` | Optional out-of-core / distributed execution path |
+| **pyarrow** | `23.0.1` | Parquet I/O |
 | **typer** | `0.24.1` | CLI entry point |
 
 ---
@@ -288,13 +325,15 @@ PAMOLA.CORE follows [Semantic Versioning](https://semver.org/) and [PEP 440](htt
 
 ```python
 import pamola_core
-print(pamola_core.__version__)   # e.g. "1.0.0.dev4"
+print(pamola_core.__version__)   # e.g. "1.0.0rc1"
 ```
 
 | Phase | Version | Branch | Tag | Install |
 |-------|---------|--------|-----|---------|
-| Dev (current) | `1.0.0.dev4` | `develop` | `v1.0.0.dev4` | `pip install --pre pamola-core` |
+| Pre-releases (current) | `1.0.0.devN`, `1.0.0rcN` | `develop` | `v1.0.0.devN`, `v1.0.0rcN` | `pip install --pre pamola-core` |
 | Stable (planned) | `1.0.0` | `main` | `v1.0.0` | `pip install pamola-core` |
+
+The badge at the top shows the newest version published on PyPI; the version on `develop` can be ahead of it.
 
 - **Source of truth:** `pyproject.toml` → `version`
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
@@ -332,7 +371,7 @@ Hands-on notebooks live under [`examples/`](https://github.com/realmdata-ai/PAMO
 - `examples/metrics/` — fidelity, privacy, utility metrics
 - `examples/data_examples/sample.csv` — non-PII synthetic sample used by the notebooks
 
-> **No real personal data** is included in this repository. All sample records are artificially generated.
+> **No real personal data** is included in this repository. All sample records are artificially generated; the origin and licence of every data asset is recorded in [DATA_PROVENANCE.md](DATA_PROVENANCE.md).
 
 ---
 
@@ -350,9 +389,11 @@ Hands-on notebooks live under [`examples/`](https://github.com/realmdata-ai/PAMO
 The project uses **Sphinx** to generate API reference documentation from Python docstrings.
 
 ```bash
-cd docs
-make html        # output: docs/_build/html/index.html
+pip install sphinx sphinx-autodoc-typehints
+sphinx-build -b html docs docs/_build    # output: docs/_build/index.html
 ```
+
+See [docs/README.md](docs/README.md) for build options.
 
 ---
 
@@ -365,6 +406,7 @@ make html        # output: docs/_build/html/index.html
 | **Glossary** | [realmdata.io/glossary](https://realmdata.ai/pages/glossary.html) |
 | **Examples** | [`examples/`](https://github.com/realmdata-ai/PAMOLA/tree/main/examples) |
 | **Changelog** | [CHANGELOG.md](CHANGELOG.md) |
+| **Data provenance & licences** | [DATA_PROVENANCE.md](DATA_PROVENANCE.md) |
 
 ---
 
@@ -428,7 +470,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## Ownership & Licensing
 
-PAMOLA.CORE is maintained by Realm Inveo Inc. and distributed under the BSD 3-Clause License. See [LICENSE](LICENSE) for applicable copyright notices and license terms.
+PAMOLA.CORE is developed and maintained by Realm Inveo Inc. (REALMDATA) and distributed under the [MIT License](LICENSE).
 
 ---
 
@@ -439,7 +481,7 @@ PAMOLA.CORE is maintained by Realm Inveo Inc. and distributed under the BSD 3-Cl
 | **General inquiries** | [contact@realmdata.ai](mailto:contact@realmdata.ai) |
 | **Commercial / Sales** | [sales@realmdata.ai](mailto:sales@realmdata.ai) |
 | **Due diligence / Legal** | [legal@realmdata.ai](mailto:legal@realmdata.ai) |
-| **Website** | [realmdata.io](https://realmdata.ai) |
+| **Website** | [realmdata.ai](https://realmdata.ai) |
 
 ---
 

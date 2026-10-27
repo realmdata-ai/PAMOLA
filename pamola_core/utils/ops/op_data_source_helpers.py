@@ -4,7 +4,7 @@ Module: Data Source Helper Functions
 Description: Helper functions for DataSource class
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module contains supplementary functions used by the DataSource class.
 These functions are factored out to maintain a clean separation of concerns

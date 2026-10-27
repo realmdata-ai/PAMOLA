@@ -265,14 +265,14 @@ for metric, value in result.metrics.items():
 
 - The config object must specify at least `field_operations` and (if needed) `lookup_tables`.
 - Visualization and encryption settings are optional but recommended for production.
-- Output format, batch size, and other options can be customized.
+- Output format, chunk size, and other options can be customized.
 - Example config:
   ```python
   config = {
       "field_operations": {...},
       "lookup_tables": {...},
       "output_format": "csv",
-      "batch_size": 10000
+      "chunk_size": 10000
   }
   ```
 

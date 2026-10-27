@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-11-18
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 Core JSON Schema definition for backend validation of full masking configurations in PAMOLA.CORE.

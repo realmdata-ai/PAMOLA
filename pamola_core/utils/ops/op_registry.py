@@ -4,7 +4,7 @@ Module: Operation Registry
 Description: Registration and discovery system for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for registering, discovering, and retrieving
 operation classes throughout the PAMOLA Core framework. It allows operations to be

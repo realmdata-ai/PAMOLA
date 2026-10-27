@@ -1,7 +1,7 @@
 """
-Модуль для работы с шаблонами отчетов.
+Module for working with report templates.
 
-Функции для загрузки, рендеринга и копирования шаблонов с использованием Jinja2.
+Functions for loading, rendering and copying templates using Jinja2.
 """
 
 import json
@@ -19,35 +19,35 @@ from pamola_core.utils.reporting.config import (
 )
 from pamola_core.errors.exceptions import ValidationError
 
-# Настройка логирования
+# Logging setup
 logger = logging.getLogger(__name__)
 
 
 def get_jinja_environment(template_name: Optional[str] = None) -> jinja2.Environment:
     """
-    Создает и настраивает окружение Jinja2.
+    Creates and configures the Jinja2 environment.
 
     Parameters
     -----------
     template_name : str, optional
-        Имя шаблона (если не указано, используется шаблон по умолчанию)
+        Template name (the default template is used if not specified)
 
     Returns
     --------
     jinja2.Environment
-        Настроенное окружение Jinja2
+        Configured Jinja2 environment
     """
     template_path = get_template_path(template_name)
 
-    # Проверяем наличие директории шаблонов
+    # Check that the template directory exists
     if not template_path.exists():
-        logger.warning(f"Директория шаблона не найдена: {template_path}")
+        logger.warning(f"Template directory not found: {template_path}")
         template_path.mkdir(parents=True, exist_ok=True)
 
-    # Создаем загрузчик файлов
+    # Create the file loader
     file_system_loader = jinja2.FileSystemLoader(template_path)
 
-    # Создаем окружение
+    # Create the environment
     env = jinja2.Environment(
         loader=file_system_loader,
         autoescape=jinja2.select_autoescape(["html", "xml"]),
@@ -55,7 +55,7 @@ def get_jinja_environment(template_name: Optional[str] = None) -> jinja2.Environ
         lstrip_blocks=True,
     )
 
-    # Добавляем пользовательские фильтры
+    # Add custom filters
     env.filters["format_size"] = format_file_size
     env.filters["to_json"] = to_json
 
@@ -66,55 +66,55 @@ def render_template(
     template_name: str, context: Dict[str, Any], template_dir: Optional[str] = None
 ) -> str:
     """
-    Рендерит шаблон с заданным контекстом.
+    Renders a template with the given context.
 
     Parameters
     -----------
     template_name : str
-        Имя файла шаблона (например, base.html)
+        Template file name (e.g. base.html)
     context : Dict[str, Any]
-        Контекст для рендеринга
+        Rendering context
     template_dir : str, optional
-        Имя директории шаблона (если не указано, используется шаблон по умолчанию)
+        Template directory name (the default template is used if not specified)
 
     Returns
     --------
     str
-        Отрендеренный HTML-код
+        Rendered HTML markup
     """
     try:
         env = get_jinja_environment(template_dir)
         template = env.get_template(template_name)
         return template.render(**context)
     except jinja2.exceptions.TemplateNotFound:
-        logger.error(f"Шаблон не найден: {template_name} в директории {template_dir}")
-        return f"<p>Ошибка: шаблон {template_name} не найден</p>"
+        logger.error(f"Template not found: {template_name} in directory {template_dir}")
+        return f"<p>Error: template {template_name} not found</p>"
     except Exception as e:
-        logger.error(f"Ошибка при рендеринге шаблона {template_name}: {e}")
-        return f"<p>Ошибка при рендеринге шаблона: {str(e)}</p>"
+        logger.error(f"Error rendering template {template_name}: {e}")
+        return f"<p>Error rendering template: {str(e)}</p>"
 
 
 def copy_static_resources(
     target_dir: Path, template_name: Optional[str] = None
 ) -> bool:
     """
-    Копирует статические ресурсы шаблона (CSS, JS) в директорию отчета.
+    Copies the template's static resources (CSS, JS) to the report directory.
 
     Parameters
     -----------
     target_dir : Path
-        Целевая директория
+        Target directory
     template_name : str, optional
-        Имя шаблона (если не указано, используется шаблон по умолчанию)
+        Template name (the default template is used if not specified)
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     template_path = get_template_path(template_name)
 
-    # Копируем CSS файлы
+    # Copy CSS files
     styles_dir = template_path / "styles"
     if styles_dir.exists():
         target_styles_dir = target_dir / "styles"
@@ -124,10 +124,10 @@ def copy_static_resources(
             try:
                 shutil.copy2(file, target_styles_dir / file.name)
             except Exception as e:
-                logger.error(f"Ошибка при копировании {file.name}: {e}")
+                logger.error(f"Error copying {file.name}: {e}")
                 return False
 
-    # Копируем JS файлы
+    # Copy JS files
     scripts_dir = template_path / "scripts"
     if scripts_dir.exists():
         target_scripts_dir = target_dir / "scripts"
@@ -137,10 +137,10 @@ def copy_static_resources(
             try:
                 shutil.copy2(file, target_scripts_dir / file.name)
             except Exception as e:
-                logger.error(f"Ошибка при копировании {file.name}: {e}")
+                logger.error(f"Error copying {file.name}: {e}")
                 return False
 
-    # Копируем изображения
+    # Copy images
     images_dir = template_path / "images"
     if images_dir.exists():
         target_images_dir = target_dir / "images"
@@ -150,7 +150,7 @@ def copy_static_resources(
             try:
                 shutil.copy2(file, target_images_dir / file.name)
             except Exception as e:
-                logger.error(f"Ошибка при копировании {file.name}: {e}")
+                logger.error(f"Error copying {file.name}: {e}")
                 return False
 
     return True
@@ -158,29 +158,29 @@ def copy_static_resources(
 
 def include_external_resources(target_dir: Path) -> bool:
     """
-    Загружает и сохраняет внешние ресурсы (Bootstrap, Chart.js и т. д.).
+    Downloads and saves external resources (Bootstrap, Chart.js, etc.).
 
     Parameters
     -----------
     target_dir : Path
-        Целевая директория
+        Target directory
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     try:
         import requests
 
-        # Создаем директории для ресурсов
+        # Create resource directories
         styles_dir = target_dir / "styles"
         styles_dir.mkdir(exist_ok=True)
 
         scripts_dir = target_dir / "scripts"
         scripts_dir.mkdir(exist_ok=True)
 
-        # Список внешних ресурсов для загрузки
+        # External resources to download
         resources = [
             {
                 "url": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css",
@@ -204,48 +204,48 @@ def include_external_resources(target_dir: Path) -> bool:
             },
         ]
 
-        # Загружаем каждый ресурс
+        # Download each resource
         for resource in resources:
             response = requests.get(resource["url"], timeout=10)
 
             if response.status_code == 200:
                 with open(resource["path"], "wb") as f:
                     f.write(response.content)
-                logger.info(f"Загружен ресурс: {resource['url']}")
+                logger.info(f"Downloaded resource: {resource['url']}")
             else:
                 logger.error(
-                    f"Ошибка при загрузке ресурса {resource['url']}: {response.status_code}"
+                    f"Error downloading resource {resource['url']}: {response.status_code}"
                 )
                 return False
 
         return True
     except ImportError:
         logger.warning(
-            "Модуль requests не установлен. Включение внешних ресурсов невозможно."
+            "The requests module is not installed. Cannot include external resources."
         )
         return False
     except Exception as e:
-        logger.error(f"Ошибка при включении внешних ресурсов: {e}")
+        logger.error(f"Error including external resources: {e}")
         return False
 
 
 def check_template_exists(template_name: Optional[str] = None) -> bool:
     """
-    Проверяет наличие шаблона.
+    Checks whether a template exists.
 
     Parameters
     -----------
     template_name : str, optional
-        Имя шаблона (если не указано, используется шаблон по умолчанию)
+        Template name (the default template is used if not specified)
 
     Returns
     --------
     bool
-        True, если шаблон существует и содержит необходимые файлы
+        True if the template exists and contains the required files
     """
     template_path = get_template_path(template_name)
 
-    # Проверяем наличие основных файлов шаблона
+    # Check for the template's core files
     required_files = ["base.html", "partials/header.html", "partials/sidebar.html"]
 
     for file in required_files:
@@ -257,65 +257,65 @@ def check_template_exists(template_name: Optional[str] = None) -> bool:
 
 def initialize_template(template_name: str) -> bool:
     """
-    Инициализирует шаблон - копирует стандартные файлы в директорию шаблона.
+    Initializes a template by copying the standard files into the template directory.
 
     Parameters
     -----------
     template_name : str
-        Имя нового шаблона
+        Name of the new template
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     try:
         template_path = get_template_path(template_name)
         default_template_path = get_template_path("default")
 
-        # Если директория уже существует и не пустая, уточняем
+        # If the directory already exists and is not empty, do not overwrite it
         if template_path.exists() and any(template_path.iterdir()):
             logger.warning(
-                f"Директория шаблона {template_name} уже существует и не пустая"
+                f"Template directory {template_name} already exists and is not empty"
             )
             return False
 
-        # Если директория по умолчанию не существует, создаем ее и базовые файлы
+        # If the default directory does not exist, create it and the base files
         if not default_template_path.exists():
-            logger.warning("Директория шаблона по умолчанию не существует, создаем...")
+            logger.warning("Default template directory does not exist, creating it...")
             create_default_template()
 
-        # Копируем файлы из шаблона по умолчанию
+        # Copy files from the default template
         for item in default_template_path.glob("**/*"):
             if item.is_file():
-                # Создаем относительный путь
+                # Build the relative path
                 rel_path = item.relative_to(default_template_path)
-                # Создаем целевой путь
+                # Build the target path
                 target_path = template_path / rel_path
-                # Создаем родительскую директорию, если она не существует
+                # Create the parent directory if it does not exist
                 target_path.parent.mkdir(parents=True, exist_ok=True)
-                # Копируем файл
+                # Copy the file
                 shutil.copy2(item, target_path)
 
-        logger.info(f"Шаблон {template_name} инициализирован")
+        logger.info(f"Template {template_name} initialized")
         return True
     except Exception as e:
-        logger.error(f"Ошибка при инициализации шаблона {template_name}: {e}")
+        logger.error(f"Error initializing template {template_name}: {e}")
         return False
 
 
 def list_available_templates() -> List[str]:
     """
-    Получает список доступных шаблонов.
+    Gets the list of available templates.
 
     Returns
     --------
     List[str]
-        Список имен доступных шаблонов
+        List of available template names
     """
     templates_dir = get_templates_dir()
 
-    # Собираем список директорий в директории шаблонов
+    # Collect the subdirectories of the templates directory
     templates = []
     for item in templates_dir.iterdir():
         if item.is_dir() and check_template_exists(item.name):
@@ -326,17 +326,17 @@ def list_available_templates() -> List[str]:
 
 def create_default_template() -> bool:
     """
-    Создает шаблон по умолчанию с базовыми файлами.
+    Creates the default template with base files.
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     try:
         template_path = get_template_path("default")
 
-        # Создаем структуру директорий
+        # Create the directory structure
         dirs = [
             template_path,
             template_path / "partials",
@@ -348,29 +348,29 @@ def create_default_template() -> bool:
         for directory in dirs:
             directory.mkdir(parents=True, exist_ok=True)
 
-        # Здесь можно создать базовые файлы шаблона
-        # Это потребовало бы значительного количества кода
-        # В реальном приложении эти файлы можно загрузить из ресурсов пакета
+        # The base template files could be created here
+        # That would require a substantial amount of code
+        # In a real application these files could be loaded from package resources
 
         return True
     except Exception as e:
-        logger.error(f"Ошибка при создании шаблона по умолчанию: {e}")
+        logger.error(f"Error creating default template: {e}")
         return False
 
 
 def format_file_size(size_bytes: int) -> str:
     """
-    Форматирует размер файла в читаемый вид.
+    Formats a file size in human-readable form.
 
     Parameters
     -----------
     size_bytes : int
-        Размер в байтах
+        Size in bytes
 
     Returns
     --------
     str
-        Отформатированная строка с размером
+        Formatted size string
     """
     if size_bytes < 1024:
         return f"{size_bytes} B"
@@ -384,36 +384,36 @@ def format_file_size(size_bytes: int) -> str:
 
 def to_json(data: Any) -> str:
     """
-    Преобразует данные в JSON-строку.
+    Converts data to a JSON string.
 
     Parameters
     -----------
     data : Any
-        Данные для преобразования
+        Data to convert
 
     Returns
     --------
     str
-        JSON-строка
+        JSON string
     """
     return json.dumps(data, ensure_ascii=False)
 
 
-def create_empty_report(output_path: Path, title: str = "Пустой отчет") -> bool:
+def create_empty_report(output_path: Path, title: str = "Empty Report") -> bool:
     """
-    Создает пустой отчет для случаев, когда нет данных.
+    Creates an empty report for cases where there is no data.
 
     Parameters
     -----------
     output_path : Path
-        Путь для сохранения отчета
+        Path to save the report to
     title : str
-        Заголовок отчета
+        Report title
 
     Returns
     --------
     bool
-        True в случае успеха, False в случае ошибки
+        True on success, False on error
     """
     try:
         context = {
@@ -432,7 +432,7 @@ def create_empty_report(output_path: Path, title: str = "Пустой отчет
 
         return True
     except Exception as e:
-        logger.error(f"Ошибка при создании пустого отчета: {e}")
+        logger.error(f"Error creating empty report: {e}")
         return False
 
 
@@ -440,27 +440,27 @@ def get_relative_artifact_path(
     artifact_path: Union[str, Path], html_report_dir: Path
 ) -> str:
     """
-    Вычисляет относительный путь к артефакту от директории отчета.
+    Computes the artifact path relative to the report directory.
 
     Parameters
     -----------
     artifact_path : str or Path
-        Абсолютный путь к артефакту
+        Absolute path to the artifact
     html_report_dir : Path
-        Путь к директории отчета
+        Path to the report directory
 
     Returns
     --------
     str
-        Относительный путь к артефакту
+        Relative path to the artifact
     """
     artifact_path = Path(artifact_path)
 
     try:
-        # Пытаемся вычислить относительный путь
+        # Try to compute the relative path
         rel_path = os.path.relpath(artifact_path, html_report_dir)
-        return rel_path.replace("\\", "/")  # Для совместимости с URL в HTML
+        return rel_path.replace("\\", "/")  # For URL compatibility in HTML
     except (ValidationError, ValueError):
-        # В случае ошибки (например, разные диски в Windows)
-        logger.warning(f"Не удалось вычислить относительный путь для {artifact_path}")
+        # On error (e.g. different drives on Windows)
+        logger.warning(f"Failed to compute a relative path for {artifact_path}")
         return str(artifact_path)

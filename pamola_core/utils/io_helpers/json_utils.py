@@ -4,7 +4,7 @@ Module: JSON Utilities
 Description: Tools for JSON validation, merging, transformation, and preparation for serialization
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Recursive conversion of NumPy types to standard Python types for safe JSON export

@@ -1,8 +1,6 @@
 # Linkage Attack Documentation
 
 **Module:** `pamola_core.attacks.linkage_attack`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -392,10 +390,10 @@ linkage = LinkageAttack(fs_threshold=0.70, n_components=2)
 
 **5. Combine with Other Attacks**
 ```python
-# Use linkage to establish baseline, then membership inference
+# Use linkage to establish baseline, then attribute inference
 linkage_results = linkage.record_linkage_attack(...)
 if len(linkage_results) > threshold:
-    print("Proceed to MembershipInference for additional testing")
+    print("Proceed to AttributeInference for additional testing")
 ```
 
 ## Troubleshooting
@@ -437,7 +435,7 @@ if data1 is None or data2 is None:
 
 ## Related Components
 
-- **[MembershipInference](./membership_inference.md)** — Test if records were in training set
-- **[DistanceToClosestRecord](./distance_to_closest_record.md)** — Measure dataset dissimilarity
+- **[AttributeInference](./attribute_inference.md)** — Infer sensitive attributes of linked records
+- **[Distance (DCR) metric](../metrics/privacy/distance.md)** — Measure dataset dissimilarity (`pamola_core.metrics.privacy.distance`)
 - **[Anonymization Module](../anonymization/)** — Apply protections before linkage testing
 - **[Profiling Module](../profiling/)** — Analyze data before anonymization

@@ -5,7 +5,7 @@ Version: 1.1.0+hotfix.2025.06.03
 Description: Specialized helpers for efficient and safe CSV processing
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Optimized CSV read/write option preparation

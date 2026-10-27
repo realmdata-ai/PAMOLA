@@ -13,7 +13,7 @@ These utilities support both before/after comparisons and aggregate/grouped data
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 """
 
 import logging

@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-23
 Updated:       2025-01-23
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    This module implements the core generalization strategies for categorical

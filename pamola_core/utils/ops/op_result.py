@@ -4,7 +4,7 @@ Module: Operation Results
 Description: Classes for representing operation results and artifacts
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides classes for representing and handling operation results,
 including status codes, artifacts, and metrics.

@@ -4,7 +4,7 @@ Module: Boxplot Visualization Implementation
 Description: Thread-safe boxplot visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for boxplots using both
 Plotly (primary) and Matplotlib (fallback) backends to create

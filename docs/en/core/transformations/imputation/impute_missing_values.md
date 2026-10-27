@@ -76,13 +76,13 @@ def __init__(
   - `column_prefix`: Prefix for new columns.
   - `description`: Operation description.
   - `output_format`: Output file format (`csv`, `json`, `parquet`).
-  - `batch_size`: Batch size for chunked processing.
+  - `chunk_size`: Chunk size for chunked processing.
   - `use_cache`, `use_dask`, `use_encryption`, `encryption_key`: Performance and security options.
 
 #### Key Attributes
 - `field_strategies`, `invalid_values`, `version`
-- `execution_time`, `include_timestamp`, `is_encryption_required`
-- `use_cache`, `use_dask`, `parallel_processes`, `batch_size`
+- `execution_time`
+- `use_cache`, `use_dask`, `parallel_processes`, `chunk_size`
 
 #### Public Methods
 

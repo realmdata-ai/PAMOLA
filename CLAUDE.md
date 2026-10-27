@@ -2,7 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Full agent contract: `docs/prompts/20260816_SYSTEM_CC_PAMOLA_CORE.md` — read it before a working session.
+Agent prompts live in `docs/prompts/`, which is git-ignored (internal, not published); read the
+latest handoff there if one exists locally.
 Project state and debt register: `DEVLOG.md`.
 
 ## Commands
@@ -100,4 +101,4 @@ recorded in `DEVLOG.md`. Do not justify or block a change with "BEST depends on 
 
 CC reports go to `docs/output/` as `YYYYMMDD_CC_<TOPIC>.md`, ending with a GCA Evidence Package
 table (`FR-*/AC-*` | Status | `file:line` + test name). Narrative progress goes to `DEVLOG.md`.
-Agent system prompts live in `docs/prompts/`.
+Agent system prompts live in `docs/prompts/` (git-ignored).

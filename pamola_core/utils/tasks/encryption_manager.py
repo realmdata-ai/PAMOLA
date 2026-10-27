@@ -4,7 +4,7 @@ Module: Encryption Manager
 Description: Secure encryption key management and handling
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for securely managing encryption keys
 and handling sensitive data, focusing on minimizing attack surface when

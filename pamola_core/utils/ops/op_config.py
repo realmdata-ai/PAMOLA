@@ -4,7 +4,7 @@ Module: Operation Configuration
 Description: Configuration management for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides classes for managing operation configuration,
 including parameter validation, storage, and serialization.

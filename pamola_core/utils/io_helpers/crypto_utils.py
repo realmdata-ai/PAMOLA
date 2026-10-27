@@ -4,7 +4,7 @@ Module: Crypto Utilities
 Description: Pamola Core cryptographic operations supporting file and in-memory data encryption/decryption
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Pluggable provider-based crypto system with standardized interface

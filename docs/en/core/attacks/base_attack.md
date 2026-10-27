@@ -1,8 +1,6 @@
 # Base Attack Documentation
 
 **Module:** `pamola_core.attacks.base`
-**Version:** 1.0
-**Last Updated:** 2026-03-23
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -26,10 +24,7 @@
 AttackInitialization (ABC)
   └─ PreprocessData
        ├─ LinkageAttack
-       ├─ MembershipInference
        ├─ AttributeInference
-       ├─ DistanceToClosestRecord
-       ├─ NearestNeighborDistanceRatio
        └─ AttackMetrics
 ```
 
@@ -117,21 +112,21 @@ def process(self, data):
     Any
         Processed result. Type depends on attack:
         - LinkageAttack: DataFrame with match pairs
-        - MembershipInference: numpy array of binary predictions
         - AttributeInference: pandas Series of predicted values
     """
     pass
 ```
 
 **Concrete Implementations:**
-| Class | process() Returns | Purpose |
-|-------|------------------|---------|
-| LinkageAttack | DataFrame | Record pairs that match |
-| MembershipInference | np.ndarray | Binary membership predictions (0/1) |
-| AttributeInference | pd.Series | Inferred attribute values |
-| DistanceToClosestRecord | np.ndarray | Distance scores |
-| NearestNeighborDistanceRatio | np.ndarray | Distance ratio scores |
-| AttackMetrics | dict | Evaluation metrics |
+
+In the current code, `PreprocessData.process()` is a compatibility placeholder and none of the
+concrete classes override it. Each class exposes its work through dedicated methods instead:
+
+| Class | Entry point(s) | Returns |
+|-------|----------------|---------|
+| LinkageAttack | `record_linkage_attack()`, `probabilistic_linkage_attack()`, `cluster_vector_linkage_attack()` | DataFrame of matched pairs |
+| AttributeInference | `attribute_inference_attack()` | pd.Series of inferred values |
+| AttackMetrics | `attack_metrics()`, `attack_success_rate()`, `residual_risk_score()` | dict / float |
 
 ## Implementation Notes
 
@@ -203,7 +198,7 @@ class PreprocessData(AttackInitialization):
 
 **Example Usage:**
 ```python
-from pamola_core.attacks import PreprocessData
+from pamola_core.attacks.preprocess_data import PreprocessData
 import pandas as pd
 import numpy as np
 
@@ -242,4 +237,4 @@ class NewAttack(PreprocessData):
         pass
 ```
 
-See [LinkageAttack](./linkage_attack.md), [MembershipInference](./membership_inference.md), or [AttributeInference](./attribute_inference.md) for concrete examples.
+See [LinkageAttack](./linkage_attack.md) or [AttributeInference](./attribute_inference.md) for concrete examples.

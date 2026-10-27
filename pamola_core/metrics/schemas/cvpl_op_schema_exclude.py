@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL Linkage Operation - excluded fields
 Package:       pamola_core.metrics.schemas
-License:       BSD 3-Clause
+License:       MIT
 
 Field names that are engine/config-level and must not be offered as user inputs in
 form builders for ``CVPLLinkageOperation``. ``columns``, ``column_mapping`` and

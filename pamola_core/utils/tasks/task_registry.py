@@ -4,7 +4,7 @@ Module: Task Registry
 Description: In-memory task type registration and discovery
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for registering task classes,
 discovering available tasks, and checking task dependencies.

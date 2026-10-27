@@ -417,10 +417,9 @@ for prop_name, prop_schema in schema["properties"].items():
 
 ## Related Documentation
 
-- [form_builder.py](./form_builder.md) - Formily schema conversion details
-- [schema_utils.py](./schema_utils.md) - Schema manipulation utilities
-- [schema_builder.py](./schema_builder.md) - Auto-generation of schemas
-- [Web UI Documentation](../../../web-ui/) - Using generated forms
+- `pamola_core/utils/schema_helpers/form_builder.py` - Formily schema conversion details
+- `pamola_core/utils/schema_helpers/schema_utils.py` - Schema manipulation utilities
+- `pamola_core/utils/schema_helpers/schema_builder.py` - Auto-generation of schemas
 
 ## Summary
 

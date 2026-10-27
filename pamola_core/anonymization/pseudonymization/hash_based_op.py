@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-06-10
 Updated:       2026-04-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module implements hash-based pseudonymization for sensitive data fields.

@@ -4,7 +4,7 @@ Module: Task Dependency Manager
 Description: Dependency management for task execution
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for managing dependencies between tasks,
 including locating dependency outputs, validating dependency completion,

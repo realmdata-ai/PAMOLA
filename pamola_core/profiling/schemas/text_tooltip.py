@@ -6,7 +6,7 @@ Version:       1.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-11-11
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 Provides detailed tooltips for text semantic categorization configuration fields in PAMOLA.CORE.

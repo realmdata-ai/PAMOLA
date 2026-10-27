@@ -4,7 +4,7 @@ Module: Memory Management Utilities
 Description: Tools for estimating, optimizing, and monitoring memory use during I/O operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Dynamic estimation of optimal chunk sizes based on system memory

@@ -3,7 +3,7 @@ PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module: Classification Utility Metric
 Description: Implements the classifiers metric
 Author: PAMOLA Core Team
-License: BSD 3-Clause
+License: MIT
 
 This module implements the classifiers metric.
 """

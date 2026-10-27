@@ -417,34 +417,23 @@ The module uses memory caching with 1-hour TTL. This can be modified by adjustin
 
 ## 8. Integration with PAMOLA.CORE
 
-### 8.1 Operation Integration
+### 8.1 Use in a Custom Operation
+
+`pamola_core` has no ready-made NLP enrichment operation or pipeline class. To run entity
+extraction as part of a task, call the functions from your own `BaseOperation` subclass (see
+[BaseOperation](./../ops/op_base.md)) or from plain pandas code:
 
 ```python
-from pamola_core.operations import DataEnrichmentOperation
-from pamola_core.utils.nlp.entity_extraction import extract_job_positions
+import pandas as pd
+from pamola_core.utils.nlp.entity_extraction import extract_job_positions, extract_entities
 
-class JobExtractionOperation(DataEnrichmentOperation):
-    def process(self, df):
-        results = extract_job_positions(
-            df['job_title'].tolist(),
-            show_progress=True
-        )
-        # Process results...
-```
+df = pd.read_csv("resumes.csv")
 
-### 8.2 Pipeline Integration
+# Job positions for a column of titles
+job_results = extract_job_positions(df["job_title"].tolist(), show_progress=True)
 
-```python
-from pamola_core.pipeline import Pipeline
-from pamola_core.utils.nlp.entity_extraction import extract_entities
-
-# Add entity extraction step
-pipeline.add_step(
-    lambda df: extract_entities(
-        df['text'].tolist(),
-        entity_type="organization"
-    )
-)
+# Organizations mentioned in free text
+org_results = extract_entities(df["text"].tolist(), entity_type="organization")
 ```
 
 ## 9. Troubleshooting

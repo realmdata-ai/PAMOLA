@@ -1,7 +1,6 @@
 # GeneratorOperation Documentation
 
 **Module:** `pamola_core.fake_data.base_generator_op`
-**Version:** 3.0.0
 **Last Updated:** 2026-03-23
 
 ## Overview
@@ -31,7 +30,7 @@ pamola_core/fake_data/
 ├── base_generator_op.py        # GeneratorOperation implementation
 ├── operations/
 │   ├── name_op.py              # FakeNameOperation (subclass)
-│   ├── email_op.py             # EmailOperation (subclass)
+│   ├── email_op.py             # FakeEmailOperation (subclass)
 │   ├── phone_op.py             # FakePhoneOperation (subclass)
 │   └── organization_op.py       # FakeOrganizationOperation (subclass)
 ├── generators/
@@ -73,11 +72,11 @@ pamola_core/fake_data/
 | `field_name` | str | Target field for generation | Required |
 | `generator` | BaseGenerator | Generator instance used to create synthetic data | Required |
 | `generator_params` | Dict | Additional generator configuration parameters | {} |
-| `consistency_mechanism` | str | Consistency preservation mechanism (prgn, mapping, etc.) | "prgn" |
+| `consistency_mechanism` | str | Consistency preservation mechanism (`prgn` or `mapping`) | "prgn" |
 | `id_field` | str | Unique identifier field for mapping consistency | None |
 | `mapping_store_path` | str | Path to persistent mapping store | None |
-| `mapping_store` | MappingStore | Pre-loaded mapping store instance | None |
 | `save_mapping` | bool | Whether to persist mapping results after processing | False |
+| `include_raw_samples_in_metrics` | bool | Include raw original/synthetic samples in metrics (off by default for privacy) | False |
 | `**kwargs` | dict | Additional arguments for FieldOperation/BaseOperation | |
 
 ### Key Methods
@@ -86,21 +85,24 @@ pamola_core/fake_data/
 |--------|-------------|------------|---------|
 | `execute` | Execute the generator operation with timing and error handling | `data_source`, `task_dir`, `reporter`, `**kwargs` | OperationResult |
 | `process_batch` | Process a batch of data rows | `batch: pd.DataFrame` | pd.DataFrame |
-| `process_value` | Process a single value with retry logic | `value`, `**params` | Generated value |
-| `_initialize_generator` | Initialize the generator with configuration | None | None |
-| `_initialize_mapping_store` | Initialize mapping store if needed | None | None |
+| `_initialize_mapping_store` | Initialize mapping store from a path | `path` | None |
 | `_collect_metrics` | Collect metrics for the operation | `df: pd.DataFrame` | Dict |
-| `_save_metrics` | Save metrics to file and generate visualizations | `metrics_data: Dict`, `task_dir: Path` | Path |
+| `_save_metrics` | Save metrics through the DataWriter and register the artifact | `metrics`, `writer`, `result`, `reporter`, `progress_tracker` | bool |
 
 ## Usage Examples
+
+In most cases use the public subclasses (`FakeNameOperation`, `FakeEmailOperation`,
+`FakePhoneOperation`, `FakeOrganizationOperation`). `GeneratorOperation` can be used directly
+with any `BaseGenerator` instance.
 
 ### Basic Usage: Name Generation Operation
 
 ```python
+from pathlib import Path
 from pamola_core.fake_data.generators.name import NameGenerator
 from pamola_core.fake_data.base_generator_op import GeneratorOperation
-from pathlib import Path
-from pamola_core.utils.task_reporting import Reporter
+from pamola_core.utils.ops.op_data_source import DataSource
+from pamola_core.utils.tasks.task_reporting import TaskReporter
 
 # Create a name generator
 name_gen = NameGenerator(config={
@@ -118,133 +120,94 @@ name_op = GeneratorOperation(
 )
 
 # Execute the operation
-reporter = Reporter()
+task_dir = Path("./task_directory")
+reporter = TaskReporter(
+    task_id="fake_names",
+    task_type="fake_data",
+    description="Generate synthetic names",
+    report_path=task_dir / "report.json",
+)
 result = name_op.execute(
-    data_source="path/to/data.csv",
-    task_dir=Path("./task_directory"),
+    data_source=DataSource.from_file_path("path/to/data.csv"),
+    task_dir=task_dir,
     reporter=reporter
 )
 
-if result.success:
-    print(f"Processing completed. Results: {result.data.head()}")
+if result.status.name == "SUCCESS":
+    print(f"Processing completed. Metrics: {result.metrics}")
 else:
     print(f"Error: {result.error_message}")
 ```
 
-### Advanced Configuration with Mapping Store
+### Mapping-Based Consistency
 
 ```python
-from pamola_core.fake_data.generators.email import EmailGenerator
-from pamola_core.fake_data.base_generator_op import GeneratorOperation
-from pamola_core.fake_data.commons.mapping_store import MappingStore
 import pandas as pd
 from pathlib import Path
+from unittest.mock import MagicMock
+from pamola_core.fake_data.generators.email import EmailGenerator
+from pamola_core.fake_data.base_generator_op import GeneratorOperation
+from pamola_core.utils.ops.op_data_source import DataSource
 
-# Create email generator with domain preferences
 email_gen = EmailGenerator(config={
     "domains": ["newemail.com", "corporate.org"],
     "format": "name_surname",
     "preserve_domain_ratio": 0.3
 })
 
-# Initialize mapping store for consistency
-mapping_store = MappingStore()
-
-# Create operation with mapping
+# The same original value always maps to the same synthetic value.
+# save_mapping=True writes the mapping (it holds original values) only encrypted,
+# so it requires use_encryption=True and the task encryption key.
 email_op = GeneratorOperation(
     field_name="email",
     generator=email_gen,
-    generator_params={
-        "domains": ["newemail.com", "corporate.org"],
-        "format": "name_surname"
-    },
     consistency_mechanism="mapping",
-    mapping_store=mapping_store,
+    mapping_store_path="./mappings/email.json",
     save_mapping=True,
-    mapping_store_path="./mappings/email.json"
+    use_encryption=True,
+    encryption_key="<task key>"
 )
 
-# Load data and execute
 df = pd.DataFrame({
     'email': ['john.doe@example.com', 'jane.smith@company.org'],
     'first_name': ['John', 'Jane']
 })
 
-reporter = Reporter()
 result = email_op.execute(
-    data_source=df,
+    data_source=DataSource.from_dataframe(df),
     task_dir=Path("./output"),
-    reporter=reporter
+    reporter=MagicMock()  # or a TaskReporter
 )
-
-# Access generated data
-print(result.data)
 ```
 
-### Parallel Processing with Dask
+### Large Datasets: Dask and Chunked Processing
+
+Processing options are the common `BaseOperation` constructor parameters:
 
 ```python
 from pamola_core.fake_data.generators.phone import PhoneGenerator
 from pamola_core.fake_data.base_generator_op import GeneratorOperation
-from pathlib import Path
-import pandas as pd
 
-# Create phone generator
 phone_gen = PhoneGenerator(config={
     "country_codes": ["us", "ca", "uk"],
     "region": "us"
 })
 
-# Create operation configured for Dask processing
+# Dask-based processing
 phone_op = GeneratorOperation(
     field_name="phone_number",
     generator=phone_gen,
-    generator_params={"country_codes": ["us", "ca", "uk"]},
-    processing_method="dask",  # Use Dask for parallel processing
-    dask_npartitions=4
-)
-
-# Execute with large dataset
-result = phone_op.execute(
-    data_source="path/to/large_dataset.csv",
-    task_dir=Path("./output"),
-    reporter=Reporter(),
+    use_dask=True,
     npartitions=4,
     dask_partition_size="100MB"
 )
-```
 
-### Batch Processing with Progress Tracking
-
-```python
-from pamola_core.fake_data.base_generator_op import GeneratorOperation
-from pamola_core.fake_data.generators.organization import OrganizationGenerator
-from pamola_core.utils.progress import HierarchicalProgressTracker
-from pathlib import Path
-
-# Create organization generator
-org_gen = OrganizationGenerator(config={
-    "organization_type": "general",
-    "region": "en"
-})
-
-# Create operation with batch processing
-org_op = GeneratorOperation(
-    field_name="organization_name",
-    generator=org_gen,
-    generator_params={"organization_type": "general"},
-    processing_method="chunk",
-    batch_size=5000
-)
-
-# Execute with progress tracking
-progress_tracker = HierarchicalProgressTracker()
-result = org_op.execute(
-    data_source="path/to/data.csv",
-    task_dir=Path("./output"),
-    reporter=Reporter(),
-    progress_tracker=progress_tracker,
-    chunk_size=5000
+# Chunked / parallel processing
+phone_op_chunked = GeneratorOperation(
+    field_name="phone_number",
+    generator=phone_gen,
+    chunk_size=5000,
+    parallel_processes=4
 )
 ```
 
@@ -252,31 +215,28 @@ result = org_op.execute(
 
 The `execute` method returns an `OperationResult` object containing:
 
-- **data** - Processed DataFrame with synthetic values
-- **success** - Boolean indicating successful execution
+- **status** - `OperationStatus` (`SUCCESS`, `ERROR`, ...)
+- **metrics** - Dictionary of operation metrics
+- **artifacts** - List of `OperationArtifact` objects (output data, metrics JSON, visualizations, mapping files)
 - **error_message** - Error description (if any)
 - **execution_time** - Time taken for execution in seconds
-- **metrics_path** - Path to saved metrics JSON file
-- **visualization_paths** - List of paths to generated visualization files
-- **status** - Detailed status information
 
-## Processing Methods
+The processed data is written to the task's `output/` directory (when `save_output=True`).
 
-GeneratorOperation supports three processing methods for handling large datasets:
+## Processing Options
 
-| Method | Description | Best For | Configuration |
-|--------|-------------|----------|---------------|
-| `chunk` | Sequential chunk-based processing | Medium datasets, memory constraints | `chunk_size` parameter |
-| `joblib` | Parallel processing using joblib | Multi-core processing | `parallel_processes`, `chunk_size` |
-| `dask` | Distributed processing using Dask | Large datasets, cluster processing | `npartitions`, `dask_partition_size` |
+| Option | Description | Configuration |
+|--------|-------------|---------------|
+| Chunked | Sequential chunk-based processing | `chunk_size` |
+| Parallel | Parallel processing with joblib | `parallel_processes`, `chunk_size` |
+| Dask | Distributed processing using Dask | `use_dask`, `npartitions`, `dask_partition_size` |
 
 ## Consistency Mechanisms
 
 | Mechanism | Description | Use Case |
 |-----------|-------------|----------|
-| `prgn` | Pseudo-Random Number Generator for deterministic generation | Default, consistent across runs with same seed |
+| `prgn` | Pseudo-Random Number Generator for deterministic generation | Default, consistent across runs with the same key/salt |
 | `mapping` | Store-based mapping for exact value reuse | When same original values must map to same synthetic values |
-| `cache` | In-memory caching of generated values | Performance optimization for repeated values |
 
 ## Limitations
 
@@ -290,8 +250,8 @@ GeneratorOperation supports three processing methods for handling large datasets
 
 ## Best Practices
 
-1. **Choose Appropriate Processing Method**: Use `chunk` for small/medium data, `joblib` for multi-core systems, `dask` for distributed processing
-2. **Configure Batch Sizes**: Adjust batch size based on available memory and data characteristics
+1. **Choose Appropriate Processing Options**: Use `chunk_size` for small/medium data, `parallel_processes` for multi-core systems, `use_dask` for distributed processing
+2. **Configure Chunk Sizes**: Adjust `chunk_size` based on available memory and data characteristics
 3. **Use Mapping Stores for Consistency**: Save and reuse mappings when reproducibility is important
 4. **Monitor Progress**: Use progress trackers for long-running operations
 5. **Handle Null Values Appropriately**: Configure null strategy based on data semantics

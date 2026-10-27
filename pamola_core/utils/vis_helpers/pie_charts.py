@@ -4,7 +4,7 @@ Module: Pie Chart Visualization Implementation
 Description: Thread-safe pie chart visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for pie charts using Plotly as
 the primary backend, with support for donut charts and sunburst charts

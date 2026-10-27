@@ -2,8 +2,8 @@
 PAMOLA - Privacy-Aware Machine Learning Analytics
 Cell Suppression Operation Module
 
-License: BSD 3-Clause
-Copyright (c) 2025 PAMOLA Development Team
+License: MIT
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
 Version: 1.2.0
 Last Updated: 2025-06-15

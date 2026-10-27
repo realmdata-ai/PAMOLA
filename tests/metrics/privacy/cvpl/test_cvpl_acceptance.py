@@ -416,17 +416,21 @@ def test_cvpl_c18_legacy_goldens_G2_G4_projection_only(name, tau):
     links 19 (LR 0.316667, weighted 0.276781). 49 of the one-hot columns have identical
     variance, so the PCA basis inside that degenerate eigenspace is arbitrary: cutting the
     kept components through it rotates the cosine geometry, and a different (equally valid)
-    solver legitimately links a different number of pairs. The numbers below are what THIS
-    implementation produces (deterministic: the covariance eigen-decomposition with canonical
-    signs); they pin it against accidental drift and must not be read as reference values or
-    as evidence about the BEST numbers. The fixture is not a correctness oracle."""
+    solver legitimately links a different number of pairs.
+
+    The linked count is therefore NOT pinned: it depends on the LAPACK build, not on this code
+    (19 on one build, 22 on the CI runner image of 2026-10-27, 23 on Windows; BEST linked 21).
+    What does not depend on the solver is pinned instead: the projection itself, the flag that
+    tells the reader the cut went through a degenerate eigenspace, and the consistency of the
+    rates with the count. The fixture is not a correctness oracle."""
     d, dp = make_df(60, 1), make_df(60, 2)
     cfg = CVPLConfig.from_dict({"qids": _QIDS, "auxiliary": ["income", "person_id"], "tau": tau, "seed": 42})
     r = run_cvpl(d, dp, cfg)
     assert r["projection"]["n_components"] == 28
     assert r["projection"]["variance_retained"] == pytest.approx(0.903622, abs=1e-6)
     assert r["projection"]["encoding"]["person_id"]["bounded"] is True
+    assert r["projection"]["cutoff_in_degenerate_eigenspace"] is True
     assert r["n_undetermined"] == 0
-    assert r["n_linked"] == 19
-    assert r["cvpl_lr"] == pytest.approx(0.3166666667, abs=1e-9)
-    assert r["cvpl_weighted_lr_legacy"] == pytest.approx(0.2767808592, abs=1e-9)
+    assert 15 <= r["n_linked"] <= 27  # 0.25..0.45 of 60: every build seen so far, with margin
+    assert r["cvpl_lr"] == pytest.approx(r["n_linked"] / 60, abs=1e-9)
+    assert 0 < r["cvpl_weighted_lr_legacy"] <= r["cvpl_lr"]

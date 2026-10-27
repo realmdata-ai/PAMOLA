@@ -4,7 +4,7 @@ Module: Task Context Manager
 Description: Task execution state management with checkpoint support
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for managing task execution state,
 enabling checkpoint creation, state persistence, and resumable execution.

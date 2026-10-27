@@ -156,26 +156,25 @@ df = pd.read_csv("data.csv", **options)
 ### Pattern 3: Large File Processing with Dask
 
 ```python
-from pamola_core.utils.io_helpers.dask_utils import read_large_csv
+from pamola_core.utils.io_helpers.dask_utils import read_csv_in_chunks
 
-# Use Dask for large files
-ddf = read_large_csv("huge_file.csv", blocksize="64MB")
-
-# Process in chunks
-result = ddf.map_partitions(process_partition).compute()
+# Read a large CSV with Dask, receiving pandas DataFrame chunks
+for chunk in read_csv_in_chunks(
+    "huge_file.csv", chunk_size=100_000, encoding="utf-8", delimiter=",", quotechar='"'
+):
+    process_partition(chunk)
 ```
 
 ### Pattern 4: Memory-Aware Processing
 
 ```python
-from pamola_core.utils.io_helpers.memory_utils import estimate_memory_usage
-from pamola_core.utils.io_helpers.file_utils import get_file_size
+from pamola_core.utils.io_helpers.memory_utils import estimate_file_memory, get_system_memory
 
 # Check if file fits in memory
-file_size = get_file_size("data.csv")
-available_memory = get_available_memory()
+estimate = estimate_file_memory("data.csv")
+available_gb = get_system_memory()["available_gb"]
 
-if file_size < available_memory * 0.8:
+if estimate["estimated_memory_gb"] < available_gb * 0.8:
     df = pd.read_csv("data.csv")  # Load all
 else:
     # Process in chunks
@@ -214,10 +213,11 @@ else:
 The `io_helpers` package provides specialized error handling:
 
 ```python
-from pamola_core.errors import PamolaFileNotFoundError, ValidationError
+from pamola_core.errors.exceptions import PamolaFileNotFoundError, ValidationError
+from pamola_core.utils.io_helpers.crypto_utils import read_encrypted_json
 
 try:
-    data = read_encrypted_file("data.csv.enc", key="secret")
+    data = read_encrypted_json("data.json.enc", key="secret")
 except PamolaFileNotFoundError:
     print("File not found")
 except ValidationError:
@@ -238,7 +238,7 @@ except ValidationError:
 - [DataReader](../ops/op_data_reader.md) - Uses io_helpers for reading
 - [DataSource](../ops/op_data_source.md) - Uses io_helpers for data management
 - [BaseOperation](../ops/op_base.md) - Uses io_helpers for I/O operations
-- [Encryption Guide](../../../encryption-guide.md) - Detailed encryption documentation
+- [Cryptographic Subsystem](../crypto_files.md) - Detailed encryption documentation
 
 ## Summary
 

@@ -108,60 +108,30 @@ def __init__(
 - **`"range"`**: Suppress records where field_name falls within suppression_range
 - **`"risk"`**: Suppress based on k-anonymity risk scores (requires ka_risk_field from base class)
 - **`"custom"`**: Use custom multi-field conditions via multi_conditions from base class
-    suppression_values: Optional[List[Any]] = None,
-    suppression_range: Optional[Tuple[Any, Any]] = None,
-    mode: str = "REMOVE",
-    save_suppressed_records: bool = False,
-    suppression_reason_field: str = "_suppression_reason",
-    # Multi-field conditions
-    multi_field_conditions: Optional[List[Dict[str, Any]]] = None,
-    condition_logic: str = "OR",
-    # Risk-based suppression
-    ka_risk_field: Optional[str] = None,
-    risk_threshold: float = 5.0,
-    # Standard parameters
-    output_field_name: Optional[str] = None,
-    null_strategy: str = "PRESERVE",
-    batch_size: int = 10000,
-    use_cache: bool = False,
-    use_encryption: bool = False,
-    encryption_key: Optional[Path] = None,
-    engine: str = "auto",
-    max_rows_in_memory: int = 1000000,
-    **kwargs
-)
-```
 
-### 3.2 Parameters
+### 3.4 Parameters Inherited from the Base Classes (via `**kwargs`)
 
-#### Primary Parameters
-- **field_name** (str): Primary field to check for suppression conditions
-- **suppression_condition** (str): Type of condition - "null", "value", "range", "risk", "custom"
-- **suppression_values** (List[Any]): Values to match for "value" condition
-- **suppression_range** (Tuple[Any, Any]): (min, max) bounds for "range" condition
-- **save_suppressed_records** (bool): Whether to save removed records for audit
-
-#### Multi-field Parameters
-- **multi_field_conditions** (List[Dict]): List of field conditions with structure:
+#### Multi-field Parameters (`AnonymizationOperation`)
+- **multi_conditions** (List[Dict]): List of field conditions with structure:
   ```python
   {
       "field": "field_name",
-      "operator": "eq|ne|gt|lt|gte|lte|in|null|not_null",
-      "value": Any
+      "operator": "in|not_in|eq|ne|gt|lt|ge|le|range",
+      "values": [...]
   }
   ```
-- **condition_logic** (str): "AND" or "OR" for combining conditions
+- **condition_logic** (str, default "AND"): "AND" or "OR" for combining conditions
 
-#### Risk-based Parameters
+#### Risk-based Parameters (`AnonymizationOperation`)
 - **ka_risk_field** (str): Field containing k-anonymity risk scores
-- **risk_threshold** (float): Threshold below which records are suppressed
+- **risk_threshold** (float, default 5.0): Threshold below which records are suppressed
 
-#### Processing Parameters
-- **batch_size** (int): Number of records to process per batch
-- **engine** (str): "pandas", "dask", or "auto"
-- **max_rows_in_memory** (int): Threshold for automatic Dask switching
+#### Processing Parameters (`BaseOperation`)
+- **chunk_size** (int, default 10000): Number of records to process per chunk
+- **engine** (str, default "auto"): "pandas", "dask", or "auto"
+- **use_cache**, **use_encryption**, **encryption_key**, **output_format**, ...
 
-### 3.3 Methods
+### 3.5 Methods
 
 #### process_batch(batch: pd.DataFrame) -> pd.DataFrame
 Processes a single batch of data, applying suppression conditions.
@@ -226,10 +196,10 @@ Removes records based on complex conditions across multiple fields.
 op = RecordSuppressionOperation(
     field_name="status",
     suppression_condition="custom",
-    multi_field_conditions=[
-        {"field": "age", "operator": "lt", "value": 18},
-        {"field": "consent", "operator": "eq", "value": False},
-        {"field": "risk_score", "operator": "gt", "value": 0.8}
+    multi_conditions=[
+        {"field": "age", "operator": "lt", "values": [18]},
+        {"field": "consent", "operator": "eq", "values": [False]},
+        {"field": "risk_score", "operator": "gt", "values": [0.8]}
     ],
     condition_logic="OR"  # Remove if ANY condition is true
 )
@@ -245,7 +215,7 @@ from pamola_core.utils.ops.op_data_source import DataSource
 from pamola_core.anonymization.suppression.record_op import RecordSuppressionOperation
 
 # Create data source
-data_source = DataSource("path/to/data.csv")
+data_source = DataSource.from_file_path("path/to/data.csv")
 
 # Create operation
 op = RecordSuppressionOperation(
@@ -274,15 +244,13 @@ print(f"Suppression rate: {result.metrics['suppression_rate']}%")
 op = RecordSuppressionOperation(
     field_name="user_id",
     suppression_condition="custom",
-    multi_field_conditions=[
+    multi_conditions=[
         # Remove if k < 3
-        {"field": "k_anonymity", "operator": "lt", "value": 3},
+        {"field": "k_anonymity", "operator": "lt", "values": [3]},
         # OR if in high-risk category
-        {"field": "risk_category", "operator": "in", "value": ["HIGH", "CRITICAL"]},
-        # OR if missing critical fields
-        {"field": "postal_code", "operator": "null", "value": None},
-        {"field": "birth_date", "operator": "null", "value": None}
+        {"field": "risk_category", "operator": "in", "values": ["HIGH", "CRITICAL"]},
     ],
+    # (missing values are handled with suppression_condition="null" in a separate operation)
     condition_logic="OR",
     save_suppressed_records=True,
     use_encryption=True,  # Encrypt audit trail
@@ -299,19 +267,21 @@ op = RecordSuppressionOperation(
     suppression_condition="value",
     suppression_values=["CANCELLED", "FAILED", "REJECTED"],
     engine="auto",  # Automatically use Dask if needed
-    max_rows_in_memory=1_000_000,  # Switch to Dask above 1M rows
-    batch_size=50000  # Larger batches for efficiency
+    chunk_size=50000  # Larger chunks for efficiency
 )
 ```
 
 ### 5.4 Risk-based Suppression Pipeline
 
 ```python
-# First run k-anonymity profiling
-from pamola_core.profiling import KAnonymityProfiler
+# First run k-anonymity profiling in ENRICH mode: it adds a k-anonymity column
+from pamola_core import KAnonymityProfilerOperation
 
-profiler = KAnonymityProfiler(quasi_identifiers=["age", "zipcode", "gender"])
-profiling_result = profiler.execute(data_source, task_dir)
+profiler = KAnonymityProfilerOperation(
+    quasi_identifiers=["age", "zipcode", "gender"],
+    analysis_mode="ENRICH",
+)
+profiling_result = profiler.execute(data_source, task_dir, reporter)
 
 # Then suppress high-risk records
 op = RecordSuppressionOperation(
@@ -322,11 +292,10 @@ op = RecordSuppressionOperation(
     save_suppressed_records=True
 )
 
-# Pass profiling results to suppression
+# Run the suppression on the enriched output (ka_risk_field must name the k-anonymity column)
 result = op.execute(
-    data_source=data_source,
-    task_dir=task_dir,
-    profiling_results=profiling_result.metrics
+    data_source=enriched_data_source,
+    task_dir=task_dir
 )
 ```
 
@@ -423,18 +392,12 @@ Each suppressed record includes:
 
 ### 9.1 Pipeline Integration
 ```python
-# Typical anonymization pipeline
-pipeline = [
-    DataValidationOperation(),
-    KAnonymityProfiler(),
-    RecordSuppressionOperation(
-        suppression_condition="risk",
-        ka_risk_field="k_score",
-        risk_threshold=5.0
-    ),
-    GeneralizationOperation(),
-    MaskingOperation()
-]
+# Typical order of operations in a BaseTask (configure_operations):
+#   1. KAnonymityProfilerOperation(..., analysis_mode="ENRICH")   # add k-anonymity column
+#   2. RecordSuppressionOperation(field_name=..., suppression_condition="risk",
+#                                 ka_risk_field="<k-anonymity column>", risk_threshold=5.0)
+#   3. CategoricalGeneralizationOperation(...) / NumericGeneralizationOperation(...)
+#   4. FullMaskingOperation(...) / PartialMaskingOperation(...)
 ```
 
 ### 9.2 Error Handling
@@ -490,7 +453,7 @@ op = RecordSuppressionOperation(
     field_name="id",
     suppression_condition="null",
     engine="dask",  # Force Dask
-    batch_size=25000  # Smaller batches
+    chunk_size=25000  # Smaller chunks
 )
 ```
 

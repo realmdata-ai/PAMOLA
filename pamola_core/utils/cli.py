@@ -4,7 +4,7 @@ Module: Command Line Interface Utilities
 Description: Standard CLI argument handling for PAMOLA/PAMOLA.CORE tasks
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides standardized command-line argument parsing for
 various tasks in the PAMOLA ecosystem, ensuring consistent interface

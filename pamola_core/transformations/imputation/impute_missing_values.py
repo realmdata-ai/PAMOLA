@@ -5,7 +5,7 @@ Description: Operation for replace missing or invalid values using
 statistical functions.
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for replace missing or invalid values
 using statistical functions. It supports different imputation strategies

@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL blocking / candidate compatibility
 Package:       pamola_core.metrics.privacy.cvpl
-License:       BSD 3-Clause
+License:       MIT
 
 ``B_lambda``: which released rows are admissible candidates for a source row.
 Compatibility is decided per quasi-identifier from the *declared* rules:

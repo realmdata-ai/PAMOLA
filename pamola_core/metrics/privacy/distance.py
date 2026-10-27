@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       Mar 2025
 Updated:       2025-07-16
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module implements the Distance to Closest Record (DCR) privacy metric,

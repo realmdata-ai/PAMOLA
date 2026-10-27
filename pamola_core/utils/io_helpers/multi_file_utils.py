@@ -4,7 +4,7 @@ Module: Multi-file Dataset Utilities
 Description: Helpers for processing, stacking, and merging multi-file datasets
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 Key features:
 - Vertical stacking of CSV datasets across multiple files

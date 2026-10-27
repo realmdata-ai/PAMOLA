@@ -50,7 +50,7 @@ pamola_core.utils
 
 ```mermaid
 graph TD
-    A[Input Data Source] --> B[PhoneOperation]
+    A[Input Data Source] --> B[FakePhoneOperation]
     B --> C[Load Data]
     C --> D[Process in Batches]
     D --> E[PhoneGenerator]
@@ -76,17 +76,17 @@ graph TD
 | `process_value(value, **params)` | Processes a single value using the generator |
 | `_analyze_country_distribution(df)` | Analyzes distribution of country codes |
 | `_analyze_formats(df)` | Analyzes distribution of phone number formats |
-| `_collect_metrics(df)` | Collects operation metrics |
+| `_collect_specific_metrics(df)` | Collects phone-specific metrics |
 | `_calculate_quality_metrics(original_series, generated_series)` | Calculates quality comparison metrics |
 | `_determine_format_type(phone)` | Determines the format type of a phone number |
-| `_save_metrics(metrics_data, task_dir)` | Saves metrics to files and generates visualizations |
+| `_save_metrics(metrics, writer, result, reporter, progress_tracker)` | Saves metrics through the DataWriter (inherited from `GeneratorOperation`) |
 
 ## Configuration Parameters
 
 | Parameter | Type | Description | Default |
 |-----------|------|-------------|---------|
 | `field_name` | str | Field to process (containing phone numbers) | Required |
-| `mode` | str | Operation mode (REPLACE or ENRICH) | `"ENRICH"` |
+| `mode` | str | Operation mode (REPLACE or ENRICH) | `"REPLACE"` |
 | `output_field_name` | str | Name for the output field (if mode=ENRICH) | `None` |
 | `country_codes` | List/Dict | Country codes to use | `None` |
 | `operator_codes_dict` | str | Path to dictionary of operator codes | `None` |
@@ -97,32 +97,32 @@ graph TD
 | `preserve_country_code` | bool | Whether to preserve country code from original | `True` |
 | `preserve_operator_code` | bool | Whether to preserve operator code from original | `False` |
 | `region` | str | Region/country for formatting | `None` |
-| `batch_size` | int | Number of records to process in one batch | `10000` |
+| `chunk_size` | int | Number of records to process in one chunk | `10000` |
 | `null_strategy` | str | Strategy for handling NULL values | `"PRESERVE"` |
 | `consistency_mechanism` | str | Method for ensuring consistency | `"prgn"` |
 | `mapping_store_path` | str | Path to store mappings | `None` |
 | `id_field` | str | Field for record identification | `None` |
 | `key` | str | Key for encryption/PRGN | `None` |
 | `context_salt` | str | Salt for PRGN | `None` |
-| `save_mapping` | bool | Whether to save mapping to file | `False` |
+| `save_mapping` | bool | Whether to save mapping to file (written encrypted; requires `use_encryption=True` and `encryption_key`) | `False` |
 | `column_prefix` | str | Prefix for new column (if mode=ENRICH) | `"_"` |
-| `international_format` | bool | Whether to use international format | `True` |
-| `local_formatting` | bool | Whether to apply local country formatting | `False` |
 | `country_code_field` | str | Field containing country codes | `None` |
 | `detailed_metrics` | bool | Whether to collect detailed metrics | `False` |
-| `error_logging_level` | str | Level for error logging | `"WARNING"` |
 | `max_retries` | int | Maximum number of retries for generation on error | `3` |
 
 ## Operation Results
 
+`execute()` returns an `OperationResult`:
+
 | Field | Description |
 |-------|-------------|
-| `success` | Boolean indicating if operation completed successfully |
-| `message` | Status message or error description |
-| `data` | Processed DataFrame (if returning data) |
+| `status` | `OperationStatus` (`SUCCESS`, `ERROR`, ...) |
+| `error_message` | Error description (if any) |
 | `metrics` | Collected metrics from operation |
-| `artifacts` | Paths to generated files/visualizations |
+| `artifacts` | List of `OperationArtifact` objects (output data, metrics, visualizations, mapping) |
 | `execution_time` | Time taken to execute the operation |
+
+The processed data is written to `{task_dir}/output/` (when `save_output=True`).
 
 ## Metrics Collected
 
@@ -137,54 +137,55 @@ graph TD
 ## Usage Examples
 
 ```python
-from pamola_core.fake_data.operations.phone_op import PhoneOperation
 from pathlib import Path
-import pandas as pd
+from unittest.mock import MagicMock
+from pamola_core import FakePhoneOperation
+from pamola_core.utils.ops.op_data_source import DataSource
 
-# Create a reporter (implementation dependent on your framework)
-reporter = Reporter()
+# Use a TaskReporter in a real task; a mock is enough for a quick run
+reporter = MagicMock()
 
 # Create the operation
-phone_op = PhoneOperation(
+phone_op = FakePhoneOperation(
     field_name="contact_phone",
     mode="ENRICH",
     output_field_name="synthetic_phone",
     country_codes={"1": 0.6, "44": 0.2, "7": 0.2},
     format="+CC (AAA) XXX-XXXX",
     preserve_country_code=True,
-    batch_size=5000,
+    chunk_size=5000,
     consistency_mechanism="mapping",
     mapping_store_path="./mappings/phone_mappings.json",
-    save_mapping=True,
+    save_mapping=True,              # mapping is written encrypted:
+    use_encryption=True,            # requires use_encryption
+    encryption_key="<task key>",    # and the task encryption key
     detailed_metrics=True
 )
 
-# Execute on DataFrame
-df = pd.read_csv("contacts.csv")
-result = phone_op.execute(df, Path("./task_dir"), reporter)
-
-# Or execute on file
-result = phone_op.execute("path/to/contacts.csv", Path("./task_dir"), reporter)
+# Execute on a file
+result = phone_op.execute(
+    data_source=DataSource.from_file_path("path/to/contacts.csv"),
+    task_dir=Path("./task_dir"),
+    reporter=reporter,
+)
 
 # Access results
-if result.success:
-    processed_df = result.data
-    print(f"Processed {len(processed_df)} records in {result.execution_time} seconds")
-    print(f"Metrics saved to: {result.artifacts['metrics']}")
-    print(f"Visualizations saved to: {result.artifacts['visualizations']}")
+if result.status.name == "SUCCESS":
+    print(f"Finished in {result.execution_time} seconds")
+    for artifact in result.artifacts:
+        print(f"{artifact.artifact_type}: {artifact.path}")
 else:
-    print(f"Operation failed: {result.message}")
+    print(f"Operation failed: {result.error_message}")
 ```
 
 ## Artifacts Generated
 
 | Artifact Type | Path Pattern | Description |
 |--------------|--------------|-------------|
-| Processed Data | `{task_dir}/output/{output_name}.csv` | Output dataset if saving enabled |
-| Metrics | `{task_dir}/metrics/{operation_name}_{field_name}_metrics.json` | Operation metrics in JSON format |
-| Report | `{task_dir}/reports/{operation_name}_{field_name}_report.md` | Metrics report in markdown format |
-| Visualizations | `{task_dir}/visualizations/{metric_name}.png` | Metric visualizations |
-| Mapping | `{task_dir}/maps/{operation_name}_{field_name}_mapping.json` | Mapping of original to synthetic values |
+| Processed Data | `{task_dir}/output/{field_name}_FakePhoneOperation_output_{timestamp}.csv` | Output dataset (when `save_output=True`) |
+| Metrics | `{task_dir}/metrics/{field_name}_FakePhoneOperation_metrics_{timestamp}.json` | Operation metrics in JSON format |
+| Visualizations | `{task_dir}/visualizations/FakePhoneOperation_{field_name}_value_distribution_{timestamp}.png` | Value distribution (when `generate_visualization=True`) |
+| Mapping | `{task_dir}/maps/{name}_{field_name}_mapping.json` | Encrypted mapping of original to synthetic values (when `save_mapping=True`) |
 
 ## Limitations
 

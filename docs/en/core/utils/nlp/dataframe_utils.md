@@ -404,18 +404,17 @@ for idx in indices:
 #### With Text Transformation
 
 ```python
-from pamola_core.utils.nlp.text_transformer import TextTransformer
-from pamola_core.utils.nlp.dataframe_utils import create_column_backup
+from pamola_core.utils.nlp.text_utils import normalize_text
+from pamola_core.utils.nlp.dataframe_utils import create_column_backup, compare_columns
 
-# Backup original
-backup = create_column_backup(df, "text")
+# Backup original (returns the backup column name, e.g. "text_original")
+backup_col = create_column_backup(df, "text")
 
 # Apply transformations
-transformer = TextTransformer()
-df['text'] = df['text'].apply(transformer.transform)
+df['text'] = df['text'].apply(normalize_text)
 
-# Validate changes
-changes = compare_columns(df, backup, "text")
+# Validate changes (boolean Series per row)
+changes = compare_columns(df, backup_col, "text")
 ```
 
 ### Common Issues and Solutions
@@ -442,5 +441,4 @@ changes = compare_columns(df, backup, "text")
 
 - [`pamola_core.utils.nlp.text_utils`](./text_utils.md) - Text processing utilities
 - [`pamola_core.utils.nlp.entity_extraction`](./entity_extraction.md) - Entity extraction
-- [`pamola_core.utils.nlp.text_transformer`](./text_transformer.md) - Text transformation
 - [`pandas.DataFrame`](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) - Pandas documentation

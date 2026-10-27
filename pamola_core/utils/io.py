@@ -6,7 +6,7 @@ Version:       2.0.1+refactor.2025.06.03
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
    Unified interface and orchestrator for reading, writing, encrypting, and managing datasets.
    This module provides a high-level facade for robust file I/O operations, designed to handle

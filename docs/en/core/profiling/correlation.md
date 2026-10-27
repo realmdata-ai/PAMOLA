@@ -40,10 +40,9 @@ The module follows a clear separation of concerns:
 │ ┌──────────────────────┐     │ ┌──────────────────┐  │
 │ │CorrelationMatrixOp   │     │ │correlation_ratio │  │
 │ └──────────────────────┘     │ └──────────────────┘  │
-│                        │     │                       │
-│ ┌──────────────────┐   │     │ ┌────────────────┐    │
-│ │analyze_correlations│ │     │ │interpret_correlation│
-│ └──────────────────┘   │     │ └────────────────┘    │
+│                        │     │ ┌────────────────┐    │
+│                        │     │ │interpret_correlation│
+│                        │     │ └────────────────┘    │
 └────────────────────────┘     └───────────────────────┘
         │   │     │
         ▼   ▼     ▼
@@ -130,27 +129,28 @@ matrix_result = matrix_operation.execute(
 )
 ```
 
-### analyze_correlations
+### Analyzing several pairs
 
-Helper function for analyzing multiple field pairs in one operation.
+There is no batch helper function; run one `CorrelationOperation` per pair (or use
+`CorrelationMatrixOperation` for all pairs of a field list).
 
 ```python
-from pamola_core.profiling.analyzers.correlation import analyze_correlations
+from pamola_core.profiling.analyzers.correlation import CorrelationOperation
 
-# Define pairs to analyze
 field_pairs = [
     ("salary", "education_level"),
     ("salary", "experience_years"),
     ("age", "salary")
 ]
 
-# Analyze multiple pairs
-results = analyze_correlations(
-    data_source=data_source,
-    task_dir=Path("/path/to/task"),
-    reporter=reporter,
-    pairs=field_pairs
-)
+results = {}
+for field1, field2 in field_pairs:
+    op = CorrelationOperation(field1=field1, field2=field2)
+    results[f"{field1}_{field2}"] = op.execute(
+        data_source=data_source,
+        task_dir=Path("/path/to/task"),
+        reporter=reporter
+    )
 ```
 
 ## Correlation Methods
@@ -252,31 +252,6 @@ def execute(self,
 
 **Returns:**
 - `OperationResult` object containing matrix analysis results and artifacts
-
-### analyze_correlations
-
-```python
-def analyze_correlations(
-        data_source: DataSource,
-        task_dir: Path,
-        reporter: Any,
-        pairs: List[Tuple[str, str]],
-        **kwargs) -> Dict[str, OperationResult]:
-```
-
-**Parameters:**
-- `data_source` (required): Source of data for the operations
-- `task_dir` (required): Directory where task artifacts should be saved
-- `reporter` (required): Reporter object for tracking progress and artifacts
-- `pairs` (required): List of field pairs to analyze as tuples (field1, field2)
-- `**kwargs`: Additional parameters:
-  - `methods`: Dictionary mapping field pairs to correlation methods
-  - `null_handling` (default: 'drop'): Method for handling nulls
-  - `generate_visualization` (default: False): Whether to generate visualization
-  - `track_progress` (default: True): Whether to track overall progress
-
-**Returns:**
-- Dictionary mapping pair names to their operation results
 
 ## Generated Artifacts
 
@@ -404,27 +379,23 @@ else:
 ### Multiple Correlation Analyses
 
 ```python
-from pamola_core.profiling.analyzers.correlation import analyze_correlations
+from pamola_core.profiling.analyzers.correlation import CorrelationOperation
 
-# Define pairs to analyze
+# Define pairs to analyze, with an optional explicit method per pair
 field_pairs = [
-    ("salary", "experience_years"),
-    ("salary", "education_level"),
-    ("experience_years", "performance_score"),
-    ("department", "performance_score")
+    ("salary", "experience_years", None),
+    ("salary", "education_level", "correlation_ratio"),
+    ("experience_years", "performance_score", None),
+    ("department", "performance_score", None)
 ]
 
-# Analyze multiple pairs
-results = analyze_correlations(
-    data_source=data_source,
-    task_dir=task_dir,
-    reporter=reporter,
-    pairs=field_pairs,
-    methods={
-        # Specify custom methods for particular pairs (optional)
-        "salary_education_level": "correlation_ratio"
-    }
-)
+# Analyze each pair with its own operation
+results = {}
+for field1, field2, method in field_pairs:
+    op = CorrelationOperation(field1=field1, field2=field2, method=method)
+    results[f"{field1}_{field2}"] = op.execute(
+        data_source=data_source, task_dir=task_dir, reporter=reporter
+    )
 
 # Process results
 for pair_name, result in results.items():
