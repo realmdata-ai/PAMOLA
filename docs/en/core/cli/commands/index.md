@@ -288,7 +288,7 @@ Display version and exit.
 
 ```bash
 pamola-core --version
-# Output: pamola-core 1.0.0rc1
+# Output: pamola-core 1.0.0rc2
 ```
 
 ### `--verbose` / `-v`

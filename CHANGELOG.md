@@ -7,6 +7,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [1.0.0rc2] - 2026-10-27
+
+The first `1.0.0` candidate on PyPI: `1.0.0rc1` was tagged but never published, and the
+maintainer review (#118) and the documentation and licence work (#119) landed after its tag.
+Everything below is new since `1.0.0rc1`.
+
+### Fixed
+
+- **Hierarchy dictionaries may keep a value unchanged at a level.** `validate_structure` called an
+  entry whose label equals the value itself (`HS-grad -> HS-grad`, routine in the Adult education
+  hierarchy and accepted by ARX and anjana) a "potential circular reference", so
+  `CategoricalGeneralizationOperation(strategy="hierarchy")` refused the whole file; only the first
+  100 entries were checked, so the outcome depended on row order. An entry maps a value to its
+  labels and cannot loop; the check is removed.
+- **Installed NLTK corpora are found, and NLP resources are no longer checked at import.**
+  `python -m nltk.downloader wordnet` installs `corpora/wordnet.zip`, which NLTK reads but
+  `nltk.data.find("corpora/wordnet")` does not find, so an installed corpus was reported missing —
+  on every `import pamola_core`, on stderr. Presence checks now accept both forms
+  (`nltk_resource_present`), and the lemmatizers are built on the first `lemmatize()` call.
+  `WordNetLemmatizer` is used only when its corpus is installed (it raised `LookupError` on first
+  use otherwise); English then falls back to the Snowball stemmer.
+- **CVPL acceptance test C18 (G2/G4) no longer pins a solver-dependent count.** These goldens cut
+  the PCA projection through a degenerate eigenspace, so the number of linked pairs follows the
+  LAPACK build (19, 22 or 23 on the builds seen). The test pins the projection, the
+  `cutoff_in_degenerate_eigenspace` flag and the consistency of the rates with the count instead.
+
 ### Mathematical contract of the distance and linkage metrics (MATH)
 
 - **DCR / NNDR: nominal categorical columns are one-hot encoded. DCR and NNDR values change for
