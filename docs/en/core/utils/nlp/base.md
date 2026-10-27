@@ -5,7 +5,7 @@
 The `base.py` module is the foundational component of the NLP package in PAMOLA.CORE. It provides fundamental utilities, constants, and base classes for all NLP package components, including error hierarchies, dependency management, resource path handling, and common utility functions.
 
 **Status:** stable  
-**License:** BSD 3-Clause
+**License:** MIT
 
 ## Key Features
 

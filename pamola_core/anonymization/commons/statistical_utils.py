@@ -7,7 +7,7 @@ Package:       pamola_core.anonymization.commons
 Module:        statistical_utils.py
 Version:       1.0.1
 Last Updated:  2025-06-16
-License:       BSD 3-Clause
+License:       MIT
 Status:        Stable
 
 Description:

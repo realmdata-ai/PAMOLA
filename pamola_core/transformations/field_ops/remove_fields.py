@@ -4,7 +4,7 @@ Module: Remove Fields Operation
 Description: Operation for remove one or more specified fields from a dataset.
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for remove one or more specified fields from
 a dataset. It supports both explicit field lists and pattern-based selection.

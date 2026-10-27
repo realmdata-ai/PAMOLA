@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2024
 Revised:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 This module provides an operation for generalizing numeric fields to enhance privacy

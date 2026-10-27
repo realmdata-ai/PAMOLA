@@ -4,7 +4,7 @@ Module: Progress Manager
 Description: Centralized progress tracking and logging coordination
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides centralized management of progress bars and logging,
 ensuring clean display of execution progress without conflicts between

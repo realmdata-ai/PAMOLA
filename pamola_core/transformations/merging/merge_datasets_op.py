@@ -4,7 +4,7 @@ Module: Merge Datasets Operation
 Description: Operation for merging datasets with various strategies
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for merging datasets with various strategies
 while maintaining data utility. It implements various strategies:

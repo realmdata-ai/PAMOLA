@@ -4,7 +4,7 @@ Module: MinHash Signature Generator
 Description: Module for computing MinHash signatures for text fields to enable fast similarity comparison
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module implements MinHash signature generation for text data to enable efficient
 similarity comparisons and diversity evaluation across records, typically for:

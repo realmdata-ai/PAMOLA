@@ -4,7 +4,7 @@ Module: Clean Invalid Values Operation
 Description: Operation for nullify values that violate defined constraints.
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for nullify values that violate defined
 constraints. It supports different constraint types for different data types

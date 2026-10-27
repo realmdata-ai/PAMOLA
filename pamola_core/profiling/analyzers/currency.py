@@ -6,7 +6,7 @@ Version:       2.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   This module defines operations for profiling currency fields in tabular datasets.

@@ -6,7 +6,7 @@ Version:       2.0.0
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2024
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
   This module provides analyzers and operations for categorical fields in tabular datasets.

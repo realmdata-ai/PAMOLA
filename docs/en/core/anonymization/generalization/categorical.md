@@ -756,5 +756,5 @@ For questions, issues, or contributions:
 - Issues: [GitHub Issues](https://github.com/pamola/pamola_core/issues)
 - Email: support@pamola.ai
 
-**License:** BSD 3-Clause  
+**License:** MIT  
 **Copyright:** © 2025 PAMOLA Core Team

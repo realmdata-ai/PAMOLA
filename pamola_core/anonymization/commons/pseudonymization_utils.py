@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-06-10
 Modified:      2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
     This module provides shared utilities for pseudonymization operations within

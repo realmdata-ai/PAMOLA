@@ -4,7 +4,7 @@ Module: MyOperation
 Description: [REPLACE WITH YOUR OPERATION DESCRIPTION]
 Author: [YOUR NAME]
 Created: [DATE]
-License: BSD 3-Clause
+License: MIT
 
 This operation [BRIEFLY DESCRIBE WHAT IT DOES]
 

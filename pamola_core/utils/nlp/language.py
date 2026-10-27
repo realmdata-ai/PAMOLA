@@ -4,7 +4,7 @@ Module: Language Detection and Processing
 Description: Utilities for language detection, normalization, and multilingual text analysis
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides enhanced functions for detecting text language with
 graceful degradation when specialized libraries are not available.

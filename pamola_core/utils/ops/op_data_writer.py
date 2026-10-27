@@ -4,7 +4,7 @@ Module: Data Writer
 Description: Unified data writing interface for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides a specialized writer for operation outputs,
 ensuring consistent handling of files, paths, encryption, and

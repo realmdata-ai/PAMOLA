@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL configuration
 Package:       pamola_core.metrics.privacy.cvpl
-License:       BSD 3-Clause
+License:       MIT
 
 Typed, validated configuration of the CVPL linkage measurement
 (``B_lambda -> phi -> PCA -> cosine -> tau``). Every parameter that changes a

@@ -14,8 +14,8 @@ Key Features:
 This module extends the pamola_core privacy risk assessment with attribute-specific
 analysis capabilities.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
-Licensed under BSD 3-Clause License
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
+Licensed under the MIT License
 """
 
 import logging

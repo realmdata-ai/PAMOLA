@@ -4,7 +4,7 @@ Module: Bar Plot Visualization Implementation
 Description: Thread-safe bar plot visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for bar plots using both
 Plotly and Matplotlib backends. Plotly is the primary implementation,

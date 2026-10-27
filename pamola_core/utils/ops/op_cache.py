@@ -4,7 +4,7 @@ Module: Operation Caching
 Description: Caching system for operation results
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides caching functionalities for operation results,
 allowing computationally intensive operations to store and reuse results

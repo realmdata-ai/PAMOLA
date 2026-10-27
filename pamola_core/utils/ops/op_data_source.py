@@ -4,7 +4,7 @@ Module: Data Source Abstraction
 Description: Unified data source interface for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides a standardized abstraction for various data sources,
 allowing operations to work with data from different origins through a

@@ -7,7 +7,7 @@ Description:
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for charts combining multiple
 visualization types (e.g., bar+line, bar+area, etc.) with support

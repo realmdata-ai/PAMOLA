@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL linkage operation core schema
 Package:       pamola_core.metrics.schemas
-License:       BSD 3-Clause
+License:       MIT
 
 Pure JSON Schema for ``CVPLLinkageOperation``. Semantic validation (QID names, ladder
 rungs, hierarchies, ground-truth columns) is done by

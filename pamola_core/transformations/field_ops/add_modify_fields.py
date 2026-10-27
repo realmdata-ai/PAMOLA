@@ -4,7 +4,7 @@ Module: Add Or Modify Fields Operation
 Description: Operation for add/modify field based on lookups or conditions.
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for add/modify field based on lookups or
 conditions. It supports both explicit lookup tables and conditional logic.

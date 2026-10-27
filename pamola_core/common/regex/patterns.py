@@ -6,9 +6,9 @@ Features:
  - Common patterns for email, phone, credit card, domains, etc.
  - Language-specific phone extension formats.
 
-(C) 2024 Realm Inveo Inc. and DGT Network Inc.
-Licensed under BSD 3-Clause License
-See: https://opensource.org/licenses/BSD-3-Clause
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
+Licensed under the MIT License
+See: https://opensource.org/license/mit
 """
 
 

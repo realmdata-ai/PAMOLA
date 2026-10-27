@@ -4,7 +4,7 @@ Module: Data Reader
 Description: Unified data reading capabilities for operations
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides a specialized reader for various data sources,
 ensuring optimal integration with io.py and consistent handling of

@@ -3,7 +3,7 @@ PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        Remote NLP Resource Policy
 Package:       pamola_core.utils.nlp
 Status:        stable
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 Single choke point for every code path that may fetch a model or corpus from

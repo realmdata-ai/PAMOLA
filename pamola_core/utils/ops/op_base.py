@@ -4,7 +4,7 @@ Module: Operation Base Classes
 Description: Base operation classes for defining modular privacy-enhancing tasks
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides base classes for defining operations that can be used
 across different domains like profiling, anonymization, security, etc.

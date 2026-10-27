@@ -3,7 +3,7 @@ PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module: Regression Utility Metric
 Description: Implements the regressors metric
 Author: PAMOLA Core Team
-License: BSD 3-Clause
+License: MIT
 
 This module implements the regressors metric.
 """

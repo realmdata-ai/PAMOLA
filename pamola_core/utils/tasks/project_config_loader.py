@@ -6,7 +6,7 @@ Module: Project Configuration Loader
 Description: YAML project configuration loading and management
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for loading and managing project-level
 configurations in YAML format, including variable substitution, caching,

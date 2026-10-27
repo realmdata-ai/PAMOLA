@@ -4,7 +4,7 @@ Module: Temporary File Context Managers
 Description: Shared helpers for encryption/decryption temp file handling
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 """
 
 import logging

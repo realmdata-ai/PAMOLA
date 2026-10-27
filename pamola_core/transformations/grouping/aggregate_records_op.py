@@ -4,7 +4,7 @@ Module: Aggregate Records Operation
 Description: Operation for grouping and aggregating records with flexible aggregation functions
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for grouping and aggregating records
 using standard and custom aggregation functions, while maintaining data utility.

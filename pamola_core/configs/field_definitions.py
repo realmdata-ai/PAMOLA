@@ -26,7 +26,7 @@ Field Types:
 - long: Integer numeric values
 - date: Date values (may be stored as text but with date semantics)
 
-(C) 2025 BDA
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
 Author: V.Khvatov
 """

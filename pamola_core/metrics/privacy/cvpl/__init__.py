@@ -1,7 +1,7 @@
 """
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Package:  pamola_core.metrics.privacy.cvpl
-License:  BSD 3-Clause
+License:  MIT
 
 CVPL (Cluster-Vector-Projection Linkage): an explicit, reproducible linkage
 exposure measurement ``B_lambda -> phi -> PCA -> cosine -> tau`` between a source

@@ -4,7 +4,7 @@ Module: Text Tokenization Utilities
 Description: Classes and functions for tokenizing text across multiple libraries
 Author: PAMOLA Core Team
 Created: 2024
-License: BSD 3-Clause
+License: MIT
 
 This module provides classes and functions for tokenizing text with support for
 multiple libraries (spaCy, NLTK, transformers), lemmatization, n-gram extraction,

@@ -4,7 +4,7 @@ Module: File Reader Implementations
 Description: Format-specific readers shared by io.py and helper utilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 """
 
 import json

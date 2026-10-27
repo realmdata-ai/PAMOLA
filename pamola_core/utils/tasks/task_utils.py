@@ -4,7 +4,7 @@ Module: Task Utilities
 Description: Utility functions for working with tasks
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides utility functions for working with tasks,
 including directory management, file naming, and data source preparation.

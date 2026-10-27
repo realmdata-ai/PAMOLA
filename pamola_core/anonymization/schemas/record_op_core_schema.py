@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-15
 Updated:       2025-11-18
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 Core JSON Schema definition for backend validation of record suppression configurations in PAMOLA.CORE.

@@ -512,11 +512,11 @@ operation = DateTimeGeneralizationOperation(
 
 ## License
 
-BSD 3-Clause License
+MIT License — see [LICENSE](https://github.com/realmdata-ai/PAMOLA/blob/main/LICENSE).
 
 ## Support
 
 For issues and questions:
-- GitHub: [PAMOLA.CORE Issues](https://github.com/pamola/pamola-pamola_core/issues)
+- GitHub: [PAMOLA.CORE Issues](https://github.com/realmdata-ai/PAMOLA/issues)
 - Documentation: [PAMOLA Documentation](https://docs.pamola.ai)
 - Email: support@pamola.ai

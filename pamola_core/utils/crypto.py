@@ -13,7 +13,7 @@ Features:
 The module is designed to be used by other components that need to
 store or transmit sensitive data securely.
 
-(C) 2025 BDA
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
 Author: Security Team
 """

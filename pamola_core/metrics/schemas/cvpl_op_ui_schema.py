@@ -2,7 +2,7 @@
 PAMOLA.CORE - Privacy-Preserving AI Data Processors
 Module:        CVPL Linkage Operation UI schema
 Package:       pamola_core.metrics.schemas
-License:       BSD 3-Clause
+License:       MIT
 
 UI metadata (x-component, x-group) for the CVPL linkage configuration form. No
 validation rules here - see ``cvpl_op_core_schema``.

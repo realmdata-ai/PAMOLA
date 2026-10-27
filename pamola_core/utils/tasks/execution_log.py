@@ -4,7 +4,7 @@ Module: Execution Log
 Description: Manage persistent task execution history
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for managing persistent task execution
 history at the project level, enabling tracking of task dependencies,

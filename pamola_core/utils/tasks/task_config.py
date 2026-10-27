@@ -4,7 +4,7 @@ Module: Task Configuration
 Description: Configuration loading and management for tasks
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides functionality for loading and managing task configurations,
 including cascading from project configuration, task-specific configuration,

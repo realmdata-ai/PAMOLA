@@ -8,7 +8,7 @@ Features:
 - Default settings with override capabilities
 - Configuration validation
 
-(C) 2025 BDA
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
 
 Author: V.Khvatov
 """

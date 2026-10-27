@@ -3,8 +3,8 @@ PAMOLA.CORE - L-Diversity Processor
 Advanced processor for l-diversity anonymization.
 Designed for scalable, efficient anonymization with modular architecture.
 
-(C) 2024 Realm Inveo Inc., DTX, Titan Technology, & DGT Network Inc.
-Licensed under BSD 3-Clause License
+Copyright (c) 2024-2026 Realm Inveo Inc. (REALMDATA)
+Licensed under the MIT License
 
 ## Module Purpose
 Provides flexible and performance-optimized data privacy transformations with a configurable and extensible architecture.

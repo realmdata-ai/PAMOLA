@@ -4,7 +4,7 @@ Module: Split Fields Operation
 Description: Operation for splitting datasets into multiple groups of fields
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides an operation for splitting a dataset into multiple subsets,
 each containing a specific group of fields (columns), while maintaining data utility.

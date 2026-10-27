@@ -5,7 +5,7 @@ Description: Base class for all data transformation operations in PAMOLA Core.
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides the foundational class for all transformation operations,
 defining common interfaces, behaviors, and utilities for data transformation tasks.

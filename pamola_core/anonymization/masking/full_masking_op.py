@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-15
 Updated:       2025-07-25
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
 This module implements the FullMaskingOperation class that provides complete field value masking

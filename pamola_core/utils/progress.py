@@ -6,7 +6,7 @@ Version:       2.1.0+refactor.2025.05.23
 Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025
-License:       BSD 3-Clause
+License:       MIT
 Description:
    Robust progress tracking and visualization for large-scale data processing.
    This module provides comprehensive progress tracking capabilities for processing

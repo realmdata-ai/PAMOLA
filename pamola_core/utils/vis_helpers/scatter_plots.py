@@ -4,7 +4,7 @@ Module: Scatter Plot Visualization Implementation
 Description: Thread-safe scatter plot visualization capabilities
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides implementations for scatter plots primarily using
 the Plotly backend with context-isolated state management for concurrent

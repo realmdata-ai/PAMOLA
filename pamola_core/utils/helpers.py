@@ -7,7 +7,7 @@ Description:
     - Extracting characteristics from pandas and Dask data structures
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 """
 
 import hashlib

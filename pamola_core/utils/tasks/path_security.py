@@ -4,7 +4,7 @@ Module: Path Security
 Description: Security validation for file paths
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides utilities for validating path security,
 preventing directory traversal attacks, access to system directories,

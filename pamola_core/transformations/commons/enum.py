@@ -5,7 +5,7 @@
 # Package:       pamola_core.transformations.commons
 # Author:        PAMOLA Core Team
 # Created:       2025
-# License:       BSD 3-Clause
+# License:       MIT
 #
 # Description:
 #   Common enum definitions for transformation modules.

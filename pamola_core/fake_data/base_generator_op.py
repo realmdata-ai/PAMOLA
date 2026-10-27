@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-03
 Updated:       2025-06-15
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    Base classes and utilities for fake / synthetic data generation operations.

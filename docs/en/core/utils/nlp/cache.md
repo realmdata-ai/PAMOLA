@@ -8,7 +8,7 @@ The `cache.py` module is a critical component of the PAMOLA.CORE NLP utilities p
 - **Package**: `pamola.pamola_core.utils.nlp.cache`
 - **Version**: 1.3.0
 - **Status**: stable
-- **License**: BSD 3-Clause
+- **License**: MIT
 
 ## Key Features
 

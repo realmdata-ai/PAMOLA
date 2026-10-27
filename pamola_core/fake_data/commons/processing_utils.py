@@ -5,7 +5,7 @@ Description: Utility functions for efficient and scalable DataFrame processing.
 
 Author: PAMOLA Core Team
 Created: 2025
-License: BSD 3-Clause
+License: MIT
 
 This module provides utility functions for processing pandas DataFrames in
 parallel or in chunks, supporting both single-machine and distributed workflows.

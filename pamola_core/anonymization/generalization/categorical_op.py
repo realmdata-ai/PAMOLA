@@ -7,7 +7,7 @@ Status:        stable
 Author:        PAMOLA Core Team
 Created:       2025-01-20
 Updated:       2025-01-24
-License:       BSD 3-Clause
+License:       MIT
 
 Description:
    This module provides a minimal facade for categorical generalization operations,
